@@ -56,9 +56,13 @@ export function JobDetailPanel({ job }: { job: Job }) {
           <h2 className="font-heading text-lg font-bold text-text-primary">
             {job.vehicle.brand} {job.vehicle.model}
           </h2>
-          <span className="mt-1 inline-block rounded border border-border bg-elevated px-1.5 py-0.5 font-mono text-xs text-text-secondary">
-            {job.vehicle.licensePlate}
-          </span>
+          {job.vehicle.licensePlate ? (
+            <span className="mt-1 inline-block rounded border border-border bg-elevated px-1.5 py-0.5 font-mono text-xs text-text-secondary">
+              {job.vehicle.licensePlate}
+            </span>
+          ) : (
+            <span className="mt-1 inline-block text-xs text-text-muted">SPZ nedoplněna</span>
+          )}
           <p className="mt-1.5 text-sm text-text-secondary">{job.customer.name}</p>
           <p className="text-sm text-text-muted">{job.customer.phone}</p>
         </div>

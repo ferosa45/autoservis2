@@ -2,17 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { LucideIcon } from 'lucide-react';
+import type React from 'react';
 import { cn } from '@/lib/utils';
 
 export function SidebarNavLink({
   href,
   label,
-  icon: Icon,
+  icon,
 }: {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: React.ReactNode; // ZMĚNA: Přijímáme vyrenderovaný element místo LucideIcon
 }) {
   const pathname = usePathname();
   const isActive = pathname === href || pathname.startsWith(`${href}/`);
@@ -27,7 +27,8 @@ export function SidebarNavLink({
           : 'border-l-2 border-transparent text-text-secondary hover:bg-elevated hover:text-text-primary'
       )}
     >
-      <Icon className="h-4 w-4" />
+      {/* ZMĚNA: Ikonu rovnou vypíšeme, už ji nemusíme obalovat do < /> */}
+      {icon}
       {label}
     </Link>
   );

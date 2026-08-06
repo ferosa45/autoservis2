@@ -43,9 +43,11 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
             <h3 className="font-heading text-sm font-bold uppercase tracking-wide text-text-primary">
               {job.vehicle.brand} {job.vehicle.model}
             </h3>
-            <span className="rounded border border-border bg-elevated px-1.5 py-0.5 font-mono text-xs text-text-secondary">
-              {job.vehicle.licensePlate}
-            </span>
+            {job.vehicle.licensePlate && (
+              <span className="rounded border border-border bg-elevated px-1.5 py-0.5 font-mono text-xs text-text-secondary">
+                {job.vehicle.licensePlate}
+              </span>
+            )}
           </div>
           <ul className="mt-1.5 space-y-0.5 text-sm text-text-secondary">
             <li>&middot; {primaryTask}</li>

@@ -37,6 +37,18 @@ export default async function TodayPage({
   const selectedJobId = jobParam ?? jobs.find((j) => j.status === 'IN_PROGRESS')?.id ?? jobs[0]?.id ?? null;
   const selectedJob = selectedJobId ? await getJobDetail(context, selectedJobId) : null;
 
+  // ZDE JE OPRAVA: Převedeme Prisma Decimal objekty na klasická čísla (number)
+  // Předpokládám, že chybová pole (quantity, unitPrice) jsou v poli `items` uvnitř `selectedJob`.
+  const serializedJob = selectedJob ? {
+    ...selectedJob,
+    items: selectedJob.items?.map((item: any) => ({
+      ...item,
+      // Funkce Number() bezpečně převede Prisma Decimal na klasické číslo
+      quantity: item.quantity ? Number(item.quantity) : 0,
+      unitPrice: item.unitPrice ? Number(item.unitPrice) : 0,
+    }))
+  } : null;
+
   return (
     <div className="flex h-full">
       <div className="flex-1 space-y-6 overflow-y-auto p-6">
@@ -52,8 +64,9 @@ export default async function TodayPage({
       </div>
 
       <div className="w-[380px] shrink-0 space-y-4 overflow-y-auto border-l border-border p-4">
-        {selectedJob ? (
-          <JobDetailPanel job={selectedJob} />
+        {/* ZDE JE ZMĚNA: Předáváme pročištěný objekt serializedJob místo surového selectedJob */}
+        {serializedJob ? (
+          <JobDetailPanel job={serializedJob} />
         ) : (
           <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-text-muted">
             Vyberte zakázku pro zobrazení detailu.

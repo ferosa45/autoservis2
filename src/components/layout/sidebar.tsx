@@ -1,7 +1,8 @@
-import { Wrench, CalendarDays, ClipboardList, Users, FileText, Settings, Plus } from 'lucide-react';
+import { Wrench, CalendarDays, ClipboardList, Users, FileText, Settings } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { SidebarNavLink } from './sidebar-nav-link';
+import { QuickJobLauncher } from '@/components/quick-job/quick-job-launcher';
 
 const NAV_ITEMS = [
   { href: '/today', label: 'Dnes', icon: CalendarDays },
@@ -26,14 +27,7 @@ export async function Sidebar() {
       </div>
 
       <div className="px-4">
-        {/* Skutečné otevření Quick Job modalu je zapojeno ve Fázi 4 */}
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-        >
-          <Plus className="h-4 w-4" />
-          Nová zakázka
-        </button>
+        <QuickJobLauncher />
       </div>
 
       <nav className="mt-6 flex flex-1 flex-col gap-1 px-3">
