@@ -8,7 +8,7 @@ const MIN_FREE_SLOT_MINUTES = 60;
 
 type TimelineEntry =
   | { type: 'job'; job: JobForDay; time: Date }
-  | { type: 'free'; time: Date };
+  | { type: 'free'; time: Date; endTime: Date };
 
 function buildTimeline(jobs: JobForDay[], date: Date): TimelineEntry[] {
   const dayStart = new Date(date);
@@ -26,7 +26,7 @@ function buildTimeline(jobs: JobForDay[], date: Date): TimelineEntry[] {
   for (const job of sorted) {
     const gapMinutes = (job.scheduledStart.getTime() - cursor.getTime()) / 60000;
     if (gapMinutes >= MIN_FREE_SLOT_MINUTES) {
-      entries.push({ type: 'free', time: cursor });
+      entries.push({ type: 'free', time: cursor, endTime: job.scheduledStart });
     }
     entries.push({ type: 'job', job, time: job.scheduledStart });
     const jobEnd = job.scheduledEnd ?? job.scheduledStart;
@@ -37,7 +37,7 @@ function buildTimeline(jobs: JobForDay[], date: Date): TimelineEntry[] {
 
   const remainingMinutes = (dayEnd.getTime() - cursor.getTime()) / 60000;
   if (remainingMinutes >= MIN_FREE_SLOT_MINUTES) {
-    entries.push({ type: 'free', time: cursor });
+    entries.push({ type: 'free', time: cursor, endTime: dayEnd });
   }
 
   return entries;
@@ -68,7 +68,7 @@ export function JobTimeline({
         entry.type === 'job' ? (
           <JobCard key={entry.job.id} job={entry.job} isSelected={entry.job.id === selectedJobId} />
         ) : (
-          <FreeSlotCard key={`free-${index}`} time={entry.time} />
+          <FreeSlotCard key={`free-${index}`} time={entry.time} endTime={entry.endTime} />
         )
       )}
     </div>

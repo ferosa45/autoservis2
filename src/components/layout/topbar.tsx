@@ -1,6 +1,7 @@
 import { Search, Bell } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import { LogoutButton } from './logout-button';
 
 export async function Topbar() {
   const context = await getSessionContext();
@@ -43,6 +44,7 @@ export async function Topbar() {
             {context.role === 'OWNER' ? 'Majitel servisu' : 'Mechanik'}
           </p>
         </div>
+        <LogoutButton />
       </div>
     </header>
   );

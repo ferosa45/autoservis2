@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Manrope, Inter, IBM_Plex_Mono } from 'next/font/google';
+import { QuickJobProvider } from '@/components/quick-job/quick-job-provider';
 import './globals.css';
 
 const manrope = Manrope({
@@ -36,7 +37,7 @@ export default function RootLayout({
       <body
         className={`${manrope.variable} ${inter.variable} ${ibmPlexMono.variable} antialiased`}
       >
-        {children}
+        <QuickJobProvider>{children}</QuickJobProvider>
       </body>
     </html>
   );

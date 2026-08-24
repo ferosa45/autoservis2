@@ -1,6 +1,7 @@
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
+import Link from 'next/link';
 import { Wrench, Loader2 } from 'lucide-react';
 import { authenticate, type LoginState } from '@/lib/actions/auth.actions';
 
@@ -79,6 +80,13 @@ export function LoginForm() {
           )}
 
           <SubmitButton />
+
+          <p className="mt-4 text-center text-xs text-text-muted">
+            Nemáte účet?{' '}
+            <Link href="/signup" className="text-primary hover:underline">
+              Vytvořit účet (30 dní zdarma)
+            </Link>
+          </p>
         </form>
       </div>
     </div>

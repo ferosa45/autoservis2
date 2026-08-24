@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type React from 'react';
 import { cn } from '@/lib/utils';
 
 export function SidebarNavLink({
@@ -12,7 +11,12 @@ export function SidebarNavLink({
 }: {
   href: string;
   label: string;
-  icon: React.ReactNode; // ZMĚNA: Přijímáme vyrenderovaný element místo LucideIcon
+  // Vykreslený ikonový element (JSX), ne reference na komponentu -
+  // reference na komponentu (funkci/forwardRef objekt) nejde poslat
+  // ze Server Componenty do Client Componenty jako prop, protože to
+  // není "plain object" serializovatelný přes RSC hranici. Vykreslený
+  // element (React node) serializovatelný je.
+  icon: React.ReactNode;
 }) {
   const pathname = usePathname();
   const isActive = pathname === href || pathname.startsWith(`${href}/`);
@@ -27,7 +31,6 @@ export function SidebarNavLink({
           : 'border-l-2 border-transparent text-text-secondary hover:bg-elevated hover:text-text-primary'
       )}
     >
-      {/* ZMĚNA: Ikonu rovnou vypíšeme, už ji nemusíme obalovat do < /> */}
       {icon}
       {label}
     </Link>

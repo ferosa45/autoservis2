@@ -26,6 +26,13 @@ enum InvoiceStatus {
   CANCELLED
 }
 
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
 model Garage {
   id                String   @id @default(cuid())
   name              String
@@ -45,8 +52,17 @@ model Garage {
   invoicePrefix     String?
   nextInvoiceNumber Int      @default(1)
   invoiceDueDays    Int      @default(14)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+
+  // Předplatné - měsíc zdarma, pak placené přes Stripe. Po vypršení
+  // trialu bez aktivního předplatného appka přejde do režimu jen ke
+  // čtení (viz getSessionContext / assertWriteAccess), ne tvrdý paywall.
+  subscriptionStatus   SubscriptionStatus @default(TRIALING)
+  trialEndsAt          DateTime
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   users        User[]
   customers    Customer[]

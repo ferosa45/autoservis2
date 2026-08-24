@@ -1,11 +1,23 @@
+'use client';
+
 import { Clock, Plus } from 'lucide-react';
 import { formatTime } from '@/lib/format';
+import { useQuickJob } from '@/components/quick-job/quick-job-provider';
 
-// Skutečné vytvoření zakázky předvyplněné tímto časem se zapojí ve Fázi 4
-// spolu s Quick Job modalem. Zatím je karta jen vizuální.
-export function FreeSlotCard({ time }: { time: Date }) {
+export function FreeSlotCard({ time, endTime }: { time: Date; endTime: Date }) {
+  const { openQuickJob } = useQuickJob();
+
+  function handleClick() {
+    const cappedEnd = new Date(Math.min(time.getTime() + 60 * 60000, endTime.getTime()));
+    openQuickJob({ scheduledStart: time, scheduledEnd: cappedEnd });
+  }
+
   return (
-    <div className="flex items-center justify-between rounded-lg border border-dashed border-border bg-transparent p-4 text-text-muted">
+    <button
+      type="button"
+      onClick={handleClick}
+      className="flex w-full items-center justify-between rounded-lg border border-dashed border-border bg-transparent p-4 text-left text-text-muted transition-colors hover:border-primary/40 hover:text-text-secondary"
+    >
       <div className="flex items-center gap-4">
         <div className="w-14 shrink-0 text-sm font-medium">{formatTime(time)}</div>
         <div className="flex items-center gap-2">
@@ -19,6 +31,6 @@ export function FreeSlotCard({ time }: { time: Date }) {
       <div className="flex h-8 w-8 items-center justify-center rounded-md border border-border">
         <Plus className="h-4 w-4" />
       </div>
-    </div>
+    </button>
   );
 }

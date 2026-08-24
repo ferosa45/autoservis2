@@ -32,6 +32,10 @@ async function main() {
       invoicePrefix: '2026',
       nextInvoiceNumber: 1,
       invoiceDueDays: 14,
+      // Seed servis pro vývoj/testování - rovnou ACTIVE, ať práce na appce
+      // není omezená vypršením trialu.
+      subscriptionStatus: 'ACTIVE',
+      trialEndsAt: new Date(),
     },
   });
 

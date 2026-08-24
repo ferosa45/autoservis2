@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Phone, User } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/badge';
-import { JOB_STATUS_BORDER_ACCENT } from '@/lib/job-status';
+import { JOB_STATUS_COLOR } from '@/lib/job-status';
 import { formatTime, formatShortDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { JobForDay } from '@/lib/services/today.service';
@@ -23,17 +23,19 @@ function rightSideLabel(job: JobForDay): string {
 export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boolean }) {
   const primaryTask = job.tasks[0]?.title ?? job.customerRequest;
   const secondaryTask = job.tasks[1]?.title;
+  const colors = JOB_STATUS_COLOR[job.status];
 
   return (
     <Link
       href={`/today?job=${job.id}`}
       className={cn(
-        'flex gap-4 rounded-lg border-l-4 border border-border bg-surface p-4 transition-colors hover:border-primary/40',
-        JOB_STATUS_BORDER_ACCENT[job.status],
-        isSelected && 'ring-1 ring-primary'
+        'flex gap-4 rounded-lg border p-4 transition-colors hover:brightness-110',
+        colors.bg,
+        colors.border,
+        isSelected && 'ring-2 ring-primary'
       )}
     >
-      <div className="w-14 shrink-0 pt-1 text-sm font-medium text-text-secondary">
+      <div className={cn('w-14 shrink-0 pt-1 text-sm font-medium', colors.text)}>
         {formatTime(job.scheduledStart)}
       </div>
 
@@ -44,7 +46,7 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
               {job.vehicle.brand} {job.vehicle.model}
             </h3>
             {job.vehicle.licensePlate && (
-              <span className="rounded border border-border bg-elevated px-1.5 py-0.5 font-mono text-xs text-text-secondary">
+              <span className="rounded border border-white/10 bg-black/20 px-1.5 py-0.5 font-mono text-xs text-text-secondary">
                 {job.vehicle.licensePlate}
               </span>
             )}
@@ -64,8 +66,8 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          <StatusBadge status={job.status} />
-          <span className="text-xs text-text-muted">{rightSideLabel(job)}</span>
+          <StatusBadge status={job.status} className="border-white/10 bg-black/20" />
+          <span className={cn('text-xs', colors.text)}>{rightSideLabel(job)}</span>
         </div>
       </div>
     </Link>

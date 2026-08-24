@@ -3,13 +3,14 @@
 import { revalidatePath } from 'next/cache';
 import type { JobStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { getSessionContext } from '@/lib/session';
+import { getSessionContext, assertWriteAccess } from '@/lib/session';
 import { MockNotificationService } from '@/lib/notifications/mock-notification-service';
 
 const notificationService = new MockNotificationService();
 
 export async function setJobStatus(jobId: string, status: JobStatus) {
   const context = await getSessionContext();
+  assertWriteAccess(context);
 
   // updateMany s garageId ve where zaručí, že nejde změnit cizí zakázku,
   // i kdyby si klient vynutil cizí jobId.
@@ -24,10 +25,13 @@ export async function setJobStatus(jobId: string, status: JobStatus) {
 
   revalidatePath('/today');
   revalidatePath('/calendar');
+  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath('/workshop');
 }
 
 export async function toggleTask(taskId: string, completed: boolean) {
   const context = await getSessionContext();
+  assertWriteAccess(context);
 
   const result = await prisma.task.updateMany({
     where: { id: taskId, garageId: context.garageId },
@@ -43,6 +47,7 @@ export async function toggleTask(taskId: string, completed: boolean) {
 
 export async function sendJobSms(jobId: string) {
   const context = await getSessionContext();
+  assertWriteAccess(context);
 
   const job = await prisma.job.findFirst({
     where: { id: jobId, garageId: context.garageId },
@@ -60,4 +65,5 @@ export async function sendJobSms(jobId: string) {
   });
 
   revalidatePath('/today');
+  revalidatePath(`/jobs/${jobId}`);
 }

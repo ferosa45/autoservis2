@@ -1,8 +1,8 @@
-import { Wrench, CalendarDays, ClipboardList, Users, FileText, Settings } from 'lucide-react';
+import { Wrench, CalendarDays, ClipboardList, Users, FileText, Settings, CreditCard } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { SidebarNavLink } from './sidebar-nav-link';
-import { QuickJobLauncher } from '@/components/quick-job/quick-job-launcher';
+import { NewJobButton } from '@/components/quick-job/new-job-button';
 
 const NAV_ITEMS = [
   { href: '/today', label: 'Dnes', icon: CalendarDays },
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: '/jobs', label: 'Zakázky', icon: ClipboardList },
   { href: '/customers', label: 'Zákazníci', icon: Users },
   { href: '/invoices', label: 'Faktury', icon: FileText },
+  { href: '/billing', label: 'Předplatné', icon: CreditCard },
   { href: '/settings', label: 'Nastavení', icon: Settings },
 ];
 
@@ -27,12 +28,17 @@ export async function Sidebar() {
       </div>
 
       <div className="px-4">
-        <QuickJobLauncher />
+        <NewJobButton />
       </div>
 
       <nav className="mt-6 flex flex-1 flex-col gap-1 px-3">
         {NAV_ITEMS.map((item) => (
-          <SidebarNavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />
+          <SidebarNavLink
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={<item.icon className="h-4 w-4" />}
+          />
         ))}
       </nav>
 

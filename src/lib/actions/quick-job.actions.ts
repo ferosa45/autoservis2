@@ -1,11 +1,17 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getSessionContext } from '@/lib/session';
+import { getSessionContext, assertWriteAccess } from '@/lib/session';
 import { RuleBasedQuickJobParser } from '@/lib/parser/rule-based-quick-job-parser';
 import { createJobFromQuickInput, type CreateJobFromQuickInput } from '@/lib/services/job.service';
 import type { QuickJobParseResult } from '@/lib/parser/quick-job-parser.interface';
 
+// POZNÁMKA: parseQuickJobPreview a RuleBasedQuickJobParser už nejsou volané
+// z hlavního Quick Job UI (to bylo nahrazeno strukturovaným formulářem
+// s autocomplete - parsování volného textu se v praxi ukázalo nespolehlivé).
+// Kód necháváme k dispozici - rozhraní QuickJobParser je navržené i pro
+// budoucí AIQuickJobParser a může se hodit např. pro volitelné "rychlé
+// vložení textem" nebo jinou budoucí funkci.
 const parser = new RuleBasedQuickJobParser();
 
 const EMPTY_RESULT: QuickJobParseResult = {
@@ -35,6 +41,7 @@ export async function parseQuickJobPreview(input: string): Promise<QuickJobParse
 
 export async function submitQuickJob(input: CreateJobFromQuickInput): Promise<{ jobId: string }> {
   const context = await getSessionContext();
+  assertWriteAccess(context);
   const job = await createJobFromQuickInput(context, input);
 
   revalidatePath('/today');

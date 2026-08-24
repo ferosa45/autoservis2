@@ -1,3 +1,4 @@
+import { serializeJobItems } from '@/lib/serialize';
 import { getSessionContext } from '@/lib/session';
 import {
   getJobsForDay,
@@ -35,19 +36,31 @@ export default async function TodayPage({
   const stats = calculateTodayStats(jobs);
 
   const selectedJobId = jobParam ?? jobs.find((j) => j.status === 'IN_PROGRESS')?.id ?? jobs[0]?.id ?? null;
-  const selectedJob = selectedJobId ? await getJobDetail(context, selectedJobId) : null;
+  const rawSelectedJob = selectedJobId ? await getJobDetail(context, selectedJobId) : null;
 
-  // ZDE JE OPRAVA: Převedeme Prisma Decimal objekty na klasická čísla (number)
-  // Předpokládám, že chybová pole (quantity, unitPrice) jsou v poli `items` uvnitř `selectedJob`.
-  const serializedJob = selectedJob ? {
-    ...selectedJob,
-    items: selectedJob.items?.map((item: any) => ({
-      ...item,
-      // Funkce Number() bezpečně převede Prisma Decimal na klasické číslo
-      quantity: item.quantity ? Number(item.quantity) : 0,
-      unitPrice: item.unitPrice ? Number(item.unitPrice) : 0,
-    }))
-  } : null;
+  // JobDetailPanel je Client Component - posíláme jen pole, která skutečně
+  // potřebuje. rawSelectedJob obsahuje navíc invoices s Decimal částkami,
+  // které by přes server/client hranici neprošly (spread ...rawSelectedJob
+  // by je tam propašoval, i když je komponenta vůbec nepoužívá).
+  const selectedJob = rawSelectedJob
+    ? {
+        id: rawSelectedJob.id,
+        status: rawSelectedJob.status,
+        createdAt: rawSelectedJob.createdAt,
+        scheduledEnd: rawSelectedJob.scheduledEnd,
+        customerRequest: rawSelectedJob.customerRequest,
+        note: rawSelectedJob.note,
+        customer: { name: rawSelectedJob.customer.name, phone: rawSelectedJob.customer.phone },
+        vehicle: {
+          brand: rawSelectedJob.vehicle.brand,
+          model: rawSelectedJob.vehicle.model,
+          licensePlate: rawSelectedJob.vehicle.licensePlate,
+        },
+        assignedUser: rawSelectedJob.assignedUser ? { name: rawSelectedJob.assignedUser.name } : null,
+        tasks: rawSelectedJob.tasks.map((t) => ({ id: t.id, title: t.title, completed: t.completed })),
+        items: serializeJobItems(rawSelectedJob.items),
+      }
+    : null;
 
   return (
     <div className="flex h-full">
@@ -64,9 +77,8 @@ export default async function TodayPage({
       </div>
 
       <div className="w-[380px] shrink-0 space-y-4 overflow-y-auto border-l border-border p-4">
-        {/* ZDE JE ZMĚNA: Předáváme pročištěný objekt serializedJob místo surového selectedJob */}
-        {serializedJob ? (
-          <JobDetailPanel job={serializedJob} />
+        {selectedJob ? (
+          <JobDetailPanel job={selectedJob} />
         ) : (
           <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-text-muted">
             Vyberte zakázku pro zobrazení detailu.

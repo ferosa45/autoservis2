@@ -11,7 +11,11 @@ import { JOB_STATUS_LABEL } from '@/lib/job-status';
 import { cn } from '@/lib/utils';
 import type { getJobDetail } from '@/lib/services/today.service';
 
-type Job = NonNullable<Awaited<ReturnType<typeof getJobDetail>>>;
+import type { SerializedJobItem } from '@/lib/serialize';
+
+type Job = Omit<NonNullable<Awaited<ReturnType<typeof getJobDetail>>>, 'items' | 'invoices'> & {
+  items: SerializedJobItem[];
+};
 
 const TABS = ['Přehled', 'Práce a díly'] as const;
 type Tab = (typeof TABS)[number];
@@ -22,7 +26,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
   const [smsSent, setSmsSent] = useState(false);
 
   const itemsTotal = job.items.reduce(
-    (sum, item) => sum + Number(item.quantity) * Number(item.unitPrice),
+    (sum, item) => sum + item.quantity * item.unitPrice,
     0
   );
 
@@ -161,11 +165,11 @@ export function JobDetailPanel({ job }: { job: Job }) {
                     <div>
                       <p className="text-text-primary">{item.title}</p>
                       <p className="text-xs text-text-muted">
-                        {Number(item.quantity)} {item.unit} × {formatCurrency(Number(item.unitPrice))}
+                        {item.quantity} {item.unit} × {formatCurrency(item.unitPrice)}
                       </p>
                     </div>
                     <p className="text-text-primary">
-                      {formatCurrency(Number(item.quantity) * Number(item.unitPrice))}
+                      {formatCurrency(item.quantity * item.unitPrice)}
                     </p>
                   </div>
                 ))}

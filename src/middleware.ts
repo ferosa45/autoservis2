@@ -1,16 +1,18 @@
 import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
+const PUBLIC_PATHS = ['/login', '/signup'];
+
 export default auth((req) => {
   const isLoggedIn = !!req.auth?.user;
-  const isLoginPage = req.nextUrl.pathname === '/login';
+  const isPublicPage = PUBLIC_PATHS.includes(req.nextUrl.pathname);
 
-  if (!isLoggedIn && !isLoginPage) {
+  if (!isLoggedIn && !isPublicPage) {
     const loginUrl = new URL('/login', req.nextUrl.origin);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isLoggedIn && isLoginPage) {
+  if (isLoggedIn && isPublicPage) {
     return NextResponse.redirect(new URL('/today', req.nextUrl.origin));
   }
 
@@ -18,6 +20,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Middleware se nespouští na statické soubory a API auth routy
-  matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico).*)'],
+  // Middleware se nespouští na statické soubory, API auth routy a Stripe
+  // webhook (ten volá Stripe přímo bez přihlášení, ověřuje se podpisem)
+  matcher: ['/((?!api/auth|api/stripe/webhook|_next/static|_next/image|favicon.ico).*)'],
 };

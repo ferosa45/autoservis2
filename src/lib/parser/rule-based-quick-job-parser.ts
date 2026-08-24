@@ -49,18 +49,10 @@ export class RuleBasedQuickJobParser implements QuickJobParser {
       working = removeMatch(working, plateMatch[0]);
     }
 
-    // 3. Den
-    const dayResult = extractDay(stripDiacritics(working).toLowerCase(), now);
-    // extractDay pracuje nad textem bez diakritiky kvůli DAY_KEYWORDS mapě,
-    // ale odstranění matched textu provedeme z originálu podle pozice slova
+    // 3. Den (číselné datum má přednost, jinak slovní vyjádření typu "středa")
+    const dayResult = extractDay(working, now);
     if (dayResult.matchedText) {
-      const words = working.split(/\s+/);
-      const normalizedWords = stripDiacritics(working).toLowerCase().split(/\s+/);
-      const idx = normalizedWords.indexOf(dayResult.matchedText);
-      if (idx !== -1) {
-        words.splice(idx, 1);
-        working = words.join(' ');
-      }
+      working = removeMatch(working, dayResult.matchedText);
     }
 
     // 4. Čas

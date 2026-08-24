@@ -41,7 +41,7 @@ export async function getJobDetail(context: SessionContext, jobId: string) {
       tasks: true,
       items: true,
       assignedUser: true,
-      invoices: { orderBy: { createdAt: 'desc' }, take: 1 },
+      invoices: { orderBy: { createdAt: 'desc' }, take: 5 },
     },
   });
 }

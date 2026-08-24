@@ -11,6 +11,7 @@ export type CreateJobFromQuickInput = {
   vehicleLicensePlate: string | null;
   tasks: string[];
   scheduledStart: string; // ISO datetime
+  scheduledEnd: string | null; // ISO datetime
 };
 
 export async function createJobFromQuickInput(
@@ -109,6 +110,7 @@ export async function createJobFromQuickInput(
         customerId,
         vehicleId,
         scheduledStart: new Date(input.scheduledStart),
+        scheduledEnd: input.scheduledEnd ? new Date(input.scheduledEnd) : null,
         status: 'WAITING',
         customerRequest: input.tasks.join(', ') || 'Bez upřesnění',
         garageId: context.garageId,
@@ -126,5 +128,12 @@ export async function createJobFromQuickInput(
     }
 
     return job;
+  }, {
+    // Výchozích 5s Prisma defaultu bývá na pomalejším/probouzejícím se
+    // spojení (typicky Railway free tier po chvíli nečinnosti) málo pro
+    // víc sekvenčních kroků v této transakci (zákazník → vozidlo →
+    // číslo zakázky → zakázka → úkoly).
+    timeout: 15000,
+    maxWait: 10000,
   });
 }

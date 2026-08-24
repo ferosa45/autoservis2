@@ -54,3 +54,34 @@ export function isSameDay(a: Date, b: Date): boolean {
 export function formatCurrency(amount: number): string {
   return `${Math.round(amount).toLocaleString('cs-CZ')} Kč`;
 }
+
+/**
+ * Formátuje Date do tvaru, který očekává <input type="datetime-local">
+ * ("YYYY-MM-DDTHH:mm"), v lokálním čase (ne UTC - proto ne .toISOString()).
+ */
+export function formatForDatetimeLocal(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+    date.getHours()
+  )}:${pad(date.getMinutes())}`;
+}
+
+const WEEKDAYS_SHORT = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+
+export function formatWeekdayShort(date: Date): string {
+  return WEEKDAYS_SHORT[date.getDay()]!;
+}
+
+export function formatWeekRange(weekStart: Date, weekEnd: Date): string {
+  const sameMonth = weekStart.getMonth() === weekEnd.getMonth();
+  const startDay = weekStart.getDate();
+  const endDay = weekEnd.getDate();
+  const month = MONTHS[weekEnd.getMonth()];
+  const year = weekEnd.getFullYear();
+
+  if (sameMonth) {
+    return `${startDay}. – ${endDay}. ${month} ${year}`;
+  }
+  const startMonth = MONTHS[weekStart.getMonth()];
+  return `${startDay}. ${startMonth} – ${endDay}. ${month} ${year}`;
+}
