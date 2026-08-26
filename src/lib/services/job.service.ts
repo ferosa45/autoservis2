@@ -1,5 +1,37 @@
+import type { JobStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import type { SessionContext } from '@/lib/session';
+
+export type JobListFilters = {
+  query?: string;
+  status?: JobStatus;
+};
+
+export async function listJobs(context: SessionContext, filters: JobListFilters = {}) {
+  const q = filters.query?.trim();
+
+  return prisma.job.findMany({
+    where: {
+      garageId: context.garageId,
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(q
+        ? {
+            OR: [
+              { number: { contains: q, mode: 'insensitive' } },
+              { customerRequest: { contains: q, mode: 'insensitive' } },
+              { customer: { name: { contains: q, mode: 'insensitive' } } },
+              { vehicle: { licensePlate: { contains: q, mode: 'insensitive' } } },
+              { vehicle: { brand: { contains: q, mode: 'insensitive' } } },
+              { vehicle: { model: { contains: q, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
+    },
+    include: { customer: true, vehicle: true },
+    orderBy: { scheduledStart: 'desc' },
+    take: 100,
+  });
+}
 
 export type CreateJobFromQuickInput = {
   customerId: string | null;
