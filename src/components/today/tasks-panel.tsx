@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Plus } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, ExternalLink } from 'lucide-react';
 import { createTask, toggleTask } from '@/lib/actions/today.actions';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +10,7 @@ type TaskItem = {
   id: string;
   title: string;
   completed: boolean;
-  job: { vehicle: { brand: string; model: string } } | null;
+  job: { id: string; number: string; vehicle: { brand: string; model: string } } | null;
 };
 
 type JobOption = {
@@ -160,12 +161,21 @@ export function TasksPanel({ tasks, jobs = [] }: { tasks: TaskItem[]; jobs?: Job
               >
                 {task.completed && <span className="h-2 w-2 rounded-sm bg-status-done-text" />}
               </button>
-              <span className={cn('text-sm', task.completed ? 'text-text-muted line-through' : 'text-text-primary')}>
-                {task.title}
+              <div className="min-w-0 flex-1">
+                <p className={cn('text-sm', task.completed ? 'text-text-muted line-through' : 'text-text-primary')}>
+                  {task.title}
+                </p>
                 {task.job && (
-                  <span className="text-text-muted"> — {task.job.vehicle.brand} {task.job.vehicle.model}</span>
+                  <Link
+                    href={`/jobs/${task.job.id}`}
+                    className="mt-0.5 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {task.job.vehicle.brand} {task.job.vehicle.model} · #{task.job.number}
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
                 )}
-              </span>
+              </div>
             </li>
           ))}
         </ul>
