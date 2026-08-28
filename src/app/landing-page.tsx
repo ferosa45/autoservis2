@@ -1,0 +1,32 @@
+import Link from 'next/link';
+import { ArrowRight, CalendarDays, CheckCircle2, FileText, Gauge, MessageSquare, Wrench } from 'lucide-react';
+
+const features = [
+  { icon: Wrench, title: 'Zakázky', text: 'Mějte každou opravu přehledně od přijetí auta až po dokončení.' },
+  { icon: CalendarDays, title: 'Kalendář', text: 'Plánujte práci mechaniků a okamžitě vidíte, co vás čeká.' },
+  { icon: Gauge, title: 'Zákazníci a vozidla', text: 'Historie zákazníků, vozidel a oprav vždy po ruce.' },
+  { icon: FileText, title: 'Fakturace', text: 'Vystavte fakturu přímo ze zakázky bez zbytečného přepisování.' },
+  { icon: MessageSquare, title: 'SMS zákazníkům', text: 'Dejte zákazníkovi vědět, že je jeho auto hotové.' },
+  { icon: CheckCircle2, title: 'Úkoly', text: 'Nezapomeňte na telefonáty, díly ani další práci v servisu.' },
+];
+
+export default function LandingPage() {
+  return (
+    <main className="min-h-screen overflow-hidden bg-background text-text-primary">
+      <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-6 lg:px-8">
+        <div className="flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-lg font-black text-white">A</div><span className="font-heading text-lg font-extrabold tracking-tight">Autoservis2</span></div>
+        <Link href="/login" className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-secondary transition hover:bg-surface hover:text-text-primary">Přihlásit se</Link>
+      </nav>
+      <section className="relative mx-auto max-w-6xl px-5 pb-20 pt-12 lg:px-8 lg:pb-28 lg:pt-20">
+        <div className="absolute -right-32 -top-24 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
+        <div className="relative grid items-center gap-14 lg:grid-cols-[1fr_1.05fr]">
+          <div><div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Pro malé a střední autoservisy</div><h1 className="max-w-2xl font-heading text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl">Mějte svůj autoservis <span className="text-primary">pod kontrolou.</span></h1><p className="mt-6 max-w-xl text-base leading-7 text-text-secondary sm:text-lg">Autoservis2 vám pomůže řídit zakázky, zákazníky, vozidla, mechaniky, úkoly i fakturaci z jednoho místa.</p><div className="mt-8 flex flex-wrap gap-3"><Link href="/register" className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Vyzkoušet zdarma <ArrowRight className="h-4 w-4" /></Link><Link href="/login" className="rounded-lg border border-border bg-surface px-5 py-3 text-sm font-semibold text-text-primary transition hover:bg-surface-hover">Přihlásit se</Link></div></div>
+          <div className="relative rounded-2xl border border-border bg-surface p-3 shadow-2xl shadow-black/30"><div className="rounded-xl border border-border bg-background p-4 sm:p-5"><div className="flex items-center justify-between border-b border-border pb-4"><div><p className="text-xs text-text-muted">Dnes</p><h2 className="font-heading text-xl font-bold">Přehled servisu</h2></div><span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">3 zakázky</span></div><div className="mt-4 space-y-3">{[['08:00','Škoda Octavia','PRACUJE SE'],['10:30','VW Passat','ČEKÁ'],['13:00','BMW 320d','HOTOVO']].map(([time,car,status]) => <div key={time} className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3"><span className="w-11 font-mono text-xs text-text-muted">{time}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{car}</p><p className="text-xs text-text-muted">Servisní zakázka</p></div><span className="hidden rounded-md bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary sm:block">{status}</span></div>)}</div><div className="mt-4 rounded-lg border border-border bg-surface p-3"><div className="flex items-center justify-between"><span className="text-xs font-semibold text-text-secondary">Úkoly na dnes</span><span className="text-xs font-bold text-primary">3</span></div><div className="mt-2 flex gap-2 text-xs text-text-muted"><CheckCircle2 className="h-4 w-4 text-primary" /> Zavolat zákazníkovi</div><div className="mt-1 flex gap-2 text-xs text-text-muted"><CheckCircle2 className="h-4 w-4 text-primary" /> Objednat brzdové destičky</div></div></div></div>
+        </div>
+      </section>
+      <section className="border-y border-border bg-surface/40"><div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20"><div className="max-w-2xl"><p className="text-sm font-bold uppercase tracking-widest text-primary">Všechno na jednom místě</p><h2 className="mt-3 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">Méně papírování. Více času na auta.</h2><p className="mt-4 leading-7 text-text-secondary">Jednoduché nástroje, které pokryjí každodenní provoz autoservisu bez zbytečně složitého systému.</p></div><div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{features.map(({icon:Icon,title,text}) => <div key={title} className="rounded-xl border border-border bg-surface p-5 transition hover:-translate-y-0.5 hover:border-primary/30"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon className="h-5 w-5" /></div><h3 className="mt-4 font-heading font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-text-secondary">{text}</p></div>)}</div></div></section>
+      <section className="mx-auto max-w-4xl px-5 py-20 text-center lg:py-28"><h2 className="font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">Chcete mít svůj autoservis stejně přehledný?</h2><p className="mx-auto mt-4 max-w-xl leading-7 text-text-secondary">Začněte s Autoservis2 a mějte každou zakázku, auto i úkol tam, kde je právě potřebujete.</p><Link href="/register" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Vyzkoušet Autoservis2 zdarma <ArrowRight className="h-4 w-4" /></Link></section>
+      <footer className="border-t border-border px-5 py-7 text-center text-xs text-text-muted">© {new Date().getFullYear()} Autoservis2 · Jednoduchý digitální diář pro autoservisy</footer>
+    </main>
+  );
+}
