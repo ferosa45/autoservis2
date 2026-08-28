@@ -10,6 +10,7 @@ import {
   Loader2,
   FileText,
   FileCheck,
+  Play,
 } from 'lucide-react';
 import { setJobStatus, sendJobSms } from '@/lib/actions/today.actions';
 import { startInvoiceDraft } from '@/lib/actions/invoice.actions';
@@ -31,6 +32,18 @@ export function JobActions({
   const [smsSent, setSmsSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  function handleStatusChange(nextStatus: JobStatus) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await setJobStatus(jobId, nextStatus);
+        router.refresh();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Nepodařilo se změnit stav zakázky');
+      }
+    });
+  }
+
   function handleStartInvoice() {
     setError(null);
     startTransition(async () => {
@@ -47,27 +60,51 @@ export function JobActions({
     <div className="rounded-lg border border-border bg-surface p-4">
       <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">Akce</h3>
 
-      {status !== 'DONE' && (
+      {status === 'WAITING' && (
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={() => handleStatusChange('IN_PROGRESS')}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+        >
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+          Zahájit práci
+        </button>
+      )}
+
+      {status === 'IN_PROGRESS' && (
         <div className="grid grid-cols-1 gap-2">
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => setJobStatus(jobId, 'BLOCKED'))}
+            onClick={() => handleStatusChange('BLOCKED')}
             className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-border disabled:opacity-50"
           >
-            <PackageX className="h-4 w-4" />
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageX className="h-4 w-4" />}
             Čeká na díl / zákazníka
           </button>
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => setJobStatus(jobId, 'DONE'))}
+            onClick={() => handleStatusChange('DONE')}
             className="flex items-center justify-center gap-1.5 rounded-lg bg-status-done-text px-3 py-2.5 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
           >
-            <CheckCircle2 className="h-4 w-4" />
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             Hotovo
           </button>
         </div>
+      )}
+
+      {status === 'BLOCKED' && (
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={() => handleStatusChange('IN_PROGRESS')}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+        >
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+          Pokračovat v práci
+        </button>
       )}
 
       {status === 'DONE' && (
