@@ -60,7 +60,9 @@ export default async function TodayPage({
         tasks: rawSelectedJob.tasks.map((t) => ({ id: t.id, title: t.title, completed: t.completed })),
         items: serializeJobItems(rawSelectedJob.items),
         activeInvoice: (() => {
-          const invoice = rawSelectedJob.invoices.find((inv) => inv.status !== 'CANCELLED');
+          const invoice = rawSelectedJob.invoices.find(
+            (inv) => inv.status === 'DRAFT' || inv.status === 'ISSUED' || inv.status === 'PAID'
+          );
           return invoice ? { id: invoice.id, status: invoice.status } : null;
         })(),
       }
