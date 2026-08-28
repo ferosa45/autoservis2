@@ -46,6 +46,7 @@ export async function getJobsForWeek(
       scheduledStart: true,
       scheduledEnd: true,
       status: true,
+      customerRequest: true,
       vehicle: {
         select: { brand: true, model: true, licensePlate: true },
       },
