@@ -40,7 +40,7 @@ export default async function TodayPage({
 
   // JobDetailPanel je Client Component - posíláme jen pole, která skutečně
   // potřebuje. rawSelectedJob obsahuje navíc invoices s Decimal částkami,
-  // které by přes server/client hranici neprošly (spread ...rawSelectedJob
+  // které přes server/client hranici neprojdou (spread ...rawSelectedJob
   // by je tam propašoval, i když je komponenta vůbec nepoužívá).
   const selectedJob = rawSelectedJob
     ? {
@@ -59,6 +59,10 @@ export default async function TodayPage({
         assignedUser: rawSelectedJob.assignedUser ? { name: rawSelectedJob.assignedUser.name } : null,
         tasks: rawSelectedJob.tasks.map((t) => ({ id: t.id, title: t.title, completed: t.completed })),
         items: serializeJobItems(rawSelectedJob.items),
+        activeInvoice: (() => {
+          const invoice = rawSelectedJob.invoices.find((inv) => inv.status !== 'CANCELLED');
+          return invoice ? { id: invoice.id, status: invoice.status } : null;
+        })(),
       }
     : null;
 
