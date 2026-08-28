@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import { Car, PackageX, CheckCircle2, MessageSquareText, Pencil, X } from 'lucide-react';
+import { Car, PackageX, CheckCircle2, MessageSquareText, Pencil, X, Play } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/badge';
 import { formatDateTime, formatTime, formatCurrency } from '@/lib/format';
 import { setJobStatus, sendJobSms } from '@/lib/actions/today.actions';
@@ -208,7 +208,21 @@ export function JobDetailPanel({ job }: { job: Job }) {
         )}
       </div>
 
-      {job.status !== 'DONE' && (
+      {job.status === 'WAITING' && (
+        <div className="border-t border-border p-4">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => startTransition(() => setJobStatus(job.id, 'IN_PROGRESS'))}
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+          >
+            <Play className="h-4 w-4" />
+            Zahájit práci
+          </button>
+        </div>
+      )}
+
+      {job.status === 'IN_PROGRESS' && (
         <div className="grid grid-cols-2 gap-2 border-t border-border p-4">
           <button
             type="button"
@@ -227,6 +241,20 @@ export function JobDetailPanel({ job }: { job: Job }) {
           >
             <CheckCircle2 className="h-4 w-4" />
             Hotovo
+          </button>
+        </div>
+      )}
+
+      {job.status === 'BLOCKED' && (
+        <div className="border-t border-border p-4">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => startTransition(() => setJobStatus(job.id, 'IN_PROGRESS'))}
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+          >
+            <Play className="h-4 w-4" />
+            Pokračovat v práci
           </button>
         </div>
       )}
