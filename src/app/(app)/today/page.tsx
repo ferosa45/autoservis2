@@ -38,10 +38,6 @@ export default async function TodayPage({
   const selectedJobId = jobParam ?? jobs.find((j) => j.status === 'IN_PROGRESS')?.id ?? jobs[0]?.id ?? null;
   const rawSelectedJob = selectedJobId ? await getJobDetail(context, selectedJobId) : null;
 
-  // JobDetailPanel je Client Component - posíláme jen pole, která skutečně
-  // potřebuje. rawSelectedJob obsahuje navíc invoices s Decimal částkami,
-  // které přes server/client hranici neprojdou (spread ...rawSelectedJob
-  // by je tam propašoval, i když je komponenta vůbec nepoužívá).
   const selectedJob = rawSelectedJob
     ? {
         id: rawSelectedJob.id,
@@ -63,7 +59,12 @@ export default async function TodayPage({
           const invoice = rawSelectedJob.invoices.find(
             (inv) => inv.status === 'DRAFT' || inv.status === 'ISSUED' || inv.status === 'PAID'
           );
-          return invoice ? { id: invoice.id, status: invoice.status } : null;
+          if (!invoice) return null;
+
+          if (invoice.status === 'DRAFT') return { id: invoice.id, status: 'DRAFT' as const };
+          if (invoice.status === 'ISSUED') return { id: invoice.id, status: 'ISSUED' as const };
+          if (invoice.status === 'PAID') return { id: invoice.id, status: 'PAID' as const };
+          return null;
         })(),
       }
     : null;
