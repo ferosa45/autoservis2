@@ -4,16 +4,38 @@ import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Car, PackageX, CheckCircle2, MessageSquareText, Pencil, X } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/badge';
-import { formatDateTime, formatTime } from '@/lib/format';
-import { formatCurrency } from '@/lib/format';
+import { formatDateTime, formatTime, formatCurrency } from '@/lib/format';
 import { setJobStatus, sendJobSms } from '@/lib/actions/today.actions';
 import { JOB_STATUS_LABEL } from '@/lib/job-status';
 import { cn } from '@/lib/utils';
-import type { getJobDetail } from '@/lib/services/today.service';
 
 import type { SerializedJobItem } from '@/lib/serialize';
+import type { JobStatus } from '@prisma/client';
 
-type Job = Omit<NonNullable<Awaited<ReturnType<typeof getJobDetail>>>, 'items' | 'invoices'> & {
+type Job = {
+  id: string;
+  status: JobStatus;
+  createdAt: Date;
+  scheduledEnd: Date | null;
+  customerRequest: string;
+  note: string | null;
+  customer: {
+    name: string;
+    phone: string;
+  };
+  vehicle: {
+    brand: string;
+    model: string;
+    licensePlate: string | null;
+  };
+  assignedUser: {
+    name: string;
+  } | null;
+  tasks: {
+    id: string;
+    title: string;
+    completed: boolean;
+  }[];
   items: SerializedJobItem[];
 };
 
