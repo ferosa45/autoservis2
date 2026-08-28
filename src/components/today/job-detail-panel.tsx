@@ -2,10 +2,12 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import { Car, PackageX, CheckCircle2, MessageSquareText, Pencil, X, Play } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Car, PackageX, CheckCircle2, MessageSquareText, Pencil, X, Play, Receipt } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/badge';
 import { formatDateTime, formatTime, formatCurrency } from '@/lib/format';
 import { setJobStatus, sendJobSms } from '@/lib/actions/today.actions';
+import { startInvoiceDraft } from '@/lib/actions/invoice.actions';
 import { JOB_STATUS_LABEL } from '@/lib/job-status';
 import { cn } from '@/lib/utils';
 
@@ -37,12 +39,17 @@ type Job = {
     completed: boolean;
   }[];
   items: SerializedJobItem[];
+  activeInvoice: {
+    id: string;
+    status: 'DRAFT' | 'ISSUED' | 'PAID';
+  } | null;
 };
 
 const TABS = ['Přehled', 'Práce a díly'] as const;
 type Tab = (typeof TABS)[number];
 
 export function JobDetailPanel({ job }: { job: Job }) {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>('Přehled');
   const [isPending, startTransition] = useTransition();
   const [smsSent, setSmsSent] = useState(false);
@@ -51,6 +58,25 @@ export function JobDetailPanel({ job }: { job: Job }) {
     (sum, item) => sum + item.quantity * item.unitPrice,
     0
   );
+
+  const handleInvoice = () => {
+    startTransition(async () => {
+      if (job.activeInvoice) {
+        router.push(`/invoices/${job.activeInvoice.id}`);
+        return;
+      }
+
+      const { invoiceId } = await startInvoiceDraft(job.id);
+      router.push(`/invoices/${invoiceId}`);
+    });
+  };
+
+  const invoiceButtonLabel =
+    job.activeInvoice?.status === 'DRAFT'
+      ? 'Pokračovat ve faktuře'
+      : job.activeInvoice
+        ? 'Otevřít fakturu'
+        : 'Vystavit fakturu';
 
   return (
     <div className="flex h-full flex-col rounded-lg border border-border bg-surface">
@@ -260,7 +286,16 @@ export function JobDetailPanel({ job }: { job: Job }) {
       )}
 
       {job.status === 'DONE' && (
-        <div className="border-t border-border p-4">
+        <div className="grid grid-cols-2 gap-2 border-t border-border p-4">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleInvoice}
+            className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+          >
+            <Receipt className="h-4 w-4" />
+            {isPending ? 'Otevírám…' : invoiceButtonLabel}
+          </button>
           <button
             type="button"
             disabled={isPending || smsSent}
@@ -270,7 +305,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
                 setSmsSent(true);
               })
             }
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-border disabled:opacity-50"
           >
             <MessageSquareText className="h-4 w-4" />
             {smsSent ? 'SMS odeslána (mock)' : 'Poslat SMS'}
