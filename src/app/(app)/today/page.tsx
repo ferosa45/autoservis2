@@ -69,6 +69,12 @@ export default async function TodayPage({
       }
     : null;
 
+  const taskJobs = jobs.map((job) => ({
+    id: job.id,
+    number: job.number,
+    vehicle: { brand: job.vehicle.brand, model: job.vehicle.model },
+  }));
+
   return (
     <div className="flex h-full">
       <div className="flex-1 space-y-6 overflow-y-auto p-6">
@@ -91,7 +97,7 @@ export default async function TodayPage({
             Vyberte zakázku pro zobrazení detailu.
           </div>
         )}
-        <TasksPanel tasks={tasks} />
+        <TasksPanel tasks={tasks} jobs={taskJobs} />
       </div>
     </div>
   );
