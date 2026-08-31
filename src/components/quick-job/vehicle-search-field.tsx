@@ -22,23 +22,49 @@ export function VehicleSearchField({
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    // U vybraného zákazníka rovnou nabídneme jeho vozidla i bez zadání textu
-    // (typicky jedno až dvě auta) - jinak vyžadujeme aspoň nějaký text.
+    // Po výběru zákazníka zobrazíme jeho vozidla. Pokud má právě jedno,
+    // můžeme ho pohodlně předvybrat. Pokud jich má více, nikdy nic
+    // nevybíráme automaticky a mechanik musí konkrétní auto zvolit sám.
+    if (query.trim().length === 0 && customerId) {
+      if (selectedId) {
+        setSuggestions([]);
+        setIsOpen(false);
+        return;
+      }
+
+      debounceRef.current = setTimeout(async () => {
+        const results = await searchVehicles('', customerId);
+        setSuggestions(results);
+
+        if (results.length === 1) {
+          onSelect(results[0]);
+          setIsOpen(false);
+        } else {
+          setIsOpen(results.length > 0);
+        }
+      }, 150);
+
+      return () => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+      };
+    }
+
     if (query.trim().length === 0 && !customerId) {
       setSuggestions([]);
+      setIsOpen(false);
       return;
     }
 
     debounceRef.current = setTimeout(async () => {
       const results = await searchVehicles(query, customerId);
       setSuggestions(results);
-      setIsOpen(true);
+      setIsOpen(results.length > 0);
     }, 200);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query, customerId]);
+  }, [query, customerId, selectedId, onSelect]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -59,7 +85,7 @@ export function VehicleSearchField({
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
             if (suggestions.length > 0) setIsOpen(true);
-            else if (customerId) {
+            else if (customerId && !selectedId) {
               searchVehicles('', customerId).then((results) => {
                 setSuggestions(results);
                 setIsOpen(results.length > 0);
@@ -67,7 +93,7 @@ export function VehicleSearchField({
             }
           }}
           placeholder={
-            customerId ? 'Vybrat vozidlo zákazníka nebo hledat...' : 'Hledat podle značky, modelu nebo SPZ...'
+            customerId ? 'Vyberte vozidlo zákazníka nebo hledejte...' : 'Hledat podle značky, modelu nebo SPZ...'
           }
           className="w-full rounded-lg border border-border bg-elevated py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
         />
