@@ -37,7 +37,10 @@ export function VehicleSearchField({
         setSuggestions(results);
 
         if (results.length === 1) {
-          onSelect(results[0]);
+          const vehicle = results[0];
+          if (vehicle) {
+            onSelect(vehicle);
+          }
           setIsOpen(false);
         } else {
           setIsOpen(results.length > 0);
