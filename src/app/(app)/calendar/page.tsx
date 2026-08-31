@@ -54,13 +54,13 @@ export default async function CalendarPage({
   const jobsForGrid = jobs.map(({ items, ...job }) => job);
 
   return (
-    <div className="flex gap-6 p-6">
-      <div className="min-w-0 flex-1 space-y-6">
+    <div className="flex min-w-0 flex-col gap-4 p-3 sm:p-4 md:flex-row md:gap-6 md:p-6">
+      <div className="min-w-0 flex-1 space-y-4 md:space-y-6">
         <CalendarHeader weekStart={weekStart} weekEnd={weekEnd} />
         <CalendarGrid weekDays={weekDays} jobs={jobsForGrid} startHour={startHour} endHour={endHour} />
       </div>
 
-      <div className="w-72 shrink-0 space-y-4">
+      <div className="w-full shrink-0 space-y-4 md:w-72">
         <WeekOverviewPanel
           totalThisWeek={stats.totalThisWeek}
           waitingForPart={stats.waitingForPart}
