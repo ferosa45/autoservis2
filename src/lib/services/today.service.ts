@@ -17,11 +17,20 @@ export async function getJobsForDay(context: SessionContext, date: Date) {
       garageId: context.garageId,
       scheduledStart: { gte: start, lte: end },
     },
-    include: {
-      customer: true,
-      vehicle: true,
-      tasks: true,
-      items: true,
+    select: {
+      id: true,
+      number: true,
+      scheduledStart: true,
+      scheduledEnd: true,
+      status: true,
+      customerRequest: true,
+      updatedAt: true,
+      customer: { select: { name: true, phone: true } },
+      vehicle: { select: { brand: true, model: true, licensePlate: true } },
+      // Timeline potřebuje jen název a stav checklistových úkolů.
+      tasks: { select: { id: true, title: true, completed: true } },
+      // Statistiky potřebují pouze množství a cenu.
+      items: { select: { quantity: true, unitPrice: true } },
     },
     orderBy: { scheduledStart: 'asc' },
   });
@@ -33,7 +42,7 @@ export async function getJobDetail(context: SessionContext, jobId: string) {
   return prisma.job.findFirst({
     where: {
       id: jobId,
-      garageId: context.garageId, // nikdy nevěřit, že uživatel může vyžádat cizí zakázku
+      garageId: context.garageId,
     },
     include: {
       customer: true,
@@ -49,15 +58,25 @@ export async function getJobDetail(context: SessionContext, jobId: string) {
 export async function getTasksForDay(context: SessionContext, date: Date) {
   const { end } = dayRange(date);
 
-  // "Úkoly na dnes" = nesplněné úkoly s termínem do konce dneška (včetně po termínu)
-  // plus úkoly bez termínu, ale zatím nedokončené.
   return prisma.task.findMany({
     where: {
       garageId: context.garageId,
       completed: false,
       OR: [{ dueDate: { lte: end } }, { dueDate: null }],
     },
-    include: { job: { include: { vehicle: true } } },
+    select: {
+      id: true,
+      title: true,
+      completed: true,
+      dueDate: true,
+      job: {
+        select: {
+          id: true,
+          number: true,
+          vehicle: { select: { brand: true, model: true } },
+        },
+      },
+    },
     orderBy: [{ dueDate: 'asc' }, { createdAt: 'asc' }],
     take: 10,
   });

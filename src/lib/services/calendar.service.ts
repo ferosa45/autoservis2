@@ -2,12 +2,10 @@ import type { JobStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import type { SessionContext } from '@/lib/session';
 
-/**
- * Vrátí pondělí týdne, do kterého spadá zadané datum, s časem na půlnoci.
- */
+/** Vrátí pondělí týdne, do kterého spadá zadané datum, s časem na půlnoci. */
 export function getWeekStart(date: Date): Date {
   const result = new Date(date);
-  const day = result.getDay(); // 0 = neděle .. 6 = sobota
+  const day = result.getDay();
   const diffToMonday = day === 0 ? -6 : 1 - day;
   result.setDate(result.getDate() + diffToMonday);
   result.setHours(0, 0, 0, 0);
@@ -42,10 +40,20 @@ export async function getJobsForWeek(
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.mechanicId ? { assignedUserId: filters.mechanicId } : {}),
     },
-    include: {
-      customer: true,
-      vehicle: true,
-      items: true,
+    select: {
+      id: true,
+      number: true,
+      scheduledStart: true,
+      scheduledEnd: true,
+      status: true,
+      customerRequest: true,
+      vehicle: {
+        select: { brand: true, model: true, licensePlate: true },
+      },
+      // Statistiky potřebují pouze cenu a množství, ne celé položky.
+      items: {
+        select: { quantity: true, unitPrice: true },
+      },
     },
     orderBy: { scheduledStart: 'asc' },
   });
