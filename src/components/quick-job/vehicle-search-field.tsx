@@ -17,17 +17,14 @@ export function VehicleSearchField({
   const [suggestions, setSuggestions] = useState<VehicleSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    // Po výběru zákazníka zobrazíme jeho vozidla. Pokud má právě jedno,
-    // můžeme ho pohodlně předvybrat. Pokud jich má více, nikdy nic
-    // nevybíráme automaticky a mechanik musí konkrétní auto zvolit sám.
+    // Po výběru zákazníka načteme jeho vozidla. Seznam zůstává zobrazený
+    // i při ručním zadávání nového vozidla níže ve formuláři.
     if (query.trim().length === 0 && customerId) {
       if (selectedId) {
-        setSuggestions([]);
         setIsOpen(false);
         return;
       }
@@ -40,8 +37,8 @@ export function VehicleSearchField({
           const vehicle = results[0];
           if (vehicle) {
             onSelect(vehicle);
+            setIsOpen(false);
           }
-          setIsOpen(false);
         } else {
           setIsOpen(results.length > 0);
         }
@@ -67,20 +64,10 @@ export function VehicleSearchField({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query, customerId, selectedId, onSelect]);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [query, customerId, selectedId]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div>
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
         <input
@@ -106,7 +93,7 @@ export function VehicleSearchField({
         <>
           {suggestions.length > 1 && (
             <p className="mt-2 text-xs font-medium text-text-muted sm:hidden">
-              Vyberte vozidlo
+              Vyberte vozidlo, nebo níže zadejte nové
             </p>
           )}
           <div className="relative mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-border bg-elevated shadow-lg sm:absolute sm:z-10 sm:mt-1 sm:max-h-64">
