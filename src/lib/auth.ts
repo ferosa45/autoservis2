@@ -11,9 +11,7 @@ const credentialsSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
-  pages: {
-    signIn: '/login',
-  },
+  pages: { signIn: '/login' },
   providers: [
     Credentials({
       credentials: {
@@ -23,17 +21,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(rawCredentials) {
         const parsed = credentialsSchema.safeParse(rawCredentials);
         if (!parsed.success) return null;
-
         const { email, password } = parsed.data;
-
-        const user = await prisma.user.findUnique({
-          where: { email },
-        });
-        if (!user) return null;
-
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || !user.active) return null;
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) return null;
-
         return {
           id: user.id,
           name: user.name,
@@ -45,7 +37,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    // Uložíme garageId a role do JWT tokenu při přihlášení
     async jwt({ token, user }) {
       if (user) {
         token.garageId = (user as { garageId: string }).garageId;
@@ -53,7 +44,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return token;
     },
-    // Zpřístupníme garageId a role v session (server-side)
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub as string;
