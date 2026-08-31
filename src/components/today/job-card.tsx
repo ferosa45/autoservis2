@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Phone, User, Play } from 'lucide-react';
+import { Phone, User, Play, Package, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { StatusBadge } from '@/components/ui/badge';
@@ -28,11 +28,11 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const handleStart = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const changeStatus = (event: React.MouseEvent<HTMLButtonElement>, status: JobForDay['status']) => {
     event.preventDefault();
     event.stopPropagation();
     startTransition(async () => {
-      await setJobStatus(job.id, 'IN_PROGRESS');
+      await setJobStatus(job.id, status);
       router.refresh();
     });
   };
@@ -80,16 +80,40 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
         </div>
       </Link>
 
-      {(job.status === 'WAITING' || job.status === 'BLOCKED') && (
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={handleStart}
-          className="flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50 sm:w-auto sm:self-center"
-        >
-          <Play className="h-3.5 w-3.5" />
-          {isPending ? 'Spouštím…' : job.status === 'WAITING' ? 'Zahájit' : 'Pokračovat'}
-        </button>
+      {job.status !== 'DONE' && (
+        <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
+          {(job.status === 'WAITING' || job.status === 'BLOCKED') && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={(event) => changeStatus(event, 'IN_PROGRESS')}
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+            >
+              <Play className="h-3.5 w-3.5" />
+              {isPending ? 'Spouštím…' : job.status === 'WAITING' ? 'Zahájit' : 'Pokračovat'}
+            </button>
+          )}
+
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={(event) => changeStatus(event, 'BLOCKED')}
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-black/20 px-3 py-2.5 text-xs font-semibold text-text-primary hover:bg-black/30 disabled:opacity-50"
+          >
+            <Package className="h-3.5 w-3.5" />
+            Čeká na díl
+          </button>
+
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={(event) => changeStatus(event, 'DONE')}
+            className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg bg-status-done-text px-3 py-2.5 text-xs font-semibold text-background hover:opacity-90 disabled:opacity-50 sm:col-span-1"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Hotovo
+          </button>
+        </div>
       )}
     </div>
   );
