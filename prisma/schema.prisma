@@ -52,18 +52,12 @@ model Garage {
   invoicePrefix     String?
   nextInvoiceNumber Int      @default(1)
   invoiceDueDays    Int      @default(14)
-
-  // Předplatné - měsíc zdarma, pak placené přes Stripe. Po vypršení
-  // trialu bez aktivního předplatného appka přejde do režimu jen ke
-  // čtení (viz getSessionContext / assertWriteAccess), ne tvrdý paywall.
   subscriptionStatus   SubscriptionStatus @default(TRIALING)
   trialEndsAt          DateTime
   stripeCustomerId     String?            @unique
   stripeSubscriptionId String?            @unique
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   users        User[]
   customers    Customer[]
   vehicles     Vehicle[]
@@ -83,11 +77,13 @@ model User {
   role      Role
   garageId  String
   garage    Garage   @relation(fields: [garageId], references: [id])
+  active    Boolean  @default(true)
+  canInvoice       Boolean @default(false)
+  canViewInvoices  Boolean @default(false)
+  canViewFinancials Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   assignedJobs Job[] @relation("AssignedUser")
-
   @@index([garageId])
 }
 
@@ -107,11 +103,9 @@ model Customer {
   garage      Garage   @relation(fields: [garageId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   vehicles Vehicle[]
   jobs     Job[]
   invoices Invoice[]
-
   @@index([garageId])
   @@index([garageId, phone])
 }
@@ -130,9 +124,7 @@ model Vehicle {
   garage       Garage   @relation(fields: [garageId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
   jobs Job[]
-
   @@index([garageId])
   @@index([garageId, licensePlate])
 }
@@ -155,12 +147,10 @@ model Job {
   garage          Garage    @relation(fields: [garageId], references: [id])
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-
   tasks    JobTask[]
   items    JobItem[]
   invoices Invoice[]
   todos    Task[]
-
   @@unique([garageId, number])
   @@index([garageId])
   @@index([garageId, scheduledStart])
@@ -175,7 +165,6 @@ model JobTask {
   garageId  String
   garage    Garage   @relation(fields: [garageId], references: [id])
   createdAt DateTime @default(now())
-
   @@index([garageId])
   @@index([jobId])
 }
@@ -191,7 +180,6 @@ model JobItem {
   garageId  String
   garage    Garage   @relation(fields: [garageId], references: [id])
   createdAt DateTime @default(now())
-
   @@index([garageId])
   @@index([jobId])
 }
@@ -206,36 +194,27 @@ model Invoice {
   garageId   String
   garage     Garage        @relation(fields: [garageId], references: [id])
   status     InvoiceStatus @default(DRAFT)
-
-  // Snapshot dodavatele v okamžiku vystavení - historická faktura se nesmí změnit
   supplierName   String
   supplierIco    String?
   supplierDic    String?
   supplierStreet String?
   supplierCity   String?
   supplierZip    String?
-
-  // Snapshot odběratele v okamžiku vystavení
   customerName   String
   customerIco    String?
   customerDic    String?
   customerStreet String?
   customerCity   String?
   customerZip    String?
-
   issueDate DateTime
   dueDate   DateTime
-
   subtotal Decimal @db.Decimal(10, 2)
   vatTotal Decimal @db.Decimal(10, 2)
   total    Decimal @db.Decimal(10, 2)
-
   note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   items InvoiceItem[]
-
   @@unique([garageId, number])
   @@index([garageId])
   @@index([jobId])
@@ -247,7 +226,6 @@ model InvoiceItem {
   invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   garageId  String
   garage    Garage  @relation(fields: [garageId], references: [id])
-
   title     String
   quantity  Decimal @db.Decimal(10, 2)
   unit      String
@@ -256,16 +234,11 @@ model InvoiceItem {
   subtotal  Decimal @db.Decimal(10, 2)
   vatAmount Decimal @db.Decimal(10, 2)
   total     Decimal @db.Decimal(10, 2)
-
   createdAt DateTime @default(now())
-
   @@index([garageId])
   @@index([invoiceId])
 }
 
-// Jednoduché ad-hoc úkoly majitele/mechanika, nezávislé na checklistu zakázky
-// (JobTask). Slouží pro panel "Úkoly na dnes" - typicky administrativní
-// nebo telefonické úkony vázané volitelně na konkrétní zakázku.
 model Task {
   id        String    @id @default(cuid())
   title     String
@@ -277,7 +250,6 @@ model Task {
   garage    Garage    @relation(fields: [garageId], references: [id])
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-
   @@index([garageId])
   @@index([garageId, dueDate])
 }
