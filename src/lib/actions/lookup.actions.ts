@@ -22,13 +22,20 @@ export async function searchCustomers(query: string): Promise<CustomerSuggestion
   const q = query.trim();
   if (q.length === 0) return [];
 
+  const words = q.split(/\s+/).filter(Boolean);
+
   return prisma.customer.findMany({
     where: {
       garageId: context.garageId,
-      OR: [
-        { name: { contains: q, mode: 'insensitive' } },
-        { phone: { contains: q } },
-      ],
+      AND: words.map((word) => ({
+        OR: [
+          { name: { contains: word, mode: 'insensitive' as const } },
+          { phone: { contains: word } },
+          { email: { contains: word, mode: 'insensitive' as const } },
+          { companyName: { contains: word, mode: 'insensitive' as const } },
+          { ico: { contains: word, mode: 'insensitive' as const } },
+        ],
+      })),
     },
     orderBy: { name: 'asc' },
     take: 6,
