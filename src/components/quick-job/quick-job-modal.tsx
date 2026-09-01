@@ -173,29 +173,53 @@ export function QuickJobModal({
               </FieldGroup>
 
               <FieldGroup icon={Car} title="Vozidlo">
-                <VehicleSearchField
-                  customerId={form.customerId}
-                  selectedId={form.vehicleId}
-                  onSelect={handleSelectVehicle}
-                />
-                <div className="mt-2 grid grid-cols-3 gap-3">
-                  <TextField
-                    label="Značka"
-                    value={form.vehicleBrand}
-                    onChange={(v) => setForm({ ...form, vehicleBrand: v, vehicleId: null })}
+                <div className="rounded-lg border border-border bg-elevated/40 p-3">
+                  <p className="mb-2 text-xs font-semibold text-text-primary">Existující vozidlo</p>
+                  <VehicleSearchField
+                    customerId={form.customerId}
+                    selectedId={form.vehicleId}
+                    onSelect={handleSelectVehicle}
                   />
-                  <TextField
-                    label="Model"
-                    value={form.vehicleModel}
-                    onChange={(v) => setForm({ ...form, vehicleModel: v, vehicleId: null })}
-                  />
-                  <TextField
-                    label="SPZ (nepovinné)"
-                    value={form.vehicleLicensePlate}
-                    onChange={(v) => setForm({ ...form, vehicleLicensePlate: v, vehicleId: null })}
-                    placeholder="doplníte u auta"
-                    mono
-                  />
+                </div>
+
+                <div className="my-3 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-text-muted">
+                    nebo nové vozidlo
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+
+                <div className="rounded-lg border border-border bg-surface p-3">
+                  <p className="mb-2 text-xs text-text-secondary">
+                    Zadejte údaje nového vozidla. Pokud se shodují s existujícím vozidlem, použije se automaticky to existující.
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <TextField
+                      label="Značka"
+                      value={form.vehicleBrand}
+                      onChange={(v) => setForm({ ...form, vehicleBrand: v, vehicleId: null })}
+                      placeholder="např. Škoda"
+                    />
+                    <TextField
+                      label="Model"
+                      value={form.vehicleModel}
+                      onChange={(v) => setForm({ ...form, vehicleModel: v, vehicleId: null })}
+                      placeholder="např. Octavia"
+                    />
+                    <TextField
+                      label="SPZ (nepovinné)"
+                      value={form.vehicleLicensePlate}
+                      onChange={(v) => setForm({ ...form, vehicleLicensePlate: v, vehicleId: null })}
+                      placeholder="1AB 2345"
+                      mono
+                    />
+                  </div>
+                  {form.customerId && !form.vehicleId && (
+                    <p className="mt-2 text-[11px] text-text-muted">
+                      U zákazníka s více vozidly vytvoří vyplněná značka a model nové vozidlo, pokud takové ještě nemá.
+                    </p>
+                  )}
                 </div>
               </FieldGroup>
 
