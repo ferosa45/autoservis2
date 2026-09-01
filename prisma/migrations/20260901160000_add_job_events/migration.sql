@@ -27,3 +27,21 @@ ALTER TABLE "JobEvent" ADD CONSTRAINT "JobEvent_garageId_fkey" FOREIGN KEY ("gar
 INSERT INTO "JobEvent" ("id", "type", "message", "jobId", "garageId", "createdAt")
 SELECT 'legacy_' || "id", 'CREATED', 'Zakázka vytvořena', "id", "garageId", "createdAt"
 FROM "Job";
+
+-- Backfill existing work sessions so older jobs also show when work started/resumed.
+INSERT INTO "JobEvent" ("id", "type", "message", "jobId", "userId", "garageId", "createdAt")
+SELECT
+  'legacy_session_' || ws."id",
+  CASE
+    WHEN ROW_NUMBER() OVER (PARTITION BY ws."jobId" ORDER BY ws."startedAt") = 1 THEN 'WORK_STARTED'::"JobEventType"
+    ELSE 'WORK_RESUMED'::"JobEventType"
+  END,
+  CASE
+    WHEN ROW_NUMBER() OVER (PARTITION BY ws."jobId" ORDER BY ws."startedAt") = 1 THEN 'Zahájena práce'
+    ELSE 'Pokračování v práci'
+  END,
+  ws."jobId",
+  ws."userId",
+  ws."garageId",
+  ws."startedAt"
+FROM "WorkSession" ws;
