@@ -79,7 +79,7 @@ export async function createJobFromQuickInput(
       }
     }
 
-    let vehicleId = input.vehicleId;
+    let vehicleId: string | null = input.vehicleId;
 
     if (vehicleId) {
       const owned = await tx.vehicle.findFirst({
@@ -125,13 +125,19 @@ export async function createJobFromQuickInput(
         });
         vehicleId = created.id;
       } else if (customerVehicles.length === 1) {
-        // Zachováme pohodlné chování pro zákazníka s jediným vozidlem.
-        vehicleId = customerVehicles[0]?.id ?? null;
+        // U zákazníka s jediným vozidlem zachováme pohodlný automatický výběr.
+        vehicleId = customerVehicles[0].id;
       } else if (customerVehicles.length > 1) {
         throw new Error('Tento zákazník má více vozidel. Vyberte prosím konkrétní vozidlo nebo zadejte nové vozidlo.');
       } else {
         throw new Error('Zadejte značku a model vozidla.');
       }
+    }
+
+    // Model Job vyžaduje vozidlo. Všechny větve výše buď vozidlo nastaví,
+    // nebo vyhodí chybu, takže zde už můžeme bezpečně pracovat se stringem.
+    if (!vehicleId) {
+      throw new Error('Vyberte vozidlo nebo zadejte nové vozidlo.');
     }
 
     const jobCount = await tx.job.count({ where: { garageId: context.garageId } });
@@ -141,8 +147,7 @@ export async function createJobFromQuickInput(
       data: {
         number,
         customerId,
-        // Prisma typ zde očekává při volitelném FK `undefined`, ne `null`.
-        vehicleId: vehicleId ?? undefined,
+        vehicleId,
         scheduledStart: new Date(input.scheduledStart),
         scheduledEnd: input.scheduledEnd ? new Date(input.scheduledEnd) : null,
         status: 'WAITING',
