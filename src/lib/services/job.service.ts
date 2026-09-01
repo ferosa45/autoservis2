@@ -94,30 +94,26 @@ export async function createJobFromQuickInput(
       const normalizedPlate = input.vehicleLicensePlate
         ? input.vehicleLicensePlate.replace(/\s+/g, '').toUpperCase()
         : null;
-      const brand = input.vehicleBrand.trim().toLowerCase();
-      const model = input.vehicleModel.trim().toLowerCase();
 
-      // Nejdřív se pokusíme podle zadaných údajů najít existující vozidlo.
-      // To musí proběhnout před kontrolou více vozidel, jinak bychom
-      // zákazníkovi s více auty nedovolili založit nové vozidlo.
       let existingVehicle = normalizedPlate
         ? customerVehicles.find(
             (v) => v.licensePlate?.replace(/\s+/g, '').toUpperCase() === normalizedPlate
           )
         : undefined;
 
-      if (!existingVehicle && !normalizedPlate && brand && model) {
-        existingVehicle = customerVehicles.find(
-          (v) => v.brand.trim().toLowerCase() === brand && v.model.trim().toLowerCase() === model
-        );
+      if (!existingVehicle && !normalizedPlate) {
+        const brand = input.vehicleBrand.trim().toLowerCase();
+        const model = input.vehicleModel.trim().toLowerCase();
+        if (brand && model) {
+          existingVehicle = customerVehicles.find(
+            (v) => v.brand.toLowerCase() === brand && v.model.toLowerCase() === model
+          );
+        }
       }
 
       if (existingVehicle) {
         vehicleId = existingVehicle.id;
-      } else if (brand && model) {
-        // Zákazník může mít libovolný počet vozidel. Pokud uživatel zadal
-        // značku a model a žádné existující vozidlo tomu neodpovídá,
-        // jednoznačně tím žádá o nové vozidlo.
+      } else if (input.vehicleBrand.trim() && input.vehicleModel.trim()) {
         const created = await tx.vehicle.create({
           data: {
             brand: input.vehicleBrand.trim(),
@@ -145,7 +141,8 @@ export async function createJobFromQuickInput(
       data: {
         number,
         customerId,
-        vehicleId,
+        // Prisma typ zde očekává při volitelném FK `undefined`, ne `null`.
+        vehicleId: vehicleId ?? undefined,
         scheduledStart: new Date(input.scheduledStart),
         scheduledEnd: input.scheduledEnd ? new Date(input.scheduledEnd) : null,
         status: 'WAITING',
