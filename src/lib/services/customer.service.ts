@@ -25,7 +25,7 @@ export async function listCustomers(context: SessionContext, query?: string) {
 }
 
 export async function getCustomerDetail(context: SessionContext, customerId: string) {
-  return prisma.customer.findFirst({
+  const customer = await prisma.customer.findFirst({
     where: { id: customerId, garageId: context.garageId },
     include: {
       vehicles: {
@@ -39,9 +39,11 @@ export async function getCustomerDetail(context: SessionContext, customerId: str
               scheduledStart: true,
               status: true,
               customerRequest: true,
-              invoice: {
+              invoices: {
+                orderBy: { createdAt: 'desc' },
                 select: {
                   total: true,
+                  status: true,
                 },
               },
             },
@@ -50,6 +52,28 @@ export async function getCustomerDetail(context: SessionContext, customerId: str
       },
     },
   });
+
+  if (!customer) return null;
+
+  return {
+    ...customer,
+    vehicles: customer.vehicles.map((vehicle) => ({
+      ...vehicle,
+      jobs: vehicle.jobs.map((job) => {
+        const validInvoices = job.invoices.filter((invoice) => invoice.status !== 'CANCELLED' && invoice.status !== 'DRAFT');
+        const latestInvoice = validInvoices[0];
+
+        return {
+          id: job.id,
+          number: job.number,
+          scheduledStart: job.scheduledStart,
+          status: job.status,
+          customerRequest: job.customerRequest,
+          invoice: latestInvoice ? { total: Number(latestInvoice.total) } : null,
+        };
+      }),
+    })),
+  };
 }
 
 export type CustomerDetail = NonNullable<Awaited<ReturnType<typeof getCustomerDetail>>>;
