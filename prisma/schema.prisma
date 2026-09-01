@@ -7,10 +7,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role { OWNER MECHANIC }
-enum JobStatus { WAITING IN_PROGRESS BLOCKED DONE }
-enum InvoiceStatus { DRAFT ISSUED PAID CANCELLED }
-enum SubscriptionStatus { TRIALING ACTIVE PAST_DUE CANCELED }
+enum Role {
+  OWNER
+  MECHANIC
+}
+
+enum JobStatus {
+  WAITING
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
 
 model Garage {
   id String @id @default(cuid())
