@@ -19,6 +19,17 @@ enum JobStatus {
   DONE
 }
 
+enum JobEventType {
+  CREATED
+  WORK_STARTED
+  WAITING_FOR_PART
+  WORK_RESUMED
+  COMPLETED
+  INVOICE_ISSUED
+  INVOICE_PAID
+  INVOICE_CANCELLED
+}
+
 enum InvoiceStatus {
   DRAFT
   ISSUED
@@ -68,6 +79,7 @@ model Garage {
   invoiceItems InvoiceItem[]
   tasks Task[]
   workSessions WorkSession[]
+  events JobEvent[]
 }
 
 model User {
@@ -86,6 +98,7 @@ model User {
   updatedAt DateTime @updatedAt
   assignedJobs Job[] @relation("AssignedUser")
   workSessions WorkSession[]
+  jobEvents JobEvent[]
   @@index([garageId])
 }
 
@@ -154,6 +167,7 @@ model Job {
   invoices Invoice[]
   todos Task[]
   workSessions WorkSession[]
+  events JobEvent[]
   @@unique([garageId, number])
   @@index([garageId])
   @@index([garageId, scheduledStart])
@@ -174,6 +188,21 @@ model WorkSession {
   @@index([userId])
   @@index([garageId])
   @@index([jobId, endedAt])
+}
+
+model JobEvent {
+  id String @id @default(cuid())
+  type JobEventType
+  message String
+  jobId String
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId String?
+  user User? @relation(fields: [userId], references: [id])
+  garageId String
+  garage Garage @relation(fields: [garageId], references: [id])
+  createdAt DateTime @default(now())
+  @@index([jobId, createdAt])
+  @@index([garageId])
 }
 
 model JobTask {
