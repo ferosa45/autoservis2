@@ -24,14 +24,16 @@ export async function Topbar() {
         </span>
       </div>
 
-      <div className="relative hidden w-72 md:block">
+      <form method="GET" action="/customers" className="relative hidden w-72 md:block">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
         <input
-          type="text"
+          type="search"
+          name="q"
           placeholder="Hledat zákazníka, vozidlo, SPZ..."
+          aria-label="Hledat zákazníka, vozidlo nebo SPZ"
           className="w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
         />
-      </div>
+      </form>
 
       <div className="ml-auto flex items-center gap-1.5 sm:gap-4">
         <div className="sm:hidden">
