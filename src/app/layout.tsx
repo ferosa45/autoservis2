@@ -23,8 +23,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Autoservis - digitální diář',
-  description: 'Digitální diář a zakázkový list pro malé autoservisy',
+  title: 'Garazio - software pro autoservisy',
+  description: 'Jednoduchý digitální diář pro malé a střední autoservisy.',
 };
 
 export default function RootLayout({
