@@ -91,45 +91,50 @@ export async function createJobFromQuickInput(
         where: { garageId: context.garageId, customerId },
       });
 
-      // Pokud má existující zákazník více vozidel, není bezpečné hádat,
-      // které auto přijelo do servisu. Mechanik ho musí vždy explicitně vybrat.
-      if (input.customerId && customerVehicles.length > 1) {
-        throw new Error('Tento zákazník má více vozidel. Vyberte prosím konkrétní vozidlo.');
-      }
-
       const normalizedPlate = input.vehicleLicensePlate
         ? input.vehicleLicensePlate.replace(/\s+/g, '').toUpperCase()
         : null;
+      const brand = input.vehicleBrand.trim().toLowerCase();
+      const model = input.vehicleModel.trim().toLowerCase();
 
+      // Nejdřív se pokusíme podle zadaných údajů najít existující vozidlo.
+      // To musí proběhnout před kontrolou více vozidel, jinak bychom
+      // zákazníkovi s více auty nedovolili založit nové vozidlo.
       let existingVehicle = normalizedPlate
         ? customerVehicles.find(
             (v) => v.licensePlate?.replace(/\s+/g, '').toUpperCase() === normalizedPlate
           )
         : undefined;
 
-      if (!existingVehicle && !normalizedPlate) {
-        const brand = input.vehicleBrand.trim().toLowerCase();
-        const model = input.vehicleModel.trim().toLowerCase();
-        if (brand && model) {
-          existingVehicle = customerVehicles.find(
-            (v) => v.brand.toLowerCase() === brand && v.model.toLowerCase() === model
-          );
-        }
+      if (!existingVehicle && !normalizedPlate && brand && model) {
+        existingVehicle = customerVehicles.find(
+          (v) => v.brand.trim().toLowerCase() === brand && v.model.trim().toLowerCase() === model
+        );
       }
 
       if (existingVehicle) {
         vehicleId = existingVehicle.id;
-      } else {
+      } else if (brand && model) {
+        // Zákazník může mít libovolný počet vozidel. Pokud uživatel zadal
+        // značku a model a žádné existující vozidlo tomu neodpovídá,
+        // jednoznačně tím žádá o nové vozidlo.
         const created = await tx.vehicle.create({
           data: {
-            brand: input.vehicleBrand.trim() || 'Neznámá značka',
-            model: input.vehicleModel.trim() || 'Neznámý model',
+            brand: input.vehicleBrand.trim(),
+            model: input.vehicleModel.trim(),
             licensePlate: input.vehicleLicensePlate?.trim() || null,
             customerId,
             garageId: context.garageId,
           },
         });
         vehicleId = created.id;
+      } else if (customerVehicles.length === 1) {
+        // Zachováme pohodlné chování pro zákazníka s jediným vozidlem.
+        vehicleId = customerVehicles[0]?.id ?? null;
+      } else if (customerVehicles.length > 1) {
+        throw new Error('Tento zákazník má více vozidel. Vyberte prosím konkrétní vozidlo nebo zadejte nové vozidlo.');
+      } else {
+        throw new Error('Zadejte značku a model vozidla.');
       }
     }
 
