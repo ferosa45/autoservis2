@@ -21,8 +21,6 @@ export function VehicleSearchField({
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    // Po výběru zákazníka načteme jeho vozidla. Seznam zůstává zobrazený
-    // i při ručním zadávání nového vozidla níže ve formuláři.
     if (query.trim().length === 0 && customerId) {
       if (selectedId) {
         setIsOpen(false);
@@ -64,7 +62,7 @@ export function VehicleSearchField({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query, customerId, selectedId]);
+  }, [query, customerId, selectedId, onSelect]);
 
   return (
     <div>
@@ -90,13 +88,13 @@ export function VehicleSearchField({
       </div>
 
       {isOpen && suggestions.length > 0 && (
-        <>
+        <div className="mt-2 w-full overflow-hidden rounded-lg border border-border bg-elevated shadow-lg">
           {suggestions.length > 1 && (
-            <p className="mt-2 text-xs font-medium text-text-muted sm:hidden">
+            <p className="border-b border-border px-3 py-2 text-xs font-medium text-text-muted">
               Vyberte vozidlo, nebo níže zadejte nové
             </p>
           )}
-          <div className="relative mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-border bg-elevated shadow-lg sm:absolute sm:z-10 sm:mt-1 sm:max-h-64">
+          <div className="max-h-48 overflow-y-auto">
             {suggestions.map((vehicle) => (
               <button
                 key={vehicle.id}
@@ -117,7 +115,7 @@ export function VehicleSearchField({
               </button>
             ))}
           </div>
-        </>
+        </div>
       )}
 
       {selectedId && (
