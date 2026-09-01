@@ -60,7 +60,6 @@ export default async function TodayPage({
             (inv) => inv.status === 'DRAFT' || inv.status === 'ISSUED' || inv.status === 'PAID'
           );
           if (!invoice) return null;
-
           if (invoice.status === 'DRAFT') return { id: invoice.id, status: 'DRAFT' as const };
           if (invoice.status === 'ISSUED') return { id: invoice.id, status: 'ISSUED' as const };
           if (invoice.status === 'PAID') return { id: invoice.id, status: 'PAID' as const };
@@ -76,8 +75,8 @@ export default async function TodayPage({
   }));
 
   return (
-    <div className="flex h-full">
-      <div className="flex-1 space-y-6 overflow-y-auto p-6">
+    <div className="flex min-h-full flex-col md:flex-row">
+      <div className="min-w-0 flex-1 space-y-5 overflow-visible p-3 sm:space-y-6 sm:p-6 md:overflow-y-auto">
         <TodayHeader date={date} />
         <StatsCards
           totalToday={stats.totalToday}
@@ -89,7 +88,7 @@ export default async function TodayPage({
         <QuickActions />
       </div>
 
-      <div className="w-[380px] shrink-0 space-y-4 overflow-y-auto border-l border-border p-4">
+      <div className="w-full shrink-0 space-y-4 border-t border-border p-3 sm:p-4 md:w-[380px] md:overflow-y-auto md:border-l md:border-t-0">
         {selectedJob ? (
           <JobDetailPanel job={selectedJob} />
         ) : (

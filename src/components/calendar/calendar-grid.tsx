@@ -72,34 +72,36 @@ export function CalendarGrid({
   const today = new Date();
 
   return (
-    <div className="flex rounded-lg border border-border bg-surface">
-      {/* Sloupec s časovými popisky */}
-      <div className="w-14 shrink-0 border-r border-border pt-9">
-        {hours.map((hour) => (
-          <div
-            key={hour}
-            style={{ height: HOUR_HEIGHT }}
-            className="flex items-start justify-end pr-2 text-xs text-text-muted"
-          >
-            {hour}:00
-          </div>
-        ))}
-      </div>
+    <div className="min-w-0 overflow-x-auto rounded-lg border border-border bg-surface">
+      <div className="flex min-w-[840px]">
+        {/* Sloupec s časovými popisky */}
+        <div className="w-14 shrink-0 border-r border-border pt-9">
+          {hours.map((hour) => (
+            <div
+              key={hour}
+              style={{ height: HOUR_HEIGHT }}
+              className="flex items-start justify-end pr-2 text-xs text-text-muted"
+            >
+              {hour}:00
+            </div>
+          ))}
+        </div>
 
-      {/* 7 sloupců dnů */}
-      <div className="grid flex-1 grid-cols-7 divide-x divide-border">
-        {weekDays.map((day, index) => (
-          <DayColumn
-            key={day.toISOString()}
-            day={day}
-            jobs={jobsByDay[index] ?? []}
-            isToday={isSameDay(day, today)}
-            startHour={startHour}
-            endHour={endHour}
-            gridHeight={gridHeight}
-            hours={hours}
-          />
-        ))}
+        {/* 7 sloupců dnů. Na mobilu mají pevnou minimální šířku a celý týden lze posouvat vodorovně. */}
+        <div className="grid min-w-0 flex-1 grid-cols-7 divide-x divide-border">
+          {weekDays.map((day, index) => (
+            <DayColumn
+              key={day.toISOString()}
+              day={day}
+              jobs={jobsByDay[index] ?? []}
+              isToday={isSameDay(day, today)}
+              startHour={startHour}
+              endHour={endHour}
+              gridHeight={gridHeight}
+              hours={hours}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -146,7 +148,7 @@ function DayColumn({
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-w-[112px] flex-col">
       <div
         className={cn(
           'flex flex-col items-center gap-0.5 border-b border-border py-2',

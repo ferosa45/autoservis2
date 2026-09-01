@@ -17,41 +17,57 @@ export function VehicleSearchField({
   const [suggestions, setSuggestions] = useState<VehicleSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    // U vybraného zákazníka rovnou nabídneme jeho vozidla i bez zadání textu
-    // (typicky jedno až dvě auta) - jinak vyžadujeme aspoň nějaký text.
+    // Po výběru zákazníka načteme jeho vozidla. Seznam zůstává zobrazený
+    // i při ručním zadávání nového vozidla níže ve formuláři.
+    if (query.trim().length === 0 && customerId) {
+      if (selectedId) {
+        setIsOpen(false);
+        return;
+      }
+
+      debounceRef.current = setTimeout(async () => {
+        const results = await searchVehicles('', customerId);
+        setSuggestions(results);
+
+        if (results.length === 1) {
+          const vehicle = results[0];
+          if (vehicle) {
+            onSelect(vehicle);
+            setIsOpen(false);
+          }
+        } else {
+          setIsOpen(results.length > 0);
+        }
+      }, 150);
+
+      return () => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+      };
+    }
+
     if (query.trim().length === 0 && !customerId) {
       setSuggestions([]);
+      setIsOpen(false);
       return;
     }
 
     debounceRef.current = setTimeout(async () => {
       const results = await searchVehicles(query, customerId);
       setSuggestions(results);
-      setIsOpen(true);
+      setIsOpen(results.length > 0);
     }, 200);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query, customerId]);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [query, customerId, selectedId]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div>
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
         <input
@@ -59,7 +75,7 @@ export function VehicleSearchField({
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
             if (suggestions.length > 0) setIsOpen(true);
-            else if (customerId) {
+            else if (customerId && !selectedId) {
               searchVehicles('', customerId).then((results) => {
                 setSuggestions(results);
                 setIsOpen(results.length > 0);
@@ -67,34 +83,41 @@ export function VehicleSearchField({
             }
           }}
           placeholder={
-            customerId ? 'Vybrat vozidlo zákazníka nebo hledat...' : 'Hledat podle značky, modelu nebo SPZ...'
+            customerId ? 'Vyberte vozidlo zákazníka nebo hledejte...' : 'Hledat podle značky, modelu nebo SPZ...'
           }
           className="w-full rounded-lg border border-border bg-elevated py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
         />
       </div>
 
       {isOpen && suggestions.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-border bg-elevated shadow-lg">
-          {suggestions.map((vehicle) => (
-            <button
-              key={vehicle.id}
-              type="button"
-              onClick={() => {
-                onSelect(vehicle);
-                setQuery('');
-                setIsOpen(false);
-              }}
-              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-border"
-            >
-              <span className="text-text-primary">
-                {vehicle.brand} {vehicle.model}
-              </span>
-              {vehicle.licensePlate && (
-                <span className="font-mono text-xs text-text-muted">{vehicle.licensePlate}</span>
-              )}
-            </button>
-          ))}
-        </div>
+        <>
+          {suggestions.length > 1 && (
+            <p className="mt-2 text-xs font-medium text-text-muted sm:hidden">
+              Vyberte vozidlo, nebo níže zadejte nové
+            </p>
+          )}
+          <div className="relative mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-border bg-elevated shadow-lg sm:absolute sm:z-10 sm:mt-1 sm:max-h-64">
+            {suggestions.map((vehicle) => (
+              <button
+                key={vehicle.id}
+                type="button"
+                onClick={() => {
+                  onSelect(vehicle);
+                  setQuery('');
+                  setIsOpen(false);
+                }}
+                className="flex min-h-11 w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-border"
+              >
+                <span className="text-text-primary">
+                  {vehicle.brand} {vehicle.model}
+                </span>
+                {vehicle.licensePlate && (
+                  <span className="font-mono text-xs text-text-muted">{vehicle.licensePlate}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
       {selectedId && (

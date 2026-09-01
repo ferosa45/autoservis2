@@ -80,3 +80,48 @@ export async function issueInvoice(invoiceId: string) {
   }, { timeout: 15000, maxWait: 10000 });
   revalidatePath(`/invoices/${invoiceId}`); if (issued.jobId) revalidatePath(`/jobs/${issued.jobId}`); revalidatePath('/invoices'); return { number: issued.number };
 }
+
+export async function cancelInvoice(invoiceId: string) {
+  const context = await getSessionContext();
+  assertWriteAccess(context);
+  assertPermission(context, 'canInvoice');
+
+  const invoice = await prisma.invoice.findFirst({
+    where: { id: invoiceId, garageId: context.garageId },
+    select: { id: true, jobId: true, status: true },
+  });
+  if (!invoice) throw new Error('Faktura nenalezena');
+  if (invoice.status === 'PAID') throw new Error('Zaplacenou fakturu nelze zrušit');
+  if (invoice.status === 'CANCELLED') throw new Error('Faktura už byla zrušena');
+
+  await prisma.invoice.update({
+    where: { id: invoice.id },
+    data: { status: 'CANCELLED' },
+  });
+
+  revalidatePath(`/invoices/${invoiceId}`);
+  revalidatePath('/invoices');
+  if (invoice.jobId) revalidatePath(`/jobs/${invoice.jobId}`);
+}
+
+export async function markInvoicePaid(invoiceId: string) {
+  const context = await getSessionContext();
+  assertWriteAccess(context);
+  assertPermission(context, 'canInvoice');
+
+  const invoice = await prisma.invoice.findFirst({
+    where: { id: invoiceId, garageId: context.garageId },
+    select: { id: true, jobId: true, status: true },
+  });
+  if (!invoice) throw new Error('Faktura nenalezena');
+  if (invoice.status !== 'ISSUED') throw new Error('Zaplacenou lze označit pouze vystavenou fakturu');
+
+  await prisma.invoice.update({
+    where: { id: invoice.id },
+    data: { status: 'PAID' },
+  });
+
+  revalidatePath(`/invoices/${invoiceId}`);
+  revalidatePath('/invoices');
+  if (invoice.jobId) revalidatePath(`/jobs/${invoice.jobId}`);
+}

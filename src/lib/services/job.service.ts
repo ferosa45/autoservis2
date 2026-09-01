@@ -42,8 +42,8 @@ export type CreateJobFromQuickInput = {
   vehicleModel: string;
   vehicleLicensePlate: string | null;
   tasks: string[];
-  scheduledStart: string; // ISO datetime
-  scheduledEnd: string | null; // ISO datetime
+  scheduledStart: string;
+  scheduledEnd: string | null;
 };
 
 export async function createJobFromQuickInput(
@@ -51,7 +51,6 @@ export async function createJobFromQuickInput(
   input: CreateJobFromQuickInput
 ) {
   return prisma.$transaction(async (tx) => {
-    // --- Zákazník: použij vybraného / dohledaného podle telefonu / vytvoř nového ---
     let customerId = input.customerId;
 
     if (customerId) {
@@ -80,22 +79,27 @@ export async function createJobFromQuickInput(
       }
     }
 
-    // --- Vozidlo: použij vybrané / dohledej podle SPZ u zákazníka / vytvoř nové ---
     let vehicleId = input.vehicleId;
 
     if (vehicleId) {
       const owned = await tx.vehicle.findFirst({
-        where: { id: vehicleId, garageId: context.garageId },
+        where: { id: vehicleId, garageId: context.garageId, customerId },
       });
-      if (!owned) throw new Error('Vozidlo nepatří do tohoto servisu');
+      if (!owned) throw new Error('Vozidlo nepatří tomuto zákazníkovi');
     } else {
-      const normalizedPlate = input.vehicleLicensePlate
-        ? input.vehicleLicensePlate.replace(/\s+/g, '').toUpperCase()
-        : null;
-
       const customerVehicles = await tx.vehicle.findMany({
         where: { garageId: context.garageId, customerId },
       });
+
+      // Pokud má existující zákazník více vozidel, není bezpečné hádat,
+      // které auto přijelo do servisu. Mechanik ho musí vždy explicitně vybrat.
+      if (input.customerId && customerVehicles.length > 1) {
+        throw new Error('Tento zákazník má více vozidel. Vyberte prosím konkrétní vozidlo.');
+      }
+
+      const normalizedPlate = input.vehicleLicensePlate
+        ? input.vehicleLicensePlate.replace(/\s+/g, '').toUpperCase()
+        : null;
 
       let existingVehicle = normalizedPlate
         ? customerVehicles.find(
@@ -103,9 +107,6 @@ export async function createJobFromQuickInput(
           )
         : undefined;
 
-      // Bez SPZ (běžné při telefonátu) zkus aspoň shodu značka+model u stejného
-      // zákazníka, ať nevznikají zbytečné duplicity - SPZ se doplní později,
-      // až auto fyzicky dorazí do servisu.
       if (!existingVehicle && !normalizedPlate) {
         const brand = input.vehicleBrand.trim().toLowerCase();
         const model = input.vehicleModel.trim().toLowerCase();
@@ -132,7 +133,6 @@ export async function createJobFromQuickInput(
       }
     }
 
-    // --- Číslo zakázky - jednoduché pořadové číslo v rámci servisu ---
     const jobCount = await tx.job.count({ where: { garageId: context.garageId } });
     const number = String(jobCount + 1);
 
@@ -161,10 +161,6 @@ export async function createJobFromQuickInput(
 
     return job;
   }, {
-    // Výchozích 5s Prisma defaultu bývá na pomalejším/probouzejícím se
-    // spojení (typicky Railway free tier po chvíli nečinnosti) málo pro
-    // víc sekvenčních kroků v této transakci (zákazník → vozidlo →
-    // číslo zakázky → zakázka → úkoly).
     timeout: 15000,
     maxWait: 10000,
   });

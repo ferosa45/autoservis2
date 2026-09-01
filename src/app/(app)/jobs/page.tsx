@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Search, ClipboardList } from 'lucide-react';
+import { Search, ClipboardList, Car, User } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { listJobs } from '@/lib/services/job.service';
 import { formatShortDate, formatTime } from '@/lib/format';
@@ -35,17 +35,17 @@ export default async function JobsListPage({
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <h1 className="font-heading text-2xl font-bold text-text-primary">Zakázky</h1>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-1">
+      <div className="space-y-3">
+        <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {STATUS_TABS.map((tab) => (
             <Link
               key={tab.value}
               href={tabHref(tab.value)}
               className={cn(
-                'rounded-lg px-3 py-1.5 text-sm font-medium',
+                'shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 (status ?? '') === tab.value
                   ? 'bg-primary text-white'
                   : 'text-text-secondary hover:bg-elevated'
@@ -56,80 +56,155 @@ export default async function JobsListPage({
           ))}
         </div>
 
-        {/* Obyčejný GET formulář - zachovává filtr stavu jako hidden pole */}
-        <form method="GET" className="relative w-full max-w-xs sm:w-64">
+        <form method="GET" className="relative w-full sm:max-w-md">
           {status && <input type="hidden" name="status" value={status} />}
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-text-muted" />
           <input
             type="text"
             name="q"
             defaultValue={q ?? ''}
             placeholder="Číslo, zákazník, vozidlo, SPZ..."
-            className="w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
+            className="w-full rounded-xl border border-border bg-surface py-3 pl-10 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
           />
         </form>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
-        {jobs.length === 0 ? (
-          <div className="p-10 text-center text-sm text-text-muted">
-            <ClipboardList className="mx-auto mb-2 h-8 w-8 text-text-muted" />
-            {q || status ? 'Nic nenalezeno.' : 'Zatím žádné zakázky.'}
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-text-muted">
-                <th className="px-4 py-3 font-medium">Číslo</th>
-                <th className="px-4 py-3 font-medium">Datum</th>
-                <th className="px-4 py-3 font-medium">Zákazník</th>
-                <th className="px-4 py-3 font-medium">Vozidlo</th>
-                <th className="px-4 py-3 font-medium">Požadavek</th>
-                <th className="px-4 py-3 font-medium">Stav</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {jobs.map((job) => {
-                const colors = JOB_STATUS_COLOR[job.status];
-                return (
-                  <tr key={job.id} className="hover:bg-elevated">
-                    <td className="px-4 py-3">
-                      <Link href={`/jobs/${job.id}`} className="font-mono text-text-primary hover:text-primary">
-                        #{job.number}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-text-secondary">
-                      {formatShortDate(job.scheduledStart)} · {formatTime(job.scheduledStart)}
-                    </td>
-                    <td className="px-4 py-3 text-text-primary">{job.customer.name}</td>
-                    <td className="px-4 py-3 text-text-primary">
-                      {job.vehicle.brand} {job.vehicle.model}
-                      {job.vehicle.licensePlate && (
-                        <span className="ml-2 font-mono text-xs text-text-muted">
-                          {job.vehicle.licensePlate}
-                        </span>
-                      )}
-                    </td>
-                    <td className="max-w-xs truncate px-4 py-3 text-text-secondary">{job.customerRequest}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={cn(
-                          'rounded-full border px-2 py-0.5 text-xs font-semibold',
-                          colors.bg,
-                          colors.border,
-                          colors.text
+      {jobs.length === 0 ? (
+        <div className="rounded-xl border border-border bg-surface p-10 text-center text-sm text-text-muted">
+          <ClipboardList className="mx-auto mb-2 h-8 w-8 text-text-muted" />
+          {q || status ? 'Nic nenalezeno.' : 'Zatím žádné zakázky.'}
+        </div>
+      ) : (
+        <>
+          {/* Desktop: tabulka */}
+          <div className="hidden overflow-hidden rounded-lg border border-border bg-surface md:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-text-muted">
+                  <th className="px-4 py-3 font-medium">Číslo</th>
+                  <th className="px-4 py-3 font-medium">Datum</th>
+                  <th className="px-4 py-3 font-medium">Zákazník</th>
+                  <th className="px-4 py-3 font-medium">Vozidlo</th>
+                  <th className="px-4 py-3 font-medium">Požadavek</th>
+                  <th className="px-4 py-3 font-medium">Stav</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {jobs.map((job) => {
+                  const colors = JOB_STATUS_COLOR[job.status];
+                  return (
+                    <tr key={job.id} className="hover:bg-elevated">
+                      <td className="px-4 py-3">
+                        <Link href={`/jobs/${job.id}`} className="font-mono text-text-primary hover:text-primary">
+                          #{job.number}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-text-secondary">
+                        {formatShortDate(job.scheduledStart)} · {formatTime(job.scheduledStart)}
+                      </td>
+                      <td className="px-4 py-3 text-text-primary">{job.customer.name}</td>
+                      <td className="px-4 py-3 text-text-primary">
+                        {job.vehicle.brand} {job.vehicle.model}
+                        {job.vehicle.licensePlate && (
+                          <span className="ml-2 font-mono text-xs text-text-muted">
+                            {job.vehicle.licensePlate}
+                          </span>
                         )}
-                      >
-                        {JOB_STATUS_LABEL[job.status]}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+                      </td>
+                      <td className="max-w-xs truncate px-4 py-3 text-text-secondary">{job.customerRequest}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={cn(
+                            'rounded-full border px-2 py-0.5 text-xs font-semibold',
+                            colors.bg,
+                            colors.border,
+                            colors.text
+                          )}
+                        >
+                          {JOB_STATUS_LABEL[job.status]}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile: karty */}
+          <div className="space-y-3 md:hidden">
+            {jobs.map((job) => {
+              const colors = JOB_STATUS_COLOR[job.status];
+
+              return (
+                <Link
+                  key={job.id}
+                  href={`/jobs/${job.id}`}
+                  className="block rounded-xl border border-border bg-surface p-4 transition-colors active:bg-elevated"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-base font-semibold text-text-primary">#{job.number}</span>
+                        <span className="text-sm text-text-muted">·</span>
+                        <span className="text-sm text-text-secondary">
+                          {formatShortDate(job.scheduledStart)} · {formatTime(job.scheduledStart)}
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={cn(
+                        'shrink-0 rounded-full border px-2 py-1 text-xs font-semibold',
+                        colors.bg,
+                        colors.border,
+                        colors.text
+                      )}
+                    >
+                      {JOB_STATUS_LABEL[job.status]}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-text-muted">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs text-text-muted">Zákazník</div>
+                        <div className="truncate font-medium text-text-primary">{job.customer.name}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-text-muted">
+                        <Car className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs text-text-muted">Vozidlo</div>
+                        <div className="truncate font-medium text-text-primary">
+                          {job.vehicle.brand} {job.vehicle.model}
+                          {job.vehicle.licensePlate && (
+                            <span className="ml-2 font-mono text-xs text-text-muted">
+                              {job.vehicle.licensePlate}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {job.customerRequest && (
+                    <div className="mt-4 border-t border-border pt-3">
+                      <div className="text-xs text-text-muted">Požadavek</div>
+                      <div className="mt-1 line-clamp-2 text-sm text-text-secondary">{job.customerRequest}</div>
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

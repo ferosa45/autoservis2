@@ -83,18 +83,18 @@ export function JobItemsList({ jobId, items }: { jobId: string; items: JobItem[]
           placeholder="Název položky (např. Olejový filtr)"
           className="w-full rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
         />
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2 sm:flex sm:items-center">
           <input
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             placeholder="Množství"
             inputMode="decimal"
-            className="w-20 rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
+            className="min-w-0 w-full rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none sm:w-20"
           />
           <select
             value={unit}
             onChange={(e) => setUnit(e.target.value)}
-            className="rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary focus:border-primary focus:outline-none"
+            className="min-w-0 w-full rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary focus:border-primary focus:outline-none sm:w-auto"
           >
             {UNITS.map((u) => (
               <option key={u} value={u}>
@@ -107,7 +107,7 @@ export function JobItemsList({ jobId, items }: { jobId: string; items: JobItem[]
             onChange={(e) => setUnitPrice(e.target.value)}
             placeholder="Cena/jedn. (Kč)"
             inputMode="decimal"
-            className="flex-1 rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
+            className="col-span-1 min-w-0 w-full rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none sm:flex-1"
           />
           <button
             type="button"
