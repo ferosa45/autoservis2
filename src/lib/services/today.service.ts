@@ -39,6 +39,7 @@ export async function getJobDetail(context: SessionContext, jobId: string) {
       items: true,
       assignedUser: true,
       workSessions: { include: { user: true }, orderBy: { startedAt: 'asc' } },
+      events: { include: { user: { select: { name: true } } }, orderBy: { createdAt: 'desc' } },
       invoices: { orderBy: { createdAt: 'desc' }, take: 5 },
     },
   });

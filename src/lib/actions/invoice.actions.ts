@@ -1,8 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { prisma } from '@/lib/prisma';
 import { getSessionContext, assertWriteAccess, assertPermission } from '@/lib/session';
+import { prisma } from '@/lib/prisma';
 import { createInvoiceDraftFromJob, computeItemAmounts, computeInvoiceTotals } from '@/lib/services/invoice.service';
 
 export async function startInvoiceDraft(jobId: string): Promise<{ invoiceId: string }> {
@@ -76,7 +76,19 @@ export async function issueInvoice(invoiceId: string) {
     const updatedGarage = await tx.garage.update({ where: { id: context.garageId }, data: { nextInvoiceNumber: { increment: 1 } } });
     const assignedNumber = updatedGarage.nextInvoiceNumber - 1;
     const formattedNumber = garage.invoicePrefix ? `${garage.invoicePrefix}${String(assignedNumber).padStart(4, '0')}` : String(assignedNumber);
-    return tx.invoice.update({ where: { id: invoiceId }, data: { number: formattedNumber, status: 'ISSUED', ...computeInvoiceTotals(invoice.items) } });
+    const issuedInvoice = await tx.invoice.update({ where: { id: invoiceId }, data: { number: formattedNumber, status: 'ISSUED', ...computeInvoiceTotals(invoice.items) } });
+    if (issuedInvoice.jobId) {
+      await tx.jobEvent.create({
+        data: {
+          type: 'INVOICE_ISSUED',
+          message: `Vystavena faktura ${formattedNumber}`,
+          jobId: issuedInvoice.jobId,
+          userId: context.userId,
+          garageId: context.garageId,
+        },
+      });
+    }
+    return issuedInvoice;
   }, { timeout: 15000, maxWait: 10000 });
   revalidatePath(`/invoices/${invoiceId}`); if (issued.jobId) revalidatePath(`/jobs/${issued.jobId}`); revalidatePath('/invoices'); return { number: issued.number };
 }
@@ -94,9 +106,22 @@ export async function cancelInvoice(invoiceId: string) {
   if (invoice.status === 'PAID') throw new Error('Zaplacenou fakturu nelze zrušit');
   if (invoice.status === 'CANCELLED') throw new Error('Faktura už byla zrušena');
 
-  await prisma.invoice.update({
-    where: { id: invoice.id },
-    data: { status: 'CANCELLED' },
+  await prisma.$transaction(async (tx) => {
+    await tx.invoice.update({
+      where: { id: invoice.id },
+      data: { status: 'CANCELLED' },
+    });
+    if (invoice.jobId) {
+      await tx.jobEvent.create({
+        data: {
+          type: 'INVOICE_CANCELLED',
+          message: 'Faktura zrušena',
+          jobId: invoice.jobId,
+          userId: context.userId,
+          garageId: context.garageId,
+        },
+      });
+    }
   });
 
   revalidatePath(`/invoices/${invoiceId}`);
@@ -116,9 +141,22 @@ export async function markInvoicePaid(invoiceId: string) {
   if (!invoice) throw new Error('Faktura nenalezena');
   if (invoice.status !== 'ISSUED') throw new Error('Zaplacenou lze označit pouze vystavenou fakturu');
 
-  await prisma.invoice.update({
-    where: { id: invoice.id },
-    data: { status: 'PAID' },
+  await prisma.$transaction(async (tx) => {
+    await tx.invoice.update({
+      where: { id: invoice.id },
+      data: { status: 'PAID' },
+    });
+    if (invoice.jobId) {
+      await tx.jobEvent.create({
+        data: {
+          type: 'INVOICE_PAID',
+          message: 'Faktura označena jako zaplacená',
+          jobId: invoice.jobId,
+          userId: context.userId,
+          garageId: context.garageId,
+        },
+      });
+    }
   });
 
   revalidatePath(`/invoices/${invoiceId}`);

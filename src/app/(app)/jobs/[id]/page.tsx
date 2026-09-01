@@ -11,6 +11,7 @@ import { JobNote } from '@/components/job-detail/job-note';
 import { JobActions } from '@/components/job-detail/job-actions';
 import { JobTimeEditor } from '@/components/job-detail/job-time-editor';
 import { JobWorkTimeCard } from '@/components/job-detail/job-work-time-card';
+import { JobHistoryTimeline } from '@/components/job-detail/job-history-timeline';
 
 export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -44,6 +45,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           <TaskChecklist jobId={job.id} tasks={job.tasks} />
           <JobItemsList jobId={job.id} items={serializedItems} />
           <JobNote jobId={job.id} initialNote={job.note} />
+          <JobHistoryTimeline events={job.events} />
         </div>
 
         <div className="space-y-6">

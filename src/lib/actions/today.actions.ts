@@ -12,7 +12,7 @@ export async function setJobStatus(jobId: string, status: JobStatus) {
   const context = await getSessionContext();
   assertWriteAccess(context);
 
-  const job = await prisma.job.findFirst({ where: { id: jobId, garageId: context.garageId }, select: { id: true } });
+  const job = await prisma.job.findFirst({ where: { id: jobId, garageId: context.garageId }, select: { id: true, status: true } });
   if (!job) throw new Error('Zakázka nenalezena');
 
   const now = new Date();
@@ -24,6 +24,7 @@ export async function setJobStatus(jobId: string, status: JobStatus) {
     });
 
     if (status === 'IN_PROGRESS') {
+      const switchingMechanic = Boolean(activeSession && activeSession.userId !== context.userId);
       if (activeSession && activeSession.userId !== context.userId) {
         await tx.workSession.update({ where: { id: activeSession.id }, data: { endedAt: now } });
       }
@@ -33,6 +34,19 @@ export async function setJobStatus(jobId: string, status: JobStatus) {
         });
       }
       await tx.job.update({ where: { id: jobId }, data: { status, assignedUserId: context.userId } });
+
+      if (job.status !== 'IN_PROGRESS' || switchingMechanic) {
+        await tx.jobEvent.create({
+          data: {
+            type: job.status === 'BLOCKED' || switchingMechanic ? 'WORK_RESUMED' : 'WORK_STARTED',
+            message: switchingMechanic || job.status === 'BLOCKED' ? 'Pokračuje v práci' : 'Zahájena práce',
+            jobId,
+            userId: context.userId,
+            garageId: context.garageId,
+            createdAt: now,
+          },
+        });
+      }
     } else {
       if (activeSession) {
         await tx.workSession.update({ where: { id: activeSession.id }, data: { endedAt: now } });
@@ -41,6 +55,30 @@ export async function setJobStatus(jobId: string, status: JobStatus) {
         where: { id: jobId },
         data: { status, ...(status === 'DONE' || status === 'WAITING' ? { assignedUserId: null } : {}) },
       });
+
+      if (status === 'BLOCKED') {
+        await tx.jobEvent.create({
+          data: {
+            type: 'WAITING_FOR_PART',
+            message: 'Práce přerušena – čeká se na díl / zákazníka',
+            jobId,
+            userId: context.userId,
+            garageId: context.garageId,
+            createdAt: now,
+          },
+        });
+      } else if (status === 'DONE') {
+        await tx.jobEvent.create({
+          data: {
+            type: 'COMPLETED',
+            message: 'Zakázka dokončena',
+            jobId,
+            userId: context.userId,
+            garageId: context.garageId,
+            createdAt: now,
+          },
+        });
+      }
     }
   });
 
