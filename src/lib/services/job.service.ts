@@ -161,6 +161,16 @@ export async function createJobFromQuickInput(
       },
     });
 
+    await tx.jobEvent.create({
+      data: {
+        type: 'CREATED',
+        message: 'Zakázka vytvořena',
+        jobId: job.id,
+        garageId: context.garageId,
+        createdAt: job.createdAt,
+      },
+    });
+
     if (input.tasks.length > 0) {
       await tx.jobTask.createMany({
         data: input.tasks.map((title) => ({
