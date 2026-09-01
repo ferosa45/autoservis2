@@ -79,7 +79,11 @@ export async function createJobFromQuickInput(
       }
     }
 
-    let vehicleId: string | null = input.vehicleId;
+    if (!customerId) {
+      throw new Error('Nepodařilo se určit zákazníka.');
+    }
+
+    let vehicleId = input.vehicleId;
 
     if (vehicleId) {
       const owned = await tx.vehicle.findFirst({
@@ -125,8 +129,11 @@ export async function createJobFromQuickInput(
         });
         vehicleId = created.id;
       } else if (customerVehicles.length === 1) {
-        // U zákazníka s jediným vozidlem zachováme pohodlný automatický výběr.
-        vehicleId = customerVehicles[0].id;
+        const onlyVehicle = customerVehicles[0];
+        if (!onlyVehicle) {
+          throw new Error('Vyberte vozidlo nebo zadejte nové vozidlo.');
+        }
+        vehicleId = onlyVehicle.id;
       } else if (customerVehicles.length > 1) {
         throw new Error('Tento zákazník má více vozidel. Vyberte prosím konkrétní vozidlo nebo zadejte nové vozidlo.');
       } else {
@@ -134,8 +141,6 @@ export async function createJobFromQuickInput(
       }
     }
 
-    // Model Job vyžaduje vozidlo. Všechny větve výše buď vozidlo nastaví,
-    // nebo vyhodí chybu, takže zde už můžeme bezpečně pracovat se stringem.
     if (!vehicleId) {
       throw new Error('Vyberte vozidlo nebo zadejte nové vozidlo.');
     }
