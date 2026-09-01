@@ -70,6 +70,11 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-muted">
               <span className="flex items-center gap-1 truncate"><User className="h-3 w-3 shrink-0" /> {job.customer.name}</span>
               <span className="flex items-center gap-1"><Phone className="h-3 w-3 shrink-0" /> {job.customer.phone}</span>
+              {job.status === 'IN_PROGRESS' && job.assignedUser && (
+                <span className="flex items-center gap-1 font-medium text-primary">
+                  <User className="h-3 w-3 shrink-0" /> Pracuje: {job.assignedUser.name}
+                </span>
+              )}
             </div>
           </div>
 
@@ -79,42 +84,6 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
           </div>
         </div>
       </Link>
-
-      {job.status !== 'DONE' && (
-        <div className="hidden shrink-0 grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
-          {(job.status === 'WAITING' || job.status === 'BLOCKED') && (
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={(event) => changeStatus(event, 'IN_PROGRESS')}
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
-            >
-              <Play className="h-3.5 w-3.5" />
-              {isPending ? 'Spouštím…' : job.status === 'WAITING' ? 'Zahájit' : 'Pokračovat'}
-            </button>
-          )}
-
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={(event) => changeStatus(event, 'BLOCKED')}
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-black/20 px-3 py-2.5 text-xs font-semibold text-text-primary hover:bg-black/30 disabled:opacity-50"
-          >
-            <Package className="h-3.5 w-3.5" />
-            Čeká na díl
-          </button>
-
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={(event) => changeStatus(event, 'DONE')}
-            className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg bg-status-done-text px-3 py-2.5 text-xs font-semibold text-background hover:opacity-90 disabled:opacity-50 sm:col-span-1"
-          >
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Hotovo
-          </button>
-        </div>
-      )}
 
       {job.status !== 'DONE' && (
         <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:hidden">

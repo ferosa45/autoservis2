@@ -79,6 +79,10 @@ export async function createJobFromQuickInput(
       }
     }
 
+    if (!customerId) {
+      throw new Error('Nepodařilo se určit zákazníka.');
+    }
+
     let vehicleId = input.vehicleId;
 
     if (vehicleId) {
@@ -90,12 +94,6 @@ export async function createJobFromQuickInput(
       const customerVehicles = await tx.vehicle.findMany({
         where: { garageId: context.garageId, customerId },
       });
-
-      // Pokud má existující zákazník více vozidel, není bezpečné hádat,
-      // které auto přijelo do servisu. Mechanik ho musí vždy explicitně vybrat.
-      if (input.customerId && customerVehicles.length > 1) {
-        throw new Error('Tento zákazník má více vozidel. Vyberte prosím konkrétní vozidlo.');
-      }
 
       const normalizedPlate = input.vehicleLicensePlate
         ? input.vehicleLicensePlate.replace(/\s+/g, '').toUpperCase()
@@ -119,18 +117,32 @@ export async function createJobFromQuickInput(
 
       if (existingVehicle) {
         vehicleId = existingVehicle.id;
-      } else {
+      } else if (input.vehicleBrand.trim() && input.vehicleModel.trim()) {
         const created = await tx.vehicle.create({
           data: {
-            brand: input.vehicleBrand.trim() || 'Neznámá značka',
-            model: input.vehicleModel.trim() || 'Neznámý model',
+            brand: input.vehicleBrand.trim(),
+            model: input.vehicleModel.trim(),
             licensePlate: input.vehicleLicensePlate?.trim() || null,
             customerId,
             garageId: context.garageId,
           },
         });
         vehicleId = created.id;
+      } else if (customerVehicles.length === 1) {
+        const onlyVehicle = customerVehicles[0];
+        if (!onlyVehicle) {
+          throw new Error('Vyberte vozidlo nebo zadejte nové vozidlo.');
+        }
+        vehicleId = onlyVehicle.id;
+      } else if (customerVehicles.length > 1) {
+        throw new Error('Tento zákazník má více vozidel. Vyberte prosím konkrétní vozidlo nebo zadejte nové vozidlo.');
+      } else {
+        throw new Error('Zadejte značku a model vozidla.');
       }
+    }
+
+    if (!vehicleId) {
+      throw new Error('Vyberte vozidlo nebo zadejte nové vozidlo.');
     }
 
     const jobCount = await tx.job.count({ where: { garageId: context.garageId } });
