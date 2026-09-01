@@ -31,17 +31,19 @@ export async function getCustomerDetail(context: SessionContext, customerId: str
       vehicles: {
         orderBy: { createdAt: 'desc' },
         include: {
-          // Posledních 5 zakázek stačí na "historii" u malého servisu -
-          // není to reporting nástroj, jen rychlý přehled.
           jobs: {
             orderBy: { scheduledStart: 'desc' },
-            take: 5,
             select: {
               id: true,
               number: true,
               scheduledStart: true,
               status: true,
               customerRequest: true,
+              invoice: {
+                select: {
+                  total: true,
+                },
+              },
             },
           },
         },
