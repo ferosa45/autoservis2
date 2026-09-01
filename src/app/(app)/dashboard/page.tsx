@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getSessionContext } from '@/lib/session';
 import { getDashboardData } from '@/lib/services/dashboard.service';
 import { formatCurrency } from '@/lib/format';
-import { CalendarDays, CheckCircle2, Clock3, Euro, TrendingUp, Wrench, AlertTriangle } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock3, Banknote, TrendingUp, Wrench, AlertTriangle } from 'lucide-react';
 
 function formatMinutes(minutes: number) {
   const hours = Math.floor(minutes / 60);
@@ -38,7 +38,7 @@ export default async function DashboardPage() {
             { icon: CalendarDays, value: data.today.total, label: 'zakázek dnes' },
             { icon: Wrench, value: data.today.inProgress, label: 'právě se opravuje' },
             { icon: CheckCircle2, value: data.today.done, label: 'hotových' },
-            { icon: Euro, value: formatCurrency(data.today.revenue), label: 'dnešní obrat' },
+            { icon: Banknote, value: formatCurrency(data.today.revenue), label: 'dnešní obrat' },
           ].map((item) => (
             <div key={item.label} className="rounded-lg border border-border bg-surface p-4">
               <item.icon className="h-5 w-5 text-text-secondary" />
