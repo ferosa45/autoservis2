@@ -12,9 +12,19 @@ export async function setJobStatus(jobId: string, status: JobStatus) {
   const context = await getSessionContext();
   assertWriteAccess(context);
 
+  const assignedUserId =
+    status === 'IN_PROGRESS'
+      ? context.userId
+      : status === 'DONE' || status === 'WAITING'
+        ? null
+        : undefined;
+
   const result = await prisma.job.updateMany({
     where: { id: jobId, garageId: context.garageId },
-    data: { status },
+    data: {
+      status,
+      ...(assignedUserId !== undefined ? { assignedUserId } : {}),
+    },
   });
 
   if (result.count === 0) {
