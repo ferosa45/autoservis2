@@ -27,9 +27,8 @@ export async function getJobsForDay(context: SessionContext, date: Date) {
       updatedAt: true,
       customer: { select: { name: true, phone: true } },
       vehicle: { select: { brand: true, model: true, licensePlate: true } },
-      // Timeline potřebuje jen název a stav checklistových úkolů.
+      assignedUser: { select: { id: true, name: true } },
       tasks: { select: { id: true, title: true, completed: true } },
-      // Statistiky potřebují pouze množství a cenu.
       items: { select: { quantity: true, unitPrice: true } },
     },
     orderBy: { scheduledStart: 'asc' },
