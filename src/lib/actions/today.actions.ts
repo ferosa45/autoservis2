@@ -15,12 +15,6 @@ export async function setJobStatus(jobId: string, status: JobStatus) {
   const job = await prisma.job.findFirst({ where: { id: jobId, garageId: context.garageId }, select: { id: true, status: true } });
   if (!job) throw new Error('Zakázka nenalezena');
 
-  const actor = await prisma.user.findFirst({
-    where: { id: context.userId, garageId: context.garageId },
-    select: { name: true },
-  });
-  if (!actor) throw new Error('Uživatel nenalezen');
-
   const now = new Date();
 
   await prisma.$transaction(async (tx) => {
