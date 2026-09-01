@@ -21,6 +21,7 @@ export default async function DashboardPage() {
   const data = await getDashboardData(context);
   const maxJobs = Math.max(...data.daily.map((day) => day.jobs), 1);
   const maxRevenue = Math.max(...data.daily.map((day) => day.revenue), 1);
+  const firstDay = data.daily[0];
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
@@ -68,64 +69,35 @@ export default async function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-border bg-surface p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <Clock3 className="h-4 w-4 text-text-secondary" />
-            <h2 className="font-heading text-sm font-bold text-text-primary">Práce mechaniků</h2>
-          </div>
+          <div className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-text-secondary" /><h2 className="font-heading text-sm font-bold text-text-primary">Práce mechaniků</h2></div>
           <p className="mt-1 text-xs text-text-muted">Odpracovaný čas za posledních 30 dní.</p>
           <div className="mt-4 divide-y divide-border">
-            {data.mechanics.length === 0 ? (
-              <p className="py-4 text-sm text-text-muted">Zatím nejsou evidováni žádní aktivní mechanici.</p>
-            ) : data.mechanics.map((mechanic) => (
-              <div key={mechanic.id} className="flex items-center justify-between py-3">
-                <span className="text-sm font-medium text-text-primary">{mechanic.name}</span>
-                <span className="text-sm font-semibold text-text-secondary">{formatMinutes(mechanic.minutes)}</span>
-              </div>
-            ))}
+            {data.mechanics.length === 0 ? <p className="py-4 text-sm text-text-muted">Zatím nejsou evidováni žádní aktivní mechanici.</p> : data.mechanics.map((mechanic) => <div key={mechanic.id} className="flex items-center justify-between py-3"><span className="text-sm font-medium text-text-primary">{mechanic.name}</span><span className="text-sm font-semibold text-text-secondary">{formatMinutes(mechanic.minutes)}</span></div>)}
           </div>
         </section>
 
         <section className="rounded-lg border border-border bg-surface p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-text-secondary" />
-            <h2 className="font-heading text-sm font-bold text-text-primary">Na co se podívat</h2>
-          </div>
+          <div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-text-secondary" /><h2 className="font-heading text-sm font-bold text-text-primary">Na co se podívat</h2></div>
           <div className="mt-4 space-y-3">
-            <div className="rounded-md bg-elevated p-3">
-              <p className="text-sm font-medium text-text-primary">{data.today.waitingForPart} zakázek čeká na díl</p>
-              <p className="mt-0.5 text-xs text-text-muted">Tyto zakázky mohou blokovat kapacitu servisu.</p>
-            </div>
-            <div className="rounded-md bg-elevated p-3">
-              <p className="text-sm font-medium text-text-primary">{data.today.workMinutes > 0 ? formatMinutes(data.today.workMinutes) : '0 h'} práce dnes</p>
-              <p className="mt-0.5 text-xs text-text-muted">Čas se počítá automaticky z pracovních relací mechaniků.</p>
-            </div>
+            <div className="rounded-md bg-elevated p-3"><p className="text-sm font-medium text-text-primary">{data.today.waitingForPart} zakázek čeká na díl</p><p className="mt-0.5 text-xs text-text-muted">Tyto zakázky mohou blokovat kapacitu servisu.</p></div>
+            <div className="rounded-md bg-elevated p-3"><p className="text-sm font-medium text-text-primary">{data.today.workMinutes > 0 ? formatMinutes(data.today.workMinutes) : '0 h'} práce dnes</p><p className="mt-0.5 text-xs text-text-muted">Čas se počítá automaticky z pracovních relací mechaniků.</p></div>
           </div>
         </section>
       </div>
 
       <section className="rounded-lg border border-border bg-surface p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="font-heading text-sm font-bold text-text-primary">Posledních 30 dní</h2>
-            <p className="mt-1 text-xs text-text-muted">Počet zakázek a vyfakturovaná částka podle dne.</p>
-          </div>
-        </div>
+        <div><h2 className="font-heading text-sm font-bold text-text-primary">Posledních 30 dní</h2><p className="mt-1 text-xs text-text-muted">Počet zakázek a vyfakturovaná částka podle dne.</p></div>
         <div className="mt-5 overflow-x-auto">
           <div className="flex min-w-[620px] items-end gap-1" style={{ height: 190 }}>
             {data.daily.map((day) => (
               <div key={day.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
                 <div className="w-full rounded-t-sm bg-primary/30" style={{ height: `${Math.max((day.jobs / maxJobs) * 105, day.jobs ? 4 : 0)}px` }} title={`${day.jobs} zakázek`} />
                 <div className="w-full rounded-t-sm bg-primary" style={{ height: `${Math.max((day.revenue / maxRevenue) * 55, day.revenue ? 3 : 0)}px` }} title={formatCurrency(day.revenue)} />
-                {([0, 6, 13, 20, 27, 29].includes(Number(day.date.slice(-2))) || day.date === data.daily[0].date) && (
-                  <span className="text-[10px] text-text-muted">{formatDay(day.date)}</span>
-                )}
+                {([0, 6, 13, 20, 27, 29].includes(Number(day.date.slice(-2))) || day.date === firstDay?.date) && <span className="text-[10px] text-text-muted">{formatDay(day.date)}</span>}
               </div>
             ))}
           </div>
-          <div className="mt-2 flex items-center justify-end gap-4 text-[11px] text-text-muted">
-            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/30" /> zakázky</span>
-            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary" /> obrat</span>
-          </div>
+          <div className="mt-2 flex items-center justify-end gap-4 text-[11px] text-text-muted"><span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/30" /> zakázky</span><span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary" /> obrat</span></div>
         </div>
       </section>
     </div>
