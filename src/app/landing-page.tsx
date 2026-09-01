@@ -47,10 +47,10 @@ const features = [
 ];
 
 const faqs = [
-  ['Pro koho je Autoservis2?', 'Pro malé a střední autoservisy, které chtějí mít zakázky, zákazníky, vozidla a každodenní provoz přehledně na jednom místě.'],
-  ['Musím něco instalovat?', 'Ne. Autoservis2 je webová aplikace, takže ji používáte přímo v prohlížeči na počítači, tabletu nebo telefonu.'],
-  ['Mohu mít v systému více mechaniků?', 'Ano. Autoservis2 počítá s týmem servisu a umožňuje pracovat s jednotlivými uživateli a jejich oprávněními.'],
-  ['Mohu si aplikaci nejdříve vyzkoušet?', 'Ano. Začněte registrací a sami si projděte, jak Autoservis2 funguje ve vašem servisu.'],
+  ['Pro koho je Garazio?', 'Pro malé a střední autoservisy, které chtějí mít zakázky, zákazníky, vozidla a každodenní provoz přehledně na jednom místě.'],
+  ['Kolik Garazio stojí?', 'Garazio stojí 300 Kč měsíčně. Jednoduchá cena bez zbytečně složitých tarifů.'],
+  ['Musím něco instalovat?', 'Ne. Garazio je webová aplikace, takže ji používáte přímo v prohlížeči na počítači, tabletu nebo telefonu.'],
+  ['Mohu mít v systému více mechaniků?', 'Ano. Garazio počítá s týmem servisu a umožňuje pracovat s jednotlivými uživateli a jejich oprávněními.'],
 ];
 
 export default function LandingPage() {
@@ -58,17 +58,18 @@ export default function LandingPage() {
     <main className="min-h-screen overflow-hidden bg-background text-text-primary">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-lg font-black text-white">A</div>
-          <span className="font-heading text-lg font-extrabold tracking-tight">Autoservis2</span>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-lg font-black text-white">G</div>
+          <span className="font-heading text-lg font-extrabold tracking-tight">Garazio</span>
         </Link>
         <div className="hidden items-center gap-7 text-sm font-semibold text-text-secondary md:flex">
           <a href="#funkce" className="transition hover:text-text-primary">Funkce</a>
           <a href="#jak-to-funguje" className="transition hover:text-text-primary">Jak to funguje</a>
+          <a href="#cena" className="transition hover:text-text-primary">Cena</a>
           <a href="#faq" className="transition hover:text-text-primary">FAQ</a>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/login" className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-text-secondary transition hover:text-text-primary sm:block">Přihlásit se</Link>
-          <Link href="/register" className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Začít zdarma</Link>
+          <Link href="/register" className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Vyzkoušet zdarma</Link>
         </div>
       </nav>
 
@@ -82,15 +83,15 @@ export default function LandingPage() {
               Pro malé a střední autoservisy
             </div>
             <h1 className="max-w-2xl font-heading text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
-              Řiďte svůj autoservis.<br />
-              <span className="text-primary">Ne papíry.</span>
+              Mějte svůj autoservis.<br />
+              <span className="text-primary">Konečně pod kontrolou.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-7 text-text-secondary sm:text-lg">
               Zakázky, zákazníci, vozidla, mechanici, úkoly i fakturace. Všechno, co potřebujete pro každodenní provoz servisu, přehledně na jednom místě.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link href="/register" className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3.5 text-sm font-bold text-white shadow-xl shadow-primary/20 transition hover:brightness-110">
-                Vyzkoušet Autoservis2 <ArrowRight className="h-4 w-4" />
+                Vyzkoušet Garazio zdarma <ArrowRight className="h-4 w-4" />
               </Link>
               <a href="#jak-to-funguje" className="rounded-lg border border-border bg-surface px-5 py-3.5 text-sm font-semibold text-text-primary transition hover:bg-surface-hover">
                 Jak to funguje?
@@ -99,7 +100,7 @@ export default function LandingPage() {
             <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-text-muted">
               <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> Bez instalace</span>
               <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> Funguje v prohlížeči</span>
-              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> Připraveno pro tým</span>
+              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> 300 Kč / měsíc</span>
             </div>
           </div>
 
@@ -149,7 +150,7 @@ export default function LandingPage() {
       </section>
 
       <section id="funkce" className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
-        <div className="max-w-2xl"><p className="text-sm font-bold uppercase tracking-widest text-primary">Všechno na jednom místě</p><h2 className="mt-3 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">Méně administrativy. Více přehledu.</h2><p className="mt-4 leading-7 text-text-secondary">Autoservis2 je postavený kolem toho, jak servis skutečně funguje. Ne kolem desítek funkcí, které nikdy nepoužijete.</p></div>
+        <div className="max-w-2xl"><p className="text-sm font-bold uppercase tracking-widest text-primary">Všechno na jednom místě</p><h2 className="mt-3 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">Méně administrativy. Více přehledu.</h2><p className="mt-4 leading-7 text-text-secondary">Garazio je postavené kolem toho, jak servis skutečně funguje. Ne kolem desítek funkcí, které nikdy nepoužijete.</p></div>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map(({ icon: Icon, title, text }) => <div key={title} className="rounded-xl border border-border bg-surface p-5 transition hover:-translate-y-0.5 hover:border-primary/30"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon className="h-5 w-5" /></div><h3 className="mt-4 font-heading font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-text-secondary">{text}</p></div>)}
         </div>
@@ -168,7 +169,29 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
+      <section id="cena" className="mx-auto max-w-5xl px-5 py-20 lg:px-8 lg:py-28">
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_0.8fr]">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-widest text-primary">Jednoduchá cena</p>
+            <h2 className="mt-3 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">Celé Garazio za 300 Kč měsíčně.</h2>
+            <p className="mt-4 max-w-xl leading-7 text-text-secondary">Žádné složité balíčky. Jedna aplikace pro každodenní provoz vašeho autoservisu.</p>
+            <div className="mt-6 space-y-3 text-sm font-semibold">
+              <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Zakázky, zákazníci a vozidla</div>
+              <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Přehled práce mechaniků</div>
+              <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Historie vozidel</div>
+              <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Fakturace a přehled servisu</div>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-7 text-center shadow-xl shadow-primary/10">
+            <p className="text-sm font-semibold text-text-secondary">Garazio</p>
+            <div className="mt-2 flex items-end justify-center gap-1"><span className="font-heading text-5xl font-extrabold">300</span><span className="pb-1 text-sm font-semibold text-text-secondary">Kč / měsíc</span></div>
+            <p className="mt-3 text-xs text-text-muted">Jednoduchá cena. Bez zbytečných tarifů.</p>
+            <Link href="/register" className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Vyzkoušet Garazio <ArrowRight className="h-4 w-4" /></Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-5 pb-20 lg:px-8 lg:pb-28">
         <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><ShieldCheck className="h-5 w-5" /></div>
@@ -193,12 +216,12 @@ export default function LandingPage() {
       <section className="mx-auto max-w-5xl px-5 py-20 text-center lg:px-8 lg:py-28">
         <div className="rounded-3xl border border-primary/20 bg-primary/5 px-6 py-12 sm:px-10">
           <h2 className="font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">Přestaňte řídit servis z papíru a telefonu.</h2>
-          <p className="mx-auto mt-4 max-w-xl leading-7 text-text-secondary">Vyzkoušejte, jak může vypadat přehlednější provoz autoservisu. Začněte během několika minut.</p>
-          <Link href="/register" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 text-sm font-bold text-white shadow-xl shadow-primary/20 transition hover:brightness-110">Začít s Autoservis2 <ArrowRight className="h-4 w-4" /></Link>
+          <p className="mx-auto mt-4 max-w-xl leading-7 text-text-secondary">Vyzkoušejte Garazio a zjistěte, jak může vypadat přehlednější provoz autoservisu.</p>
+          <Link href="/register" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 text-sm font-bold text-white shadow-xl shadow-primary/20 transition hover:brightness-110">Začít s Garazio <ArrowRight className="h-4 w-4" /></Link>
         </div>
       </section>
 
-      <footer className="border-t border-border px-5 py-8 text-center text-xs text-text-muted">© {new Date().getFullYear()} Autoservis2 · Jednoduchý digitální diář pro autoservisy</footer>
+      <footer className="border-t border-border px-5 py-8 text-center text-xs text-text-muted">© {new Date().getFullYear()} Garazio · Jednoduchý digitální diář pro autoservisy</footer>
     </main>
   );
 }
