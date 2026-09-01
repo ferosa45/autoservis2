@@ -10,32 +10,17 @@ import { JobItemsList } from '@/components/job-detail/job-items-list';
 import { JobNote } from '@/components/job-detail/job-note';
 import { JobActions } from '@/components/job-detail/job-actions';
 import { JobTimeEditor } from '@/components/job-detail/job-time-editor';
+import { JobWorkTimeCard } from '@/components/job-detail/job-work-time-card';
 
-export default async function JobDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const context = await getSessionContext();
   const job = await getJobDetail(context, id);
 
-  if (!job) {
-    notFound();
-  }
+  if (!job) notFound();
 
-  // JobItemsList je Client Component - Prisma Decimal (quantity/unitPrice)
-  // nejde přes server/client hranici poslat přímo, musí se serializovat.
   const serializedItems = serializeJobItems(job.items);
-
-  // Poslední NEZRUŠENÁ faktura - pokud je nejnovější CANCELLED, hledáme
-  // starší platnou (viz riziko zmíněné a odsouhlasené ve Fázi 1).
   const fullActiveInvoice = job.invoices.find((inv) => inv.status !== 'CANCELLED') ?? null;
-
-  // JobActions je Client Component a potřebuje jen id/number/status -
-  // fullActiveInvoice má navíc Decimal pole (subtotal/vatTotal/total),
-  // která přes server/client hranici projít nemůžou, proto posíláme jen
-  // vydestrukturovanou podmnožinu.
   const activeInvoice = fullActiveInvoice
     ? { id: fullActiveInvoice.id, number: fullActiveInvoice.number, status: fullActiveInvoice.status }
     : null;
@@ -52,9 +37,7 @@ export default async function JobDetailPage({
           </div>
 
           <div className="rounded-lg border border-border bg-surface p-4">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
-              Co zákazník nahlásil
-            </h3>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">Co zákazník nahlásil</h3>
             <p className="text-sm text-text-primary">{job.customerRequest}</p>
           </div>
 
@@ -65,6 +48,7 @@ export default async function JobDetailPage({
 
         <div className="space-y-6">
           <JobTimeEditor jobId={job.id} scheduledStart={job.scheduledStart} scheduledEnd={job.scheduledEnd} />
+          <JobWorkTimeCard sessions={job.workSessions} />
           <JobActions jobId={job.id} status={job.status} latestInvoice={activeInvoice} />
         </div>
       </div>
