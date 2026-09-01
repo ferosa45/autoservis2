@@ -13,6 +13,8 @@ export async function listCustomers(context: SessionContext, query?: string) {
               { name: { contains: q, mode: 'insensitive' } },
               { phone: { contains: q } },
               { vehicles: { some: { licensePlate: { contains: q, mode: 'insensitive' } } } },
+              { vehicles: { some: { brand: { contains: q, mode: 'insensitive' } } } },
+              { vehicles: { some: { model: { contains: q, mode: 'insensitive' } } } },
             ],
           }
         : {}),
