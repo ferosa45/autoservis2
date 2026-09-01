@@ -1,4 +1,4 @@
-import { Wrench, CalendarDays, ClipboardList, Users, FileText, Settings, CreditCard } from 'lucide-react';
+import { Wrench, CalendarDays, ClipboardList, Users, FileText, Settings, CreditCard, BarChart3 } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { SidebarNavLink } from './sidebar-nav-link';
@@ -6,6 +6,7 @@ import { NewJobButton } from '@/components/quick-job/new-job-button';
 
 const NAV_ITEMS = [
   { href: '/today', label: 'Dnes', icon: CalendarDays },
+  { href: '/dashboard', label: 'Přehled', icon: BarChart3, ownerOnly: true },
   { href: '/calendar', label: 'Kalendář', icon: CalendarDays },
   { href: '/jobs', label: 'Zakázky', icon: ClipboardList },
   { href: '/customers', label: 'Zákazníci', icon: Users },
