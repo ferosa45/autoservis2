@@ -2,7 +2,8 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import Link from 'next/link';
-import { Loader2, Wrench } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Wrench } from 'lucide-react';
+import { useState } from 'react';
 import { register, type RegisterState } from '@/lib/actions/registration.actions';
 
 const initialState: RegisterState = { error: null };
@@ -24,6 +25,7 @@ function SubmitButton() {
 
 export function SignupForm() {
   const [state, formAction] = useFormState(register, initialState);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
@@ -89,16 +91,28 @@ export function SignupForm() {
               <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-text-secondary">
                 Heslo
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                minLength={8}
-                autoComplete="new-password"
-                placeholder="alespoň 8 znaků"
-                className="w-full rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  placeholder="alespoň 8 znaků"
+                  className="w-full rounded-lg border border-border bg-elevated px-3 py-2.5 pr-11 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'}
+                  title={showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'}
+                  className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-text-muted transition hover:text-text-primary"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="mt-1.5 text-[11px] text-text-muted">Heslo musí mít alespoň 8 znaků.</p>
             </div>
           </div>
 
@@ -108,7 +122,9 @@ export function SignupForm() {
             </p>
           )}
 
-          <SubmitButton />
+          <div className="mt-5">
+            <SubmitButton />
+          </div>
 
           <p className="mt-4 text-center text-xs leading-5 text-text-muted">
             Už máte účet?{' '}
