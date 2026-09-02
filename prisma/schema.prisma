@@ -65,6 +65,7 @@ model Garage {
   invoiceDueDays Int @default(14)
   subscriptionStatus SubscriptionStatus @default(TRIALING)
   trialEndsAt DateTime
+  onboardingCompletedAt DateTime?
   stripeCustomerId String? @unique
   stripeSubscriptionId String? @unique
   createdAt DateTime @default(now())
