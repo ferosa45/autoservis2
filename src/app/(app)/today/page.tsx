@@ -1,5 +1,9 @@
+import Link from 'next/link';
+import { CheckCircle2, Plus, Sparkles } from 'lucide-react';
 import { serializeJobItems } from '@/lib/serialize';
 import { getSessionContext } from '@/lib/session';
+import { prisma } from '@/lib/prisma';
+import { completeOnboarding } from '@/lib/actions/onboarding.actions';
 import {
   getJobsForDay,
   getJobDetail,
@@ -28,11 +32,17 @@ export default async function TodayPage({
   const date = parseDate(dateParam);
   const context = await getSessionContext();
 
-  const [jobs, tasks] = await Promise.all([
+  const [jobs, tasks, garage, jobCount] = await Promise.all([
     getJobsForDay(context, date),
     getTasksForDay(context, date),
+    prisma.garage.findUnique({
+      where: { id: context.garageId },
+      select: { name: true, onboardingCompletedAt: true },
+    }),
+    prisma.job.count({ where: { garageId: context.garageId } }),
   ]);
 
+  const showWelcome = Boolean(garage && !garage.onboardingCompletedAt && jobCount === 0);
   const stats = calculateTodayStats(jobs);
 
   const selectedJobId = jobParam ?? jobs.find((j) => j.status === 'IN_PROGRESS')?.id ?? jobs[0]?.id ?? null;
@@ -78,6 +88,48 @@ export default async function TodayPage({
     <div className="flex min-h-full flex-col md:flex-row">
       <div className="min-w-0 flex-1 space-y-5 overflow-visible p-3 sm:space-y-6 sm:p-6 md:overflow-y-auto">
         <TodayHeader date={date} />
+
+        {showWelcome && (
+          <section className="overflow-hidden rounded-2xl border border-primary/20 bg-surface shadow-sm">
+            <div className="flex flex-col gap-6 p-5 sm:p-7 md:flex-row md:items-center md:justify-between">
+              <div className="min-w-0">
+                <div className="mb-3 flex items-center gap-2 text-primary">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-semibold">Vítejte v Garaziu</span>
+                </div>
+                <h2 className="font-heading text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
+                  {garage?.name ? `Servis ${garage.name} je připravený.` : 'Váš servis je připravený.'}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary sm:text-base">
+                  Nemusíte nic složitě nastavovat. Začněte vytvořením první zakázky a Garazio si osaháte rovnou v praxi.
+                </p>
+
+                <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-text-muted sm:text-sm">
+                  <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> Účet vytvořen</span>
+                  <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> 30 dní zdarma</span>
+                  <span className="flex items-center gap-1.5"><Plus className="h-4 w-4 text-primary" /> První zakázka čeká na vás</span>
+                </div>
+              </div>
+
+              <div className="flex w-full shrink-0 flex-col gap-2 md:w-auto md:min-w-52">
+                <Link
+                  href="/calendar"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+                >
+                  <Plus className="h-4 w-4" /> Vytvořit první zakázku
+                </Link>
+                <form action={completeOnboarding}>
+                  <button type="submit" className="w-full rounded-xl px-5 py-2.5 text-sm text-text-muted hover:bg-elevated hover:text-text-primary">
+                    Prohlédnout Garazio
+                  </button>
+                </form>
+              </div>
+            </div>
+          </section>
+        )}
+
         <StatsCards
           totalToday={stats.totalToday}
           waitingForPart={stats.waitingForPart}

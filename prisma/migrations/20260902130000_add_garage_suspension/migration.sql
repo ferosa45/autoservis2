@@ -1,0 +1,1 @@
+ALTER TABLE "Garage" ADD COLUMN "suspendedAt" TIMESTAMP(3);

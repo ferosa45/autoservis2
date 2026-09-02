@@ -29,12 +29,9 @@ export async function register(
   }
 
   try {
-    // Po úspěšné registraci rovnou přihlásit - uživatel nemusí zadávat
-    // údaje znovu na login stránce.
-    await signIn('credentials', { email, password, redirectTo: '/today' });
+    await signIn('credentials', { email, password, redirectTo: '/onboarding' });
     return { error: null };
   } catch (error) {
-    // NEXT_REDIRECT není chyba, musí propadnout dál (viz stejný vzor v auth.actions.ts)
     if (error instanceof AuthError) {
       return {
         error: 'Účet byl vytvořen, ale automatické přihlášení se nezdařilo. Zkuste se přihlásit ručně.',

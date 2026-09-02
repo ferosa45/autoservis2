@@ -1,25 +1,30 @@
-import { Wrench, CalendarDays, ClipboardList, Users, FileText, Settings, CreditCard } from 'lucide-react';
+import { Wrench, CalendarDays, ClipboardList, Users, FileText, Settings, CreditCard, BarChart3, ShieldCheck } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
+import { isPlatformAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { SidebarNavLink } from './sidebar-nav-link';
 import { NewJobButton } from '@/components/quick-job/new-job-button';
 
 const NAV_ITEMS = [
   { href: '/today', label: 'Dnes', icon: CalendarDays },
+  { href: '/dashboard', label: 'Přehled', icon: BarChart3, ownerOnly: true },
   { href: '/calendar', label: 'Kalendář', icon: CalendarDays },
   { href: '/jobs', label: 'Zakázky', icon: ClipboardList },
   { href: '/customers', label: 'Zákazníci', icon: Users },
   { href: '/invoices', label: 'Faktury', icon: FileText, permission: 'canViewInvoices' as const },
   { href: '/billing', label: 'Předplatné', icon: CreditCard, ownerOnly: true },
   { href: '/settings', label: 'Nastavení', icon: Settings, ownerOnly: true },
+  { href: '/admin', label: 'Admin', icon: ShieldCheck, platformAdminOnly: true },
 ];
 
 export async function Sidebar() {
   const context = await getSessionContext();
+  const platformAdmin = await isPlatformAdmin();
   const garage = await prisma.garage.findUnique({ where: { id: context.garageId } });
   const visibleItems = NAV_ITEMS.filter((item) => {
     if (item.ownerOnly && context.role !== 'OWNER') return false;
     if (item.permission && context.role !== 'OWNER' && !context.permissions[item.permission]) return false;
+    if (item.platformAdminOnly && !platformAdmin) return false;
     return true;
   });
 
