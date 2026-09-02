@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Building2, CheckCircle2, Clock3, CreditCard, Search, ShieldAlert, Users, Wrench } from 'lucide-react';
+import { Building2, CheckCircle2, Clock3, CreditCard, Search, ShieldAlert } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { isPlatformAdmin } from '@/lib/admin';
 
@@ -26,8 +26,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const now = new Date();
   const sevenDays = new Date(now.getTime() + 7 * DAY_MS);
 
+  const validStatuses = ['ALL', 'TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED'] as const;
+  const safeStatus = validStatuses.includes(status as (typeof validStatuses)[number]) ? status : 'ALL';
+
   const where = {
-    ...(status !== 'ALL' ? { subscriptionStatus: status as 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' } : {}),
+    ...(safeStatus !== 'ALL' ? { subscriptionStatus: safeStatus } : {}),
     ...(q ? { OR: [
       { name: { contains: q, mode: 'insensitive' as const } },
       { email: { contains: q, mode: 'insensitive' as const } },
@@ -55,6 +58,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     }),
   ]);
 
+  const statCards = [
+    ['Celkem servisů', total, Building2],
+    ['Aktivní', active, CheckCircle2],
+    ['Ve zkušební době', trialing, Clock3],
+    ['Končí do 7 dnů', expiring, ShieldAlert],
+    ['Po splatnosti', pastDue, CreditCard],
+  ] as const;
+
   return (
     <main className="min-h-screen bg-background text-text-primary">
       <header className="border-b border-border bg-surface">
@@ -68,13 +79,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <div className="mb-8"><p className="text-sm font-bold uppercase tracking-widest text-primary">Přehled</p><h1 className="mt-2 font-heading text-3xl font-extrabold tracking-tight">Garazio v kostce</h1><p className="mt-2 text-sm text-text-secondary">Stav servisů, předplatného a používání platformy.</p></div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {[
-            ['Celkem servisů', total, Building2],
-            ['Aktivní', active, CheckCircle2],
-            ['Ve zkušební době', trialing, Clock3],
-            ['Končí do 7 dnů', expiring, ShieldAlert],
-            ['Po splatnosti', pastDue, CreditCard],
-          ].map(([label, value, Icon]) => <div key={label as string} className="rounded-xl border border-border bg-surface p-5"><div className="flex items-center justify-between"><p className="text-xs font-semibold text-text-muted">{label as string}</p><Icon className="h-4 w-4 text-primary" /></div><p className="mt-3 font-heading text-3xl font-extrabold">{value as number}</p></div>)}
+          {statCards.map(([label, value, Icon]) => (
+            <div key={label} className="rounded-xl border border-border bg-surface p-5">
+              <div className="flex items-center justify-between"><p className="text-xs font-semibold text-text-muted">{label}</p><Icon className="h-4 w-4 text-primary" /></div>
+              <p className="mt-3 font-heading text-3xl font-extrabold">{value}</p>
+            </div>
+          ))}
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -85,7 +95,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         </div>
 
         <section className="mt-10">
-          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="font-heading text-xl font-bold">Servisy</h2><p className="text-sm text-text-muted">{garages.length} zobrazených · celkem {total}</p></div><form className="flex flex-col gap-2 sm:flex-row"><div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input name="q" defaultValue={q} placeholder="Hledat servis, email, IČO…" className="w-full rounded-lg border border-border bg-surface py-2.5 pl-9 pr-3 text-sm outline-none focus:border-primary sm:w-72" /></div><select name="status" defaultValue={status} className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"><option value="ALL">Všechny stavy</option><option value="TRIALING">Trial</option><option value="ACTIVE">Aktivní</option><option value="PAST_DUE">Po splatnosti</option><option value="CANCELED">Zrušené</option></select><button className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white">Filtrovat</button></form></div>
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="font-heading text-xl font-bold">Servisy</h2><p className="text-sm text-text-muted">{garages.length} zobrazených · celkem {total}</p></div><form className="flex flex-col gap-2 sm:flex-row"><div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input name="q" defaultValue={q} placeholder="Hledat servis, email, IČO…" className="w-full rounded-lg border border-border bg-surface py-2.5 pl-9 pr-3 text-sm outline-none focus:border-primary sm:w-72" /></div><select name="status" defaultValue={safeStatus} className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"><option value="ALL">Všechny stavy</option><option value="TRIALING">Trial</option><option value="ACTIVE">Aktivní</option><option value="PAST_DUE">Po splatnosti</option><option value="CANCELED">Zrušené</option></select><button className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white">Filtrovat</button></form></div>
 
           <div className="overflow-hidden rounded-xl border border-border bg-surface">
             <div className="hidden overflow-x-auto md:block"><table className="w-full text-left text-sm"><thead className="border-b border-border bg-elevated text-xs text-text-muted"><tr><th className="px-5 py-3 font-semibold">Servis</th><th className="px-5 py-3 font-semibold">Registrace</th><th className="px-5 py-3 font-semibold">Stav</th><th className="px-5 py-3 font-semibold">Trial</th><th className="px-5 py-3 font-semibold">Používání</th><th className="px-5 py-3" /></tr></thead><tbody className="divide-y divide-border">{garages.map((garage) => { const [label, cls] = statusLabel(garage.subscriptionStatus, garage.suspendedAt); return <tr key={garage.id} className="hover:bg-surface-hover"><td className="px-5 py-4"><p className="font-bold">{garage.name}</p><p className="mt-0.5 text-xs text-text-muted">{garage.email || 'Bez emailu'}{garage.ico ? ` · IČO ${garage.ico}` : ''}</p></td><td className="px-5 py-4 text-text-secondary">{garage.createdAt.toLocaleDateString('cs-CZ')}</td><td className="px-5 py-4"><span className={`rounded-md border px-2 py-1 text-xs font-bold ${cls}`}>{label}</span></td><td className="px-5 py-4">{garage.subscriptionStatus === 'TRIALING' ? <span className={daysLeft(garage.trialEndsAt) <= 7 ? 'font-bold text-amber-400' : 'text-text-secondary'}>{daysLeft(garage.trialEndsAt)} dní</span> : <span className="text-text-muted">—</span>}</td><td className="px-5 py-4 text-xs text-text-secondary">{garage._count.users} uživ. · {garage._count.customers} zákaz. · {garage._count.jobs} zakázek</td><td className="px-5 py-4 text-right"><Link href={`/admin/garages/${garage.id}`} className="font-semibold text-primary hover:underline">Detail</Link></td></tr> })}</tbody></table></div>
