@@ -17,10 +17,10 @@ export class StaleSessionError extends Error {
   constructor() { super('STALE_SESSION'); this.name = 'StaleSessionError'; }
 }
 export class ReadOnlyAccessError extends Error {
-  constructor() { super('READ_ONLY_ACCESS'); this.name = 'ReadOnlyAccessError'; }
+  constructor() { super('READ_ONLY_ACCESS'); this.name = 'READ_ONLY_ACCESS'; }
 }
 export class ForbiddenError extends Error {
-  constructor() { super('FORBIDDEN'); this.name = 'ForbiddenError'; }
+  constructor() { super('FORBIDDEN'); this.name = 'FORBIDDEN'; }
 }
 
 function computeHasWriteAccess(subscriptionStatus: SubscriptionStatus, trialEndsAt: Date): boolean {
@@ -34,13 +34,13 @@ export async function getSessionContext(): Promise<SessionContext> {
   if (!session?.user?.id || !session.user.garageId) throw new Error('UNAUTHENTICATED');
 
   const [garage, user] = await Promise.all([
-    prisma.garage.findUnique({ where: { id: session.user.garageId }, select: { id: true, subscriptionStatus: true, trialEndsAt: true } }),
+    prisma.garage.findUnique({ where: { id: session.user.garageId }, select: { id: true, subscriptionStatus: true, trialEndsAt: true, suspendedAt: true } }),
     prisma.user.findFirst({
       where: { id: session.user.id, garageId: session.user.garageId },
       select: { id: true, role: true, active: true, canInvoice: true, canViewInvoices: true, canViewFinancials: true },
     }),
   ]);
-  if (!garage || !user || !user.active) throw new StaleSessionError();
+  if (!garage || !user || !user.active || garage.suspendedAt) throw new StaleSessionError();
 
   return {
     userId: user.id,
