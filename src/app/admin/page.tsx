@@ -6,6 +6,8 @@ import { prisma } from '@/lib/prisma';
 import { isPlatformAdmin } from '@/lib/admin';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+type SubscriptionStatus = 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED';
+type StatusFilter = 'ALL' | SubscriptionStatus;
 
 function daysLeft(date: Date) {
   return Math.max(0, Math.ceil((date.getTime() - Date.now()) / DAY_MS));
@@ -27,13 +29,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const now = new Date();
   const sevenDays = new Date(now.getTime() + 7 * DAY_MS);
 
-  const validStatuses = ['ALL', 'TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED'] as const;
-  const safeStatus: (typeof validStatuses)[number] = validStatuses.includes(status as (typeof validStatuses)[number])
-    ? (status as (typeof validStatuses)[number])
-    : 'ALL';
+  const validStatuses: StatusFilter[] = ['ALL', 'TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED'];
+  const safeStatus: StatusFilter = validStatuses.includes(status as StatusFilter) ? status as StatusFilter : 'ALL';
 
   const where: Prisma.GarageWhereInput = {
-    ...(safeStatus !== 'ALL' ? { subscriptionStatus: safeStatus as Prisma.SubscriptionStatus } : {}),
+    ...(safeStatus !== 'ALL' ? { subscriptionStatus: safeStatus } : {}),
     ...(q ? { OR: [
       { name: { contains: q, mode: 'insensitive' } },
       { email: { contains: q, mode: 'insensitive' } },
