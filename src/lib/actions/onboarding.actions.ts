@@ -4,6 +4,16 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { assertOwner, getSessionContext } from '@/lib/session';
 
+export async function completeOnboarding() {
+  const context = await getSessionContext();
+  assertOwner(context);
+  await prisma.garage.update({
+    where: { id: context.garageId },
+    data: { onboardingCompletedAt: new Date() },
+  });
+  revalidatePath('/today');
+}
+
 export async function saveOnboardingDetails(formData: FormData) {
   const context = await getSessionContext();
   assertOwner(context);
