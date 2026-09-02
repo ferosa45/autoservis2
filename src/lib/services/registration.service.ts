@@ -24,6 +24,7 @@ export async function registerGarageWithOwner(input: RegisterInput) {
   const garage = await prisma.garage.create({
     data: {
       name: input.garageName,
+      email: input.email,
       subscriptionStatus: 'TRIALING',
       trialEndsAt,
       users: {
