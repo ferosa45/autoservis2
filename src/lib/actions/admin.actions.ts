@@ -10,25 +10,20 @@ export async function resetGarageTrial(garageId: string) {
   await assertPlatformAdmin();
   const trialEndsAt = new Date();
   trialEndsAt.setDate(trialEndsAt.getDate() + 30);
-  await prisma.garage.update({
-    where: { id: garageId },
-    data: { subscriptionStatus: 'TRIALING', trialEndsAt, suspendedAt: null },
-  });
+  await prisma.garage.update({ where: { id: garageId }, data: { subscriptionStatus: 'TRIALING', trialEndsAt } });
   revalidatePath('/admin');
   revalidatePath(`/admin/garages/${garageId}`);
 }
 
 export async function extendGarageTrial(garageId: string, days: number) {
   await assertPlatformAdmin();
+  if (!Number.isInteger(days) || days < 1 || days > 365) throw new Error('INVALID_DAYS');
   const garage = await prisma.garage.findUnique({ where: { id: garageId }, select: { trialEndsAt: true } });
   if (!garage) throw new Error('GARAGE_NOT_FOUND');
   const base = garage.trialEndsAt.getTime() > Date.now() ? garage.trialEndsAt : new Date();
   const trialEndsAt = new Date(base);
   trialEndsAt.setDate(trialEndsAt.getDate() + days);
-  await prisma.garage.update({
-    where: { id: garageId },
-    data: { subscriptionStatus: 'TRIALING', trialEndsAt },
-  });
+  await prisma.garage.update({ where: { id: garageId }, data: { subscriptionStatus: 'TRIALING', trialEndsAt } });
   revalidatePath('/admin');
   revalidatePath(`/admin/garages/${garageId}`);
 }
