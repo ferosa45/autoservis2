@@ -56,7 +56,7 @@ const faqs = [
 export default function LandingPage() {
   return (
     <main className="min-h-screen overflow-hidden bg-background text-text-primary">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 lg:px-8">
+      <nav className="relative z-20 mx-auto flex max-w-6xl items-center justify-between px-5 py-5 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-lg font-black text-white">G</div>
           <span className="font-heading text-lg font-extrabold tracking-tight">Garazio</span>
@@ -67,9 +67,9 @@ export default function LandingPage() {
           <a href="#cena" className="transition hover:text-text-primary">Cena</a>
           <a href="#faq" className="transition hover:text-text-primary">FAQ</a>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="relative z-20 flex items-center gap-2">
           <Link href="/login" className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-text-secondary transition hover:text-text-primary sm:block">Přihlásit se</Link>
-          <Link href="/signup" className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Vyzkoušet zdarma</Link>
+          <a href="/signup" className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Vyzkoušet zdarma</a>
         </div>
       </nav>
 
