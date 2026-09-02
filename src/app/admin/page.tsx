@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Prisma } from '@prisma/client';
 import { Building2, CheckCircle2, Clock3, CreditCard, Search, ShieldAlert } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { isPlatformAdmin } from '@/lib/admin';
@@ -27,15 +28,17 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const sevenDays = new Date(now.getTime() + 7 * DAY_MS);
 
   const validStatuses = ['ALL', 'TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED'] as const;
-  const safeStatus = validStatuses.includes(status as (typeof validStatuses)[number]) ? status : 'ALL';
+  const safeStatus: (typeof validStatuses)[number] = validStatuses.includes(status as (typeof validStatuses)[number])
+    ? (status as (typeof validStatuses)[number])
+    : 'ALL';
 
-  const where = {
-    ...(safeStatus !== 'ALL' ? { subscriptionStatus: safeStatus } : {}),
+  const where: Prisma.GarageWhereInput = {
+    ...(safeStatus !== 'ALL' ? { subscriptionStatus: safeStatus as Prisma.SubscriptionStatus } : {}),
     ...(q ? { OR: [
-      { name: { contains: q, mode: 'insensitive' as const } },
-      { email: { contains: q, mode: 'insensitive' as const } },
-      { companyName: { contains: q, mode: 'insensitive' as const } },
-      { ico: { contains: q, mode: 'insensitive' as const } },
+      { name: { contains: q, mode: 'insensitive' } },
+      { email: { contains: q, mode: 'insensitive' } },
+      { companyName: { contains: q, mode: 'insensitive' } },
+      { ico: { contains: q, mode: 'insensitive' } },
     ] } : {}),
   };
 
