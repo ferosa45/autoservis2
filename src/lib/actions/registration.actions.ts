@@ -29,8 +29,7 @@ export async function register(
   }
 
   try {
-    // Po úspěšné registraci rovnou přihlásit a otevřít hlavní stránku Dnes.
-    await signIn('credentials', { email, password, redirectTo: '/today' });
+    await signIn('credentials', { email, password, redirectTo: '/onboarding' });
     return { error: null };
   } catch (error) {
     if (error instanceof AuthError) {
