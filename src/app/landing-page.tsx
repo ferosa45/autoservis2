@@ -48,7 +48,7 @@ const features = [
 
 const faqs = [
   ['Pro koho je Garazio?', 'Pro malé a střední autoservisy, které chtějí mít zakázky, zákazníky, vozidla a každodenní provoz přehledně na jednom místě.'],
-  ['Kolik Garazio stojí?', 'Garazio stojí 300 Kč měsíčně. Jednoduchá cena bez zbytečně složitých tarifů.'],
+  ['Kolik Garazio stojí?', 'Garazio stojí 299 Kč měsíčně. Jednoduchá cena bez zbytečně složitých tarifů.'],
   ['Musím něco instalovat?', 'Ne. Garazio je webová aplikace, takže ji používáte přímo v prohlížeči na počítači, tabletu nebo telefonu.'],
   ['Mohu mít v systému více mechaniků?', 'Ano. Garazio počítá s týmem servisu a umožňuje pracovat s jednotlivými uživateli a jejich oprávněními.'],
 ];
@@ -69,7 +69,7 @@ export default function LandingPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link href="/login" className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-text-secondary transition hover:text-text-primary sm:block">Přihlásit se</Link>
-          <Link href="/register" className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Vyzkoušet zdarma</Link>
+          <Link href="/signup" className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Vyzkoušet zdarma</Link>
         </div>
       </nav>
 
@@ -90,7 +90,7 @@ export default function LandingPage() {
               Zakázky, zákazníci, vozidla, mechanici, úkoly i fakturace. Všechno, co potřebujete pro každodenní provoz servisu, přehledně na jednom místě.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/register" className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3.5 text-sm font-bold text-white shadow-xl shadow-primary/20 transition hover:brightness-110">
+              <Link href="/signup" className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3.5 text-sm font-bold text-white shadow-xl shadow-primary/20 transition hover:brightness-110">
                 Vyzkoušet Garazio zdarma <ArrowRight className="h-4 w-4" />
               </Link>
               <a href="#jak-to-funguje" className="rounded-lg border border-border bg-surface px-5 py-3.5 text-sm font-semibold text-text-primary transition hover:bg-surface-hover">
@@ -100,7 +100,7 @@ export default function LandingPage() {
             <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-text-muted">
               <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> Bez instalace</span>
               <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> Funguje v prohlížeči</span>
-              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> 300 Kč / měsíc</span>
+              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> 299 Kč / měsíc</span>
             </div>
           </div>
 
@@ -173,7 +173,7 @@ export default function LandingPage() {
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_0.8fr]">
           <div>
             <p className="text-sm font-bold uppercase tracking-widest text-primary">Jednoduchá cena</p>
-            <h2 className="mt-3 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">Celé Garazio za 300 Kč měsíčně.</h2>
+            <h2 className="mt-3 font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">Celé Garazio za 299 Kč měsíčně.</h2>
             <p className="mt-4 max-w-xl leading-7 text-text-secondary">Žádné složité balíčky. Jedna aplikace pro každodenní provoz vašeho autoservisu.</p>
             <div className="mt-6 space-y-3 text-sm font-semibold">
               <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /> Zakázky, zákazníci a vozidla</div>
@@ -184,9 +184,9 @@ export default function LandingPage() {
           </div>
           <div className="rounded-2xl border border-primary/30 bg-primary/5 p-7 text-center shadow-xl shadow-primary/10">
             <p className="text-sm font-semibold text-text-secondary">Garazio</p>
-            <div className="mt-2 flex items-end justify-center gap-1"><span className="font-heading text-5xl font-extrabold">300</span><span className="pb-1 text-sm font-semibold text-text-secondary">Kč / měsíc</span></div>
+            <div className="mt-2 flex items-end justify-center gap-1"><span className="font-heading text-5xl font-extrabold">299</span><span className="pb-1 text-sm font-semibold text-text-secondary">Kč / měsíc</span></div>
             <p className="mt-3 text-xs text-text-muted">Jednoduchá cena. Bez zbytečných tarifů.</p>
-            <Link href="/register" className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Vyzkoušet Garazio <ArrowRight className="h-4 w-4" /></Link>
+            <Link href="/signup" className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Vyzkoušet Garazio <ArrowRight className="h-4 w-4" /></Link>
           </div>
         </div>
       </section>
@@ -217,7 +217,7 @@ export default function LandingPage() {
         <div className="rounded-3xl border border-primary/20 bg-primary/5 px-6 py-12 sm:px-10">
           <h2 className="font-heading text-3xl font-extrabold tracking-tight sm:text-4xl">Přestaňte řídit servis z papíru a telefonu.</h2>
           <p className="mx-auto mt-4 max-w-xl leading-7 text-text-secondary">Vyzkoušejte Garazio a zjistěte, jak může vypadat přehlednější provoz autoservisu.</p>
-          <Link href="/register" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 text-sm font-bold text-white shadow-xl shadow-primary/20 transition hover:brightness-110">Začít s Garazio <ArrowRight className="h-4 w-4" /></Link>
+          <Link href="/signup" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 text-sm font-bold text-white shadow-xl shadow-primary/20 transition hover:brightness-110">Začít s Garazio <ArrowRight className="h-4 w-4" /></Link>
         </div>
       </section>
 
