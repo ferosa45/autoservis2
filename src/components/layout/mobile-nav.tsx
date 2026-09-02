@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { CalendarDays, ClipboardList, Users, FileText, BarChart3 } from 'lucide-react';
+import { CalendarDays, ClipboardList, Users, FileText, BarChart3, ShieldCheck } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
+import { isPlatformAdmin } from '@/lib/admin';
 import { NewJobButton } from '@/components/quick-job/new-job-button';
 
 const NAV_ITEMS = [
@@ -10,13 +11,16 @@ const NAV_ITEMS = [
   { href: '/jobs', label: 'Zakázky', icon: ClipboardList },
   { href: '/customers', label: 'Zákazníci', icon: Users },
   { href: '/invoices', label: 'Faktury', icon: FileText, permission: 'canViewInvoices' as const },
+  { href: '/admin', label: 'Admin', icon: ShieldCheck, platformAdminOnly: true },
 ];
 
 export async function MobileNav() {
   const context = await getSessionContext();
+  const platformAdmin = await isPlatformAdmin();
   const visibleItems = NAV_ITEMS.filter((item) => {
     if (item.ownerOnly && context.role !== 'OWNER') return false;
     if (item.permission && context.role !== 'OWNER' && !context.permissions[item.permission]) return false;
+    if (item.platformAdminOnly && !platformAdmin) return false;
     return true;
   });
 
