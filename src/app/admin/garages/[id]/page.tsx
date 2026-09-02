@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { ArrowLeft, Building2, CalendarDays, CreditCard, Mail, Phone, Users, Wrench } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { isPlatformAdmin } from '@/lib/admin';
 import { activateGarage, extendGarageTrial, resetGarageTrial, suspendGarage } from '@/lib/actions/admin.actions';
@@ -42,6 +43,14 @@ export default async function AdminGarageDetailPage({ params }: { params: Promis
   const suspend = suspendGarage.bind(null, garage.id);
   const activate = activateGarage.bind(null, garage.id);
 
+  const usageCards: Array<[string, number, LucideIcon]> = [
+    ['Uživatelé', garage._count.users, Users],
+    ['Zákazníci', garage._count.customers, Users],
+    ['Vozidla', garage._count.vehicles, Wrench],
+    ['Zakázky', garage._count.jobs, CalendarDays],
+    ['Faktury', garage._count.invoices, CreditCard],
+  ];
+
   return (
     <main className="min-h-screen bg-background text-text-primary">
       <header className="border-b border-border bg-surface">
@@ -70,80 +79,34 @@ export default async function AdminGarageDetailPage({ params }: { params: Promis
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <div className="flex gap-3">
                 <Mail className="mt-0.5 h-4 w-4 text-text-muted" />
-                <div>
-                  <p className="text-xs text-text-muted">Email</p>
-                  <p className="text-sm font-semibold">{garage.email || owner?.email || '—'}</p>
-                </div>
+                <div><p className="text-xs text-text-muted">Email</p><p className="text-sm font-semibold">{garage.email || owner?.email || '—'}</p></div>
               </div>
               <div className="flex gap-3">
                 <Phone className="mt-0.5 h-4 w-4 text-text-muted" />
-                <div>
-                  <p className="text-xs text-text-muted">Telefon</p>
-                  <p className="text-sm font-semibold">{garage.phone || '—'}</p>
-                </div>
+                <div><p className="text-xs text-text-muted">Telefon</p><p className="text-sm font-semibold">{garage.phone || '—'}</p></div>
               </div>
-              <div>
-                <p className="text-xs text-text-muted">Majitel</p>
-                <p className="text-sm font-semibold">{owner?.name || '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-text-muted">IČO</p>
-                <p className="text-sm font-semibold">{garage.ico || '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-text-muted">Registrace</p>
-                <p className="text-sm font-semibold">{garage.createdAt.toLocaleDateString('cs-CZ')}</p>
-              </div>
-              <div>
-                <p className="text-xs text-text-muted">Onboarding</p>
-                <p className="text-sm font-semibold">
-                  {garage.onboardingCompletedAt
-                    ? `Dokončen ${garage.onboardingCompletedAt.toLocaleDateString('cs-CZ')}`
-                    : 'Nedokončen'}
-                </p>
-              </div>
+              <div><p className="text-xs text-text-muted">Majitel</p><p className="text-sm font-semibold">{owner?.name || '—'}</p></div>
+              <div><p className="text-xs text-text-muted">IČO</p><p className="text-sm font-semibold">{garage.ico || '—'}</p></div>
+              <div><p className="text-xs text-text-muted">Registrace</p><p className="text-sm font-semibold">{garage.createdAt.toLocaleDateString('cs-CZ')}</p></div>
+              <div><p className="text-xs text-text-muted">Onboarding</p><p className="text-sm font-semibold">{garage.onboardingCompletedAt ? `Dokončen ${garage.onboardingCompletedAt.toLocaleDateString('cs-CZ')}` : 'Nedokončen'}</p></div>
             </div>
           </section>
 
           <section className="rounded-xl border border-border bg-surface p-6">
             <p className="text-xs font-bold uppercase tracking-widest text-primary">Předplatné</p>
             <div className="mt-3 flex items-center gap-2">
-              <span className="font-heading text-xl font-extrabold">
-                {garage.subscriptionStatus === 'ACTIVE'
-                  ? 'Aktivní'
-                  : garage.subscriptionStatus === 'PAST_DUE'
-                    ? 'Po splatnosti'
-                    : garage.subscriptionStatus === 'CANCELED'
-                      ? 'Zrušeno'
-                      : 'Trial'}
-              </span>
-              {garage.suspendedAt && (
-                <span className="rounded-md bg-red-500/10 px-2 py-1 text-[11px] font-bold text-red-400">Pozastaveno</span>
-              )}
+              <span className="font-heading text-xl font-extrabold">{garage.subscriptionStatus === 'ACTIVE' ? 'Aktivní' : garage.subscriptionStatus === 'PAST_DUE' ? 'Po splatnosti' : garage.subscriptionStatus === 'CANCELED' ? 'Zrušeno' : 'Trial'}</span>
+              {garage.suspendedAt && <span className="rounded-md bg-red-500/10 px-2 py-1 text-[11px] font-bold text-red-400">Pozastaveno</span>}
             </div>
             <div className="mt-5 rounded-lg border border-border bg-background p-4">
               <p className="text-xs text-text-muted">Konec trialu</p>
               <p className="mt-1 text-2xl font-extrabold">{garage.trialEndsAt.toLocaleDateString('cs-CZ')}</p>
-              <p className="mt-1 text-xs font-semibold text-text-secondary">
-                {garage.subscriptionStatus === 'TRIALING' ? `${trialDays} dní zbývá` : 'Trial se nyní nepoužívá'}
-              </p>
+              <p className="mt-1 text-xs font-semibold text-text-secondary">{garage.subscriptionStatus === 'TRIALING' ? `${trialDays} dní zbývá` : 'Trial se nyní nepoužívá'}</p>
             </div>
             <div className="mt-4 space-y-2">
-              <form action={resetTrial}>
-                <button className="w-full rounded-lg bg-primary px-3 py-2.5 text-xs font-bold text-white">Resetovat na 30 dní</button>
-              </form>
-              <form action={extendGarageTrial.bind(null, garage.id, 7)}>
-                <button className="w-full rounded-lg border border-border px-3 py-2.5 text-xs font-bold hover:bg-surface-hover">Přidat 7 dní</button>
-              </form>
-              {garage.suspendedAt ? (
-                <form action={activate}>
-                  <button className="w-full rounded-lg border border-emerald-500/30 px-3 py-2.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/10">Aktivovat servis</button>
-                </form>
-              ) : (
-                <form action={suspend}>
-                  <button className="w-full rounded-lg border border-red-500/30 px-3 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/10">Pozastavit servis</button>
-                </form>
-              )}
+              <form action={resetTrial}><button className="w-full rounded-lg bg-primary px-3 py-2.5 text-xs font-bold text-white">Resetovat na 30 dní</button></form>
+              <form action={extendGarageTrial.bind(null, garage.id, 7)}><button className="w-full rounded-lg border border-border px-3 py-2.5 text-xs font-bold hover:bg-surface-hover">Přidat 7 dní</button></form>
+              {garage.suspendedAt ? <form action={activate}><button className="w-full rounded-lg border border-emerald-500/30 px-3 py-2.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/10">Aktivovat servis</button></form> : <form action={suspend}><button className="w-full rounded-lg border border-red-500/30 px-3 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/10">Pozastavit servis</button></form>}
             </div>
           </section>
         </div>
@@ -151,17 +114,11 @@ export default async function AdminGarageDetailPage({ params }: { params: Promis
         <section className="mt-4 rounded-xl border border-border bg-surface p-6">
           <p className="text-xs font-bold uppercase tracking-widest text-primary">Používání</p>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-            {[
-              ['Uživatelé', garage._count.users, Users],
-              ['Zákazníci', garage._count.customers, Users],
-              ['Vozidla', garage._count.vehicles, Wrench],
-              ['Zakázky', garage._count.jobs, CalendarDays],
-              ['Faktury', garage._count.invoices, CreditCard],
-            ].map(([label, value, Icon]) => (
-              <div key={label as string} className="rounded-lg border border-border bg-background p-4">
+            {usageCards.map(([label, value, Icon]) => (
+              <div key={label} className="rounded-lg border border-border bg-background p-4">
                 <Icon className="h-4 w-4 text-primary" />
-                <p className="mt-3 text-xs text-text-muted">{label as string}</p>
-                <p className="mt-1 text-xl font-extrabold">{value as number}</p>
+                <p className="mt-3 text-xs text-text-muted">{label}</p>
+                <p className="mt-1 text-xl font-extrabold">{value}</p>
               </div>
             ))}
           </div>
@@ -169,21 +126,13 @@ export default async function AdminGarageDetailPage({ params }: { params: Promis
 
         <section className="mt-4 rounded-xl border border-border bg-surface p-6">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-primary">Uživatelé</p>
-              <h2 className="mt-2 font-heading text-xl font-bold">Přístupy do servisu</h2>
-            </div>
+            <div><p className="text-xs font-bold uppercase tracking-widest text-primary">Uživatelé</p><h2 className="mt-2 font-heading text-xl font-bold">Přístupy do servisu</h2></div>
             <Users className="h-5 w-5 text-primary" />
           </div>
           <div className="mt-5 divide-y divide-border">
             {garage.users.map((user) => (
               <div key={user.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-bold">{user.name}</p>
-                  <p className="mt-0.5 text-xs text-text-muted">
-                    {user.email} · {user.role === 'OWNER' ? 'Majitel' : 'Mechanik'}{!user.active ? ' · neaktivní' : ''}
-                  </p>
-                </div>
+                <div><p className="font-bold">{user.name}</p><p className="mt-0.5 text-xs text-text-muted">{user.email} · {user.role === 'OWNER' ? 'Majitel' : 'Mechanik'}{!user.active ? ' · neaktivní' : ''}</p></div>
                 <ResetPasswordButton userId={user.id} />
               </div>
             ))}
