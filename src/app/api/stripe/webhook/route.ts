@@ -19,6 +19,13 @@ function mapStripeStatus(status: Stripe.Subscription.Status): 'ACTIVE' | 'PAST_D
   }
 }
 
+function getSubscriptionPeriodEnd(subscription: Stripe.Subscription): Date | null {
+  const itemPeriodEnd = subscription.items.data[0]?.current_period_end;
+  if (typeof itemPeriodEnd === 'number') return new Date(itemPeriodEnd * 1000);
+  if (typeof subscription.cancel_at === 'number') return new Date(subscription.cancel_at * 1000);
+  return null;
+}
+
 export async function POST(request: Request) {
   const signature = request.headers.get('stripe-signature');
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -27,9 +34,6 @@ export async function POST(request: Request) {
     return new NextResponse('Chybí Stripe webhook konfigurace', { status: 400 });
   }
 
-  // Ověření podpisu potřebuje SUROVÉ tělo požadavku (ne JSON.parse) -
-  // Next.js App Router route handlery ho automaticky neparsují, takže
-  // request.text() dá přesně to, co Stripe očekává.
   const rawBody = await request.text();
 
   let event: Stripe.Event;
@@ -38,6 +42,16 @@ export async function POST(request: Request) {
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
     return new NextResponse(`Neplatný webhook podpis: ${(err as Error).message}`, { status: 400 });
+  }
+
+  // Stripe může stejný event doručit vícekrát. Pokud už jsme ho úspěšně
+  // zpracovali, nic dalšího nedělejme.
+  const alreadyProcessed = await prisma.stripeEvent.findUnique({
+    where: { eventId: event.id },
+    select: { id: true },
+  });
+  if (alreadyProcessed) {
+    return NextResponse.json({ received: true, duplicate: true });
   }
 
   switch (event.type) {
@@ -63,9 +77,14 @@ export async function POST(request: Request) {
         where: { stripeSubscriptionId: subscription.id },
       });
       if (garage) {
+        const subscriptionEndsAt = getSubscriptionPeriodEnd(subscription);
         await prisma.garage.update({
           where: { id: garage.id },
-          data: { subscriptionStatus: mapStripeStatus(subscription.status) },
+          data: {
+            subscriptionStatus: mapStripeStatus(subscription.status),
+            subscriptionCancelAtPeriodEnd: subscription.cancel_at_period_end,
+            ...(subscriptionEndsAt ? { subscriptionEndsAt } : {}),
+          },
         });
       }
       break;
@@ -77,9 +96,16 @@ export async function POST(request: Request) {
         where: { stripeSubscriptionId: subscription.id },
       });
       if (garage) {
+        const endedAt = typeof subscription.ended_at === 'number'
+          ? new Date(subscription.ended_at * 1000)
+          : garage.subscriptionEndsAt;
         await prisma.garage.update({
           where: { id: garage.id },
-          data: { subscriptionStatus: 'CANCELED' },
+          data: {
+            subscriptionStatus: 'CANCELED',
+            subscriptionCancelAtPeriodEnd: false,
+            ...(endedAt ? { subscriptionEndsAt: endedAt } : {}),
+          },
         });
       }
       break;
@@ -87,8 +113,6 @@ export async function POST(request: Request) {
 
     case 'invoice.payment_failed': {
       const invoice = event.data.object as Stripe.Invoice;
-      // Stripe SDK v22+ přesunulo subscription referenci z Invoice.subscription
-      // (už neexistuje) do Invoice.parent.subscription_details.subscription.
       const subscriptionRef = invoice.parent?.subscription_details?.subscription;
       const subscriptionId = typeof subscriptionRef === 'string' ? subscriptionRef : subscriptionRef?.id ?? null;
       if (subscriptionId) {
@@ -106,10 +130,24 @@ export async function POST(request: Request) {
     }
 
     default:
-      // Ostatní typy událostí (jsou jich desítky) záměrně ignorujeme -
-      // nic v appce na nich nezávisí.
       break;
   }
 
+  // Event ukládáme až po úspěšném zpracování. Když zpracování selže,
+  // Stripe dostane chybu a může event bezpečně doručit znovu.
+  try {
+    await prisma.stripeEvent.create({
+      data: { eventId: event.id, type: event.type },
+    });
+  } catch (error) {
+    // Paralelní doručení stejného eventu může narazit na unique constraint.
+    // Stav garáže je v takovém případě už zpracovaný, takže odpovíme OK.
+    if (!isUniqueConstraintError(error)) throw error;
+  }
+
   return NextResponse.json({ received: true });
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && (error as { code?: string }).code === 'P2002';
 }

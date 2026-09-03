@@ -27,6 +27,8 @@ export default async function BillingPage({
   const Icon = display.icon;
   const now = new Date();
   const trialDaysLeft = Math.ceil((garage.trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const subscriptionEndsAt = garage.subscriptionEndsAt;
+  const cancelAtPeriodEnd = garage.subscriptionCancelAtPeriodEnd;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
@@ -34,7 +36,7 @@ export default async function BillingPage({
 
       {success === '1' && (
         <div className="rounded-lg border border-status-done-border bg-status-done-bg px-4 py-3 text-sm text-status-done-text">
-          Platba proběhla úspěšně, předplatné je aktivní. Díky!
+          Platba proběhla úspěšně. Aktivace předplatného se potvrzuje po přijetí platby od Stripe.
         </div>
       )}
       {canceled === '1' && (
@@ -61,11 +63,30 @@ export default async function BillingPage({
               </dd>
             </div>
           )}
+
+          {subscriptionEndsAt && (garage.subscriptionStatus === 'ACTIVE' || garage.subscriptionStatus === 'CANCELED') && (
+            <div className="flex justify-between gap-4">
+              <dt className="text-text-secondary">
+                {cancelAtPeriodEnd || garage.subscriptionStatus === 'CANCELED' ? 'Předplatné skončí' : 'Další období'}
+              </dt>
+              <dd className="text-right text-text-primary">
+                {formatShortDate(subscriptionEndsAt)}
+                {cancelAtPeriodEnd && garage.subscriptionStatus === 'ACTIVE' ? ' (zrušeno)' : ''}
+              </dd>
+            </div>
+          )}
+
           <div className="flex justify-between">
             <dt className="text-text-secondary">Cena</dt>
-            <dd className="text-text-primary">300 Kč / měsíc</dd>
+            <dd className="text-text-primary">299 Kč / měsíc</dd>
           </div>
         </dl>
+
+        {cancelAtPeriodEnd && garage.subscriptionStatus === 'ACTIVE' && subscriptionEndsAt && (
+          <p className="mt-4 rounded-lg border border-status-waiting-border bg-status-waiting-bg px-3 py-2 text-xs text-status-waiting-text">
+            Předplatné je zrušené, ale zůstává aktivní do {formatShortDate(subscriptionEndsAt)}. Do té doby můžete Garazio normálně používat.
+          </p>
+        )}
 
         {!context.hasWriteAccess && (
           <p className="mt-4 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">

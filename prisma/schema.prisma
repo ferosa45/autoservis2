@@ -69,6 +69,8 @@ model Garage {
   suspendedAt DateTime?
   stripeCustomerId String? @unique
   stripeSubscriptionId String? @unique
+  subscriptionEndsAt DateTime?
+  subscriptionCancelAtPeriodEnd Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   users User[]
@@ -115,6 +117,14 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
   @@index([userId])
   @@index([expiresAt])
+}
+
+model StripeEvent {
+  id String @id @default(cuid())
+  eventId String @unique
+  type String
+  createdAt DateTime @default(now())
+  @@index([createdAt])
 }
 
 model Customer {

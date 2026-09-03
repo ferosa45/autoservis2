@@ -12,8 +12,6 @@ export function BillingActions({ hasActiveSubscription }: { hasActiveSubscriptio
     setError(null);
     startTransition(async () => {
       const result = await startCheckout();
-      // Úspěch přesměruje pryč (redirect() uvnitř akce) - sem se kód
-      // dostane jen při chybě.
       if (result?.error) setError(result.error);
     });
   }
@@ -46,7 +44,7 @@ export function BillingActions({ hasActiveSubscription }: { hasActiveSubscriptio
           className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
         >
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-          Aktivovat předplatné - 300 Kč / měsíc
+          Aktivovat předplatné - 299 Kč / měsíc
         </button>
       )}
 
