@@ -3,6 +3,7 @@ import { getSessionContext } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { formatShortDate } from '@/lib/format';
 import { BillingActions } from '@/components/billing/billing-actions';
+import { getStripeClient } from '@/lib/stripe';
 import { cn } from '@/lib/utils';
 
 const STATUS_DISPLAY = {
@@ -27,6 +28,20 @@ export default async function BillingPage({
   const Icon = display.icon;
   const now = new Date();
   const trialDaysLeft = Math.ceil((garage.trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+  let stripeSubscription: Stripe.Subscription | null = null;
+  if (garage.stripeSubscriptionId) {
+    try {
+      stripeSubscription = await getStripeClient().subscriptions.retrieve(garage.stripeSubscriptionId);
+    } catch {
+      // Subscription může být mezitím smazaná ve Stripe; UI dál zobrazí stav z databáze.
+    }
+  }
+
+  const subscriptionEndsAt = stripeSubscription?.current_period_end
+    ? new Date(stripeSubscription.current_period_end * 1000)
+    : null;
+  const cancelAtPeriodEnd = stripeSubscription?.cancel_at_period_end ?? false;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
@@ -61,11 +76,30 @@ export default async function BillingPage({
               </dd>
             </div>
           )}
+
+          {stripeSubscription && (garage.subscriptionStatus === 'ACTIVE' || garage.subscriptionStatus === 'CANCELED') && subscriptionEndsAt && (
+            <div className="flex justify-between gap-4">
+              <dt className="text-text-secondary">
+                {cancelAtPeriodEnd || garage.subscriptionStatus === 'CANCELED' ? 'Předplatné skončí' : 'Další období'}
+              </dt>
+              <dd className="text-right text-text-primary">
+                {formatShortDate(subscriptionEndsAt)}
+                {cancelAtPeriodEnd && garage.subscriptionStatus === 'ACTIVE' ? ' (zrušeno)' : ''}
+              </dd>
+            </div>
+          )}
+
           <div className="flex justify-between">
             <dt className="text-text-secondary">Cena</dt>
             <dd className="text-text-primary">299 Kč / měsíc</dd>
           </div>
         </dl>
+
+        {cancelAtPeriodEnd && garage.subscriptionStatus === 'ACTIVE' && subscriptionEndsAt && (
+          <p className="mt-4 rounded-lg border border-status-waiting-border bg-status-waiting-bg px-3 py-2 text-xs text-status-waiting-text">
+            Předplatné je zrušené, ale zůstává aktivní do {formatShortDate(subscriptionEndsAt)}. Do té doby můžete Garazio normálně používat.
+          </p>
+        )}
 
         {!context.hasWriteAccess && (
           <p className="mt-4 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
