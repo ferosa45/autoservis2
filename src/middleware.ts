@@ -1,18 +1,20 @@
 import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = ['/', '/login', '/signup'];
+const PUBLIC_PATHS = ['/', '/login', '/signup', '/forgot-password', '/reset-password'];
+const REDIRECT_LOGGED_IN_PATHS = ['/login', '/signup', '/forgot-password'];
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth?.user;
-  const isPublicPage = PUBLIC_PATHS.includes(req.nextUrl.pathname);
+  const pathname = req.nextUrl.pathname;
+  const isPublicPage = PUBLIC_PATHS.includes(pathname);
 
   if (!isLoggedIn && !isPublicPage) {
     const loginUrl = new URL('/login', req.nextUrl.origin);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isLoggedIn && isPublicPage && req.nextUrl.pathname !== '/') {
+  if (isLoggedIn && REDIRECT_LOGGED_IN_PATHS.includes(pathname)) {
     return NextResponse.redirect(new URL('/today', req.nextUrl.origin));
   }
 

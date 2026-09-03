@@ -2,6 +2,7 @@
 
 import { AuthError } from 'next-auth';
 import { signIn } from '@/lib/auth';
+import { welcomeEmail, sendEmail } from '@/lib/email/send';
 import { registerGarageWithOwner } from '@/lib/services/registration.service';
 
 export type RegisterState = { error: string | null };
@@ -26,6 +27,16 @@ export async function register(
     await registerGarageWithOwner({ garageName, ownerName, email, password });
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Registrace se nezdařila. Zkuste to prosím znovu.' };
+  }
+
+  const emailSent = await sendEmail({
+    to: email,
+    subject: 'Vítejte v Garaziu 👋',
+    html: welcomeEmail({ name: ownerName, garageName }),
+  });
+
+  if (!emailSent) {
+    console.error(`[registration] Welcome email was not sent to ${email}`);
   }
 
   try {
