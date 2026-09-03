@@ -1,3 +1,3 @@
-ALTER TABLE "Garage"
-ADD COLUMN "subscriptionEndsAt" TIMESTAMP(3),
-ADD COLUMN "subscriptionCancelAtPeriodEnd" BOOLEAN NOT NULL DEFAULT false;
+-- No-op migration kept for migration-history recovery.
+-- The subscription period columns are already created by
+-- 20260903134500_add_subscription_end_fields.
