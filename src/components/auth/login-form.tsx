@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { authenticate, type LoginState } from '@/lib/actions/auth.actions';
 
@@ -24,6 +25,8 @@ function SubmitButton() {
 
 export function LoginForm() {
   const [state, formAction] = useFormState(authenticate, initialState);
+  const searchParams = useSearchParams();
+  const resetSuccess = searchParams.get('reset') === 'success';
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -38,6 +41,12 @@ export function LoginForm() {
           <p className="mb-6 text-sm text-text-secondary">
             Přihlaste se ke svému autoservisu.
           </p>
+
+          {resetSuccess && (
+            <p className="mb-4 rounded-lg border border-status-done-border bg-status-done-bg px-3 py-2 text-sm text-status-done-text">
+              Heslo bylo změněno. Nyní se můžete přihlásit.
+            </p>
+          )}
 
           <input type="hidden" name="redirectTo" value="/today" />
 
@@ -56,7 +65,7 @@ export function LoginForm() {
             />
           </div>
 
-          <div className="mb-5">
+          <div className="mb-2">
             <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-text-secondary">
               Heslo
             </label>
@@ -69,6 +78,12 @@ export function LoginForm() {
               placeholder="••••••••"
               className="w-full rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
             />
+          </div>
+
+          <div className="mb-5 text-right">
+            <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+              Zapomněli jste heslo?
+            </Link>
           </div>
 
           {state.error && (
