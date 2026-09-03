@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, CheckCircle2, User, Car, Wrench, Clock, X } from 'lucide-react';
+import { Loader2, CheckCircle2, User, Car, Wrench, Clock, X, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { submitQuickJob } from '@/lib/actions/quick-job.actions';
 import { CustomerSearchField } from './customer-search-field';
@@ -78,6 +78,7 @@ export function QuickJobModal({
   const router = useRouter();
   const [step, setStep] = useState<Step>('form');
   const [form, setForm] = useState<FormState>(() => initialFormState(prefill));
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, startSubmitTransition] = useTransition();
 
   // Při každém otevření (i s jiným prefillem, např. jiný klik na volný
@@ -86,6 +87,7 @@ export function QuickJobModal({
     if (open) {
       setStep('form');
       setForm(initialFormState(prefill));
+      setErrorMessage(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -101,6 +103,7 @@ export function QuickJobModal({
       vehicleModel: '',
       vehicleLicensePlate: '',
     }));
+    setErrorMessage(null);
   }
 
   function handleSelectVehicle(vehicle: VehicleSuggestion) {
@@ -111,11 +114,13 @@ export function QuickJobModal({
       vehicleModel: vehicle.model,
       vehicleLicensePlate: vehicle.licensePlate ?? '',
     }));
+    setErrorMessage(null);
   }
 
   function handleSubmit() {
+    setErrorMessage(null);
     startSubmitTransition(async () => {
-      await submitQuickJob({
+      const result = await submitQuickJob({
         customerId: form.customerId,
         customerName: form.customerName,
         customerPhone: form.customerPhone,
@@ -127,6 +132,12 @@ export function QuickJobModal({
         scheduledStart: new Date(form.scheduledStart).toISOString(),
         scheduledEnd: form.scheduledEnd ? new Date(form.scheduledEnd).toISOString() : null,
       });
+
+      if (result.error === 'READ_ONLY_ACCESS') {
+        setErrorMessage('Účet je pouze pro čtení. Pro vytváření nových zakázek aktivujte předplatné.');
+        return;
+      }
+
       setStep('success');
       router.refresh();
       setTimeout(() => {
@@ -314,6 +325,16 @@ export function QuickJobModal({
                 </div>
               </FieldGroup>
             </div>
+
+            {errorMessage && (
+              <div className="mt-5 flex items-start gap-2 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-3 text-sm text-status-blocked-text">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <p className="font-semibold">Účet je pouze pro čtení</p>
+                  <p className="mt-0.5">Pro vytváření nových zakázek aktivujte předplatné.</p>
+                </div>
+              </div>
+            )}
 
             <div className="mt-6 flex justify-end">
               <button
