@@ -18,7 +18,7 @@ export async function TrialBanner() {
     return (
       <div className="flex items-center justify-center gap-2 bg-status-blocked-bg px-4 py-2 text-sm text-status-blocked-text">
         <Lock className="h-4 w-4 shrink-0" />
-        <span>Zkušební období vypršelo - appka je teď jen ke čtení.</span>
+        <span>Zkušební období vypršelo - účet je nyní pouze ke čtení.</span>
         <Link href="/billing" className="font-semibold underline underline-offset-2">
           Aktivovat předplatné
         </Link>
