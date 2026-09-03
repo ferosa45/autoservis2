@@ -34,7 +34,7 @@ export default async function BillingPage({
 
       {success === '1' && (
         <div className="rounded-lg border border-status-done-border bg-status-done-bg px-4 py-3 text-sm text-status-done-text">
-          Platba proběhla úspěšně, předplatné je aktivní. Díky!
+          Platba proběhla úspěšně. Aktivace předplatného se potvrzuje po přijetí platby od Stripe.
         </div>
       )}
       {canceled === '1' && (
@@ -63,7 +63,7 @@ export default async function BillingPage({
           )}
           <div className="flex justify-between">
             <dt className="text-text-secondary">Cena</dt>
-            <dd className="text-text-primary">300 Kč / měsíc</dd>
+            <dd className="text-text-primary">299 Kč / měsíc</dd>
           </div>
         </dl>
 
