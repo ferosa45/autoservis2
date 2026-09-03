@@ -26,6 +26,18 @@ function getSubscriptionPeriodEnd(subscription: Stripe.Subscription): Date | nul
   return null;
 }
 
+function isScheduledCancellation(subscription: Stripe.Subscription): boolean {
+  if (subscription.cancel_at_period_end) return true;
+
+  // Stripe Billing Portal může u některých subscription nastavit konkrétní
+  // cancel_at timestamp místo cancel_at_period_end=true.
+  return (
+    typeof subscription.cancel_at === 'number' &&
+    subscription.cancel_at * 1000 > Date.now() &&
+    subscription.status !== 'canceled'
+  );
+}
+
 export async function POST(request: Request) {
   const signature = request.headers.get('stripe-signature');
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -78,11 +90,12 @@ export async function POST(request: Request) {
       });
       if (garage) {
         const subscriptionEndsAt = getSubscriptionPeriodEnd(subscription);
+        const scheduledCancellation = isScheduledCancellation(subscription);
         await prisma.garage.update({
           where: { id: garage.id },
           data: {
             subscriptionStatus: mapStripeStatus(subscription.status),
-            subscriptionCancelAtPeriodEnd: subscription.cancel_at_period_end,
+            subscriptionCancelAtPeriodEnd: scheduledCancellation,
             ...(subscriptionEndsAt ? { subscriptionEndsAt } : {}),
           },
         });
