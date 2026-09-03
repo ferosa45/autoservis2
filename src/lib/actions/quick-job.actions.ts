@@ -39,8 +39,17 @@ export async function parseQuickJobPreview(input: string): Promise<QuickJobParse
   }
 }
 
-export async function submitQuickJob(input: CreateJobFromQuickInput): Promise<{ jobId: string }> {
+export type SubmitQuickJobResult =
+  | { jobId: string; error?: never }
+  | { jobId: null; error: 'READ_ONLY_ACCESS' };
+
+export async function submitQuickJob(input: CreateJobFromQuickInput): Promise<SubmitQuickJobResult> {
   const context = await getSessionContext();
+
+  if (!context.hasWriteAccess) {
+    return { jobId: null, error: 'READ_ONLY_ACCESS' };
+  }
+
   assertWriteAccess(context);
   const job = await createJobFromQuickInput(context, input);
 
