@@ -117,6 +117,14 @@ model PasswordResetToken {
   @@index([expiresAt])
 }
 
+model StripeEvent {
+  id String @id @default(cuid())
+  eventId String @unique
+  type String
+  createdAt DateTime @default(now())
+  @@index([createdAt])
+}
+
 model Customer {
   id String @id @default(cuid())
   name String
