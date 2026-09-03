@@ -2,7 +2,6 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { authenticate, type LoginState } from '@/lib/actions/auth.actions';
 
@@ -23,10 +22,8 @@ function SubmitButton() {
   );
 }
 
-export function LoginForm() {
+export function LoginForm({ resetSuccess = false }: { resetSuccess?: boolean }) {
   const [state, formAction] = useFormState(authenticate, initialState);
-  const searchParams = useSearchParams();
-  const resetSuccess = searchParams.get('reset') === 'success';
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
