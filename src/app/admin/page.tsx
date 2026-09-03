@@ -42,12 +42,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     ] } : {}),
   };
 
-  const [total, trialing, active, pastDue, canceled, expiring, new7, new30, totalCustomers, totalJobs, garages] = await Promise.all([
+  const [total, trialing, active, pastDue, expiring, new7, new30, totalCustomers, totalJobs, garages] = await Promise.all([
     prisma.garage.count(),
     prisma.garage.count({ where: { subscriptionStatus: 'TRIALING' } }),
     prisma.garage.count({ where: { subscriptionStatus: 'ACTIVE' } }),
     prisma.garage.count({ where: { subscriptionStatus: 'PAST_DUE' } }),
-    prisma.garage.count({ where: { subscriptionStatus: 'CANCELED' } }),
     prisma.garage.count({ where: { subscriptionStatus: 'TRIALING', trialEndsAt: { gt: now, lte: sevenDays } } }),
     prisma.garage.count({ where: { createdAt: { gte: new Date(now.getTime() - 7 * DAY_MS) } } }),
     prisma.garage.count({ where: { createdAt: { gte: new Date(now.getTime() - 30 * DAY_MS) } } }),
