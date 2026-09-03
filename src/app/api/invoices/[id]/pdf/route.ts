@@ -4,7 +4,7 @@ import { getInvoiceDetail } from '@/lib/services/invoice.service';
 import { prisma } from '@/lib/prisma';
 import { buildInvoiceDocument, type InvoicePdfData } from '@/lib/pdf/invoice-document';
 
-// @react-pdf/renderer potřebuje Node.js API (fs pro čtení fontů) - ne Edge runtime.
+// @react-pdf/renderer potřebuje Node.js APII (fs pro čtení fontů) - ne Edge runtime.
 export const runtime = 'nodejs';
 
 export async function GET(
