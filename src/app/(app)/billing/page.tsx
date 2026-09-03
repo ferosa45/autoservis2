@@ -1,4 +1,5 @@
 import { CheckCircle2, Clock, XCircle, AlertTriangle } from 'lucide-react';
+import type Stripe from 'stripe';
 import { getSessionContext } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { formatShortDate } from '@/lib/format';
