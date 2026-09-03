@@ -19,6 +19,13 @@ function mapStripeStatus(status: Stripe.Subscription.Status): 'ACTIVE' | 'PAST_D
   }
 }
 
+function getSubscriptionPeriodEnd(subscription: Stripe.Subscription): Date | null {
+  const itemPeriodEnd = subscription.items.data[0]?.current_period_end;
+  if (typeof itemPeriodEnd === 'number') return new Date(itemPeriodEnd * 1000);
+  if (typeof subscription.cancel_at === 'number') return new Date(subscription.cancel_at * 1000);
+  return null;
+}
+
 export async function POST(request: Request) {
   const signature = request.headers.get('stripe-signature');
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -70,9 +77,14 @@ export async function POST(request: Request) {
         where: { stripeSubscriptionId: subscription.id },
       });
       if (garage) {
+        const subscriptionEndsAt = getSubscriptionPeriodEnd(subscription);
         await prisma.garage.update({
           where: { id: garage.id },
-          data: { subscriptionStatus: mapStripeStatus(subscription.status) },
+          data: {
+            subscriptionStatus: mapStripeStatus(subscription.status),
+            subscriptionCancelAtPeriodEnd: subscription.cancel_at_period_end,
+            ...(subscriptionEndsAt ? { subscriptionEndsAt } : {}),
+          },
         });
       }
       break;
@@ -84,9 +96,16 @@ export async function POST(request: Request) {
         where: { stripeSubscriptionId: subscription.id },
       });
       if (garage) {
+        const endedAt = typeof subscription.ended_at === 'number'
+          ? new Date(subscription.ended_at * 1000)
+          : garage.subscriptionEndsAt;
         await prisma.garage.update({
           where: { id: garage.id },
-          data: { subscriptionStatus: 'CANCELED' },
+          data: {
+            subscriptionStatus: 'CANCELED',
+            subscriptionCancelAtPeriodEnd: false,
+            ...(endedAt ? { subscriptionEndsAt: endedAt } : {}),
+          },
         });
       }
       break;
