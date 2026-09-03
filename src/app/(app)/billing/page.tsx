@@ -1,10 +1,8 @@
 import { CheckCircle2, Clock, XCircle, AlertTriangle } from 'lucide-react';
-import type Stripe from 'stripe';
 import { getSessionContext } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { formatShortDate } from '@/lib/format';
 import { BillingActions } from '@/components/billing/billing-actions';
-import { getStripeClient } from '@/lib/stripe';
 import { cn } from '@/lib/utils';
 
 const STATUS_DISPLAY = {
@@ -29,20 +27,8 @@ export default async function BillingPage({
   const Icon = display.icon;
   const now = new Date();
   const trialDaysLeft = Math.ceil((garage.trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-  let stripeSubscription: Stripe.Subscription | null = null;
-  if (garage.stripeSubscriptionId) {
-    try {
-      stripeSubscription = await getStripeClient().subscriptions.retrieve(garage.stripeSubscriptionId);
-    } catch {
-      // Subscription může být mezitím smazaná ve Stripe; UI dál zobrazí stav z databáze.
-    }
-  }
-
-  const subscriptionEndsAt = stripeSubscription?.current_period_end
-    ? new Date(stripeSubscription.current_period_end * 1000)
-    : null;
-  const cancelAtPeriodEnd = stripeSubscription?.cancel_at_period_end ?? false;
+  const subscriptionEndsAt = garage.subscriptionEndsAt;
+  const cancelAtPeriodEnd = garage.subscriptionCancelAtPeriodEnd;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
@@ -78,7 +64,7 @@ export default async function BillingPage({
             </div>
           )}
 
-          {stripeSubscription && (garage.subscriptionStatus === 'ACTIVE' || garage.subscriptionStatus === 'CANCELED') && subscriptionEndsAt && (
+          {subscriptionEndsAt && (garage.subscriptionStatus === 'ACTIVE' || garage.subscriptionStatus === 'CANCELED') && (
             <div className="flex justify-between gap-4">
               <dt className="text-text-secondary">
                 {cancelAtPeriodEnd || garage.subscriptionStatus === 'CANCELED' ? 'Předplatné skončí' : 'Další období'}
