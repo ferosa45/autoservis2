@@ -11,28 +11,33 @@ export async function sendEmail(input: { to: string; subject: string; html: stri
     return false;
   }
 
-  const response = await fetch(RESEND_API_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: getFrom(),
-      to: [input.to],
-      subject: input.subject,
-      html: input.html,
-    }),
-    cache: 'no-store',
-  });
+  try {
+    const response = await fetch(RESEND_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: getFrom(),
+        to: [input.to],
+        subject: input.subject,
+        html: input.html,
+      }),
+      cache: 'no-store',
+    });
 
-  if (!response.ok) {
-    const body = await response.text();
-    console.error(`[email] Resend returned ${response.status}: ${body}`);
+    if (!response.ok) {
+      const body = await response.text();
+      console.error(`[email] Resend returned ${response.status}: ${body}`);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('[email] Failed to contact Resend', error);
     return false;
   }
-
-  return true;
 }
 
 export function appUrl() {
