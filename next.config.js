@@ -27,9 +27,10 @@ const nextConfig = {
       { source: '/zakazky/:id', destination: '/jobs/:id' },
       { source: '/zakaznici', destination: '/customers' },
       { source: '/zakaznici/:id', destination: '/customers/:id' },
-      { source: '/vozidla', destination: '/vehicles' },
       { source: '/predplatne', destination: '/billing' },
       { source: '/prehled', destination: '/dashboard' },
+      { source: '/faktury', destination: '/invoices' },
+      { source: '/nastaveni', destination: '/settings' },
     ];
   },
 };
