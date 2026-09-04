@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { getStripeClient } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
+import { appUrl, sendEmail, subscriptionActivatedEmail } from '@/lib/email/send';
 
 // Potřebuje Node.js runtime (ne Edge) kvůli ověření podpisu a Prisma.
 export const runtime = 'nodejs';
@@ -71,14 +72,38 @@ export async function POST(request: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       const garageId = session.metadata?.garageId;
       if (garageId && typeof session.subscription === 'string') {
-        await prisma.garage.update({
-          where: { id: garageId },
-          data: {
-            subscriptionStatus: 'ACTIVE',
-            stripeSubscriptionId: session.subscription,
-            ...(typeof session.customer === 'string' ? { stripeCustomerId: session.customer } : {}),
-          },
-        });
+        const garage = await prisma.garage.findUnique({ where: { id: garageId } });
+        if (garage) {
+          await prisma.garage.update({
+            where: { id: garageId },
+            data: {
+              subscriptionStatus: 'ACTIVE',
+              stripeSubscriptionId: session.subscription,
+              ...(typeof session.customer === 'string' ? { stripeCustomerId: session.customer } : {}),
+            },
+          });
+
+          if (garage.email) {
+            const deliveryKey = `subscription-activated:${session.subscription}`;
+            const existing = await prisma.emailDelivery.findUnique({ where: { key: deliveryKey } });
+            if (!existing) {
+              const sent = await sendEmail({
+                to: garage.email,
+                subject: 'Vaše předplatné Garazia je aktivní',
+                html: subscriptionActivatedEmail({ garageName: garage.name, appUrl: appUrl() }),
+              });
+              if (sent) {
+                try {
+                  await prisma.emailDelivery.create({
+                    data: { key: deliveryKey, garageId: garage.id, type: 'SUBSCRIPTION_ACTIVATED' },
+                  });
+                } catch (error) {
+                  if (!isUniqueConstraintError(error)) throw error;
+                }
+              }
+            }
+          }
+        }
       }
       break;
     }
