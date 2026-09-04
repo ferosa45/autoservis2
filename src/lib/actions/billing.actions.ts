@@ -1,14 +1,24 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { getSessionContext } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { getStripeClient } from '@/lib/stripe';
 
 export type BillingActionState = { error: string | null };
 
-function getBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+async function getBaseUrl(): Promise<string> {
+  const requestHeaders = await headers();
+  const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host');
+
+  if (host) {
+    const protocol = requestHeaders.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+    return `${protocol}://${host}`;
+  }
+
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  return new URL(configuredUrl).origin;
 }
 
 function friendlyStripeError(e: unknown): string {
@@ -32,7 +42,7 @@ export async function startCheckout(): Promise<BillingActionState> {
 
   try {
     const stripe = getStripeClient();
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
 
     let customerId = garage.stripeCustomerId;
     if (!customerId) {
@@ -83,7 +93,7 @@ export async function openBillingPortal(): Promise<BillingActionState> {
     const stripe = getStripeClient();
     const session = await stripe.billingPortal.sessions.create({
       customer: garage.stripeCustomerId,
-      return_url: `${getBaseUrl()}/predplatne`,
+      return_url: `${await getBaseUrl()}/predplatne`,
     });
     sessionUrl = session.url;
   } catch (e) {
