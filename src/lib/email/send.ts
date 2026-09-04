@@ -73,3 +73,28 @@ export function passwordChangedEmail(input: { name: string }) {
   const name = escapeHtml(input.name);
   return layout(`<h1 style="margin:0 0 12px;font-size:26px">Heslo bylo změněno</h1><p style="margin:0;color:#596273;line-height:1.6">Ahoj ${name}, heslo k vašemu účtu Garazio bylo právě změněno.</p><p style="margin:20px 0 0;color:#7b8494;font-size:12px;line-height:1.5">Pokud jste tuto změnu neprovedli vy, kontaktujte co nejdříve podporu Garazia.</p>`);
 }
+
+export function trialEndingEmail(input: {
+  garageName: string;
+  trialEndsAt: Date;
+  daysRemaining: number;
+  appUrl: string;
+}) {
+  const garageName = escapeHtml(input.garageName);
+  const date = input.trialEndsAt.toLocaleDateString('cs-CZ');
+  const heading = input.daysRemaining === 0
+    ? 'Vaše zkušební období dnes končí'
+    : input.daysRemaining === 1
+      ? 'Vaše zkušební období končí zítra'
+      : 'Vaše zkušební období končí za 7 dní';
+  const message = input.daysRemaining === 0
+    ? 'Dnes končí vaše bezplatné zkušební období. Pro zachování plného přístupu aktivujte předplatné.'
+    : `Zkušební období pro servis <strong>${garageName}</strong> končí ${input.daysRemaining === 1 ? 'zítra' : 'za 7 dní'} (${date}).`;
+
+  return layout(`<h1 style="margin:0 0 12px;font-size:26px">${heading}</h1><p style="margin:0 0 20px;color:#596273;line-height:1.6">${message}</p><p style="margin:0 0 24px;color:#596273;line-height:1.6">Po skončení trialu bude účet v režimu pouze pro čtení, dokud neaktivujete předplatné.</p><a href="${escapeHtml(input.appUrl)}/predplatne" style="display:inline-block;background:#5b45d6;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700">Aktivovat předplatné</a>`);
+}
+
+export function subscriptionActivatedEmail(input: { garageName: string; appUrl: string }) {
+  const garageName = escapeHtml(input.garageName);
+  return layout(`<h1 style="margin:0 0 12px;font-size:26px">Předplatné je aktivní 🎉</h1><p style="margin:0 0 20px;color:#596273;line-height:1.6">Děkujeme. Předplatné pro servis <strong>${garageName}</strong> bylo úspěšně aktivováno.</p><p style="margin:0 0 24px;color:#596273;line-height:1.6">Váš účet má opět plný přístup ke všem funkcím Garazia.</p><a href="${escapeHtml(input.appUrl)}/today" style="display:inline-block;background:#5b45d6;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700">Otevřít Garazio</a>`);
+}
