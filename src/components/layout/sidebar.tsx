@@ -6,13 +6,13 @@ import { SidebarNavLink } from './sidebar-nav-link';
 import { NewJobButton } from '@/components/quick-job/new-job-button';
 
 const NAV_ITEMS = [
-  { href: '/today', label: 'Dnes', icon: CalendarDays },
-  { href: '/dashboard', label: 'Přehled', icon: BarChart3, ownerOnly: true },
-  { href: '/calendar', label: 'Kalendář', icon: CalendarDays },
-  { href: '/jobs', label: 'Zakázky', icon: ClipboardList },
-  { href: '/customers', label: 'Zákazníci', icon: Users },
+  { href: '/dnes', label: 'Dnes', icon: CalendarDays },
+  { href: '/prehled', label: 'Přehled', icon: BarChart3, ownerOnly: true },
+  { href: '/kalendar', label: 'Kalendář', icon: CalendarDays },
+  { href: '/zakazky', label: 'Zakázky', icon: ClipboardList },
+  { href: '/zakaznici', label: 'Zákazníci', icon: Users },
   { href: '/invoices', label: 'Faktury', icon: FileText, permission: 'canViewInvoices' as const },
-  { href: '/billing', label: 'Předplatné', icon: CreditCard, ownerOnly: true },
+  { href: '/predplatne', label: 'Předplatné', icon: CreditCard, ownerOnly: true },
   { href: '/settings', label: 'Nastavení', icon: Settings, ownerOnly: true },
   { href: '/admin', label: 'Admin', icon: ShieldCheck, platformAdminOnly: true },
 ];
