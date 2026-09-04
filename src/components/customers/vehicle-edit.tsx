@@ -32,11 +32,12 @@ export function VehicleEdit({ customerId, vehicle }: { customerId: string; vehic
         const result = vehicle?.id
           ? await updateVehicle(vehicle.id, data)
           : await createVehicle(customerId, data);
-        void result;
+        if (!result.success) {
+          setError(result.error);
+          return;
+        }
         setOpen(false); router.refresh();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Nepodařilo se uložit vozidlo');
-      }
+      } catch (e) { setError(e instanceof Error ? e.message : 'Nepodařilo se uložit vozidlo'); }
     });
   }
 
