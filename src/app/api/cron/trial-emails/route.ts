@@ -17,18 +17,24 @@ function isAuthorized(request: Request) {
   return request.headers.get('authorization') === `Bearer ${secret}`;
 }
 
+function utcDayOffset(days: number) {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + days));
+}
+
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const now = new Date();
   let sent = 0;
   let skipped = 0;
 
   for (const reminder of REMINDERS) {
-    const targetStart = new Date(now.getTime() + reminder.days * 24 * 60 * 60 * 1000);
-    const targetEnd = new Date(targetStart.getTime() + 24 * 60 * 60 * 1000);
+    // Cron běží jednou denně, proto bereme celý cílový UTC den a ne jen
+    // 24hodinové okno od okamžiku spuštění.
+    const targetStart = utcDayOffset(reminder.days);
+    const targetEnd = utcDayOffset(reminder.days + 1);
 
     const garages = await prisma.garage.findMany({
       where: {
@@ -62,12 +68,22 @@ export async function GET(request: Request) {
 
       if (!ok) continue;
 
-      await prisma.emailDelivery.create({
-        data: { key: deliveryKey, garageId: garage.id, type: `TRIAL_${reminder.key.toUpperCase()}` },
-      });
-      sent += 1;
+      try {
+        await prisma.emailDelivery.create({
+          data: { key: deliveryKey, garageId: garage.id, type: `TRIAL_${reminder.key.toUpperCase()}` },
+        });
+        sent += 1;
+      } catch (error) {
+        // Paralelní spuštění cron jobu může narazit na unique key.
+        if (!isUniqueConstraintError(error)) throw error;
+        skipped += 1;
+      }
     }
   }
 
   return NextResponse.json({ ok: true, sent, skipped });
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && (error as { code?: string }).code === 'P2002';
 }
