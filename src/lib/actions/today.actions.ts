@@ -8,8 +8,15 @@ import { MockNotificationService } from '@/lib/notifications/mock-notification-s
 
 const notificationService = new MockNotificationService();
 
-export async function setJobStatus(jobId: string, status: JobStatus) {
+type SetJobStatusResult =
+  | { success: true; error?: never }
+  | { success: false; error: 'READ_ONLY_ACCESS' };
+
+export async function setJobStatus(jobId: string, status: JobStatus): Promise<SetJobStatusResult> {
   const context = await getSessionContext();
+  if (!context.hasWriteAccess) {
+    return { success: false, error: 'READ_ONLY_ACCESS' };
+  }
   assertWriteAccess(context);
 
   const job = await prisma.job.findFirst({ where: { id: jobId, garageId: context.garageId }, select: { id: true, status: true } });
@@ -86,6 +93,8 @@ export async function setJobStatus(jobId: string, status: JobStatus) {
   revalidatePath('/calendar');
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath('/workshop');
+
+  return { success: true };
 }
 
 export async function toggleTask(taskId: string, completed: boolean) {
