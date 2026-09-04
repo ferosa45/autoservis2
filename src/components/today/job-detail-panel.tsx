@@ -71,6 +71,12 @@ export function JobDetailPanel({ job }: { job: Job }) {
     });
   };
 
+  const handleStatusChange = (status: JobStatus) => {
+    startTransition(async () => {
+      await setJobStatus(job.id, status);
+    });
+  };
+
   const invoiceButtonLabel =
     job.activeInvoice?.status === 'DRAFT'
       ? 'Pokračovat ve faktuře'
@@ -239,7 +245,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => setJobStatus(job.id, 'IN_PROGRESS'))}
+            onClick={() => handleStatusChange('IN_PROGRESS')}
             className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
           >
             <Play className="h-4 w-4" />
@@ -253,7 +259,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => setJobStatus(job.id, 'BLOCKED'))}
+            onClick={() => handleStatusChange('BLOCKED')}
             className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-border disabled:opacity-50"
           >
             <PackageX className="h-4 w-4" />
@@ -262,7 +268,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => setJobStatus(job.id, 'DONE'))}
+            onClick={() => handleStatusChange('DONE')}
             className="flex items-center justify-center gap-1.5 rounded-lg bg-status-done-text px-3 py-2.5 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
           >
             <CheckCircle2 className="h-4 w-4" />
@@ -276,7 +282,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => setJobStatus(job.id, 'IN_PROGRESS'))}
+            onClick={() => handleStatusChange('IN_PROGRESS')}
             className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
           >
             <Play className="h-4 w-4" />

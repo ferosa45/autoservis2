@@ -26,6 +26,12 @@ export function WorkshopJobDetail({ job }: { job: WorkshopJob }) {
 
   const total = job.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
+  const handleStatusChange = (status: JobStatus) => {
+    startTransition(async () => {
+      await setJobStatus(job.id, status);
+    });
+  };
+
   return (
     <div className="flex h-full flex-col overflow-y-auto p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -131,7 +137,7 @@ export function WorkshopJobDetail({ job }: { job: WorkshopJob }) {
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => setJobStatus(job.id, 'BLOCKED'))}
+            onClick={() => handleStatusChange('BLOCKED')}
             className="flex min-h-[56px] items-center justify-center gap-2 rounded-xl border-2 border-border bg-elevated text-base font-bold text-text-primary hover:bg-border disabled:opacity-50"
           >
             <PackageX className="h-5 w-5" />
@@ -140,7 +146,7 @@ export function WorkshopJobDetail({ job }: { job: WorkshopJob }) {
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => setJobStatus(job.id, 'DONE'))}
+            onClick={() => handleStatusChange('DONE')}
             className="flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-status-done-text text-base font-bold text-background hover:opacity-90 disabled:opacity-50"
           >
             {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
