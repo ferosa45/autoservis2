@@ -84,6 +84,7 @@ model Garage {
   tasks Task[]
   workSessions WorkSession[]
   events JobEvent[]
+  emailDeliveries EmailDelivery[]
 }
 
 model User {
@@ -125,6 +126,16 @@ model StripeEvent {
   type String
   createdAt DateTime @default(now())
   @@index([createdAt])
+}
+
+model EmailDelivery {
+  id String @id @default(cuid())
+  key String @unique
+  type String
+  garageId String
+  garage Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@index([garageId, createdAt])
 }
 
 model Customer {
