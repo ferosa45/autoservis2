@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { ClipboardList, Plus, X } from 'lucide-react';
 import { addInvoiceItem, removeInvoiceItem } from '@/lib/actions/invoice.actions';
+import { getActionErrorMessage } from '@/lib/action-errors';
 import { formatCurrency } from '@/lib/format';
 
 type InvoiceItem = {
@@ -42,23 +43,40 @@ export function InvoiceItemsEditor({
   const [unitPrice, setUnitPrice] = useState('');
   const [vatRate, setVatRate] = useState('21');
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   function handleAdd() {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
 
-    startTransition(() =>
-      addInvoiceItem(invoiceId, {
-        title: trimmedTitle,
-        quantity: parseFloat(quantity.replace(',', '.')) || 1,
-        unit,
-        unitPrice: parseFloat(unitPrice.replace(',', '.')) || 0,
-        vatRate: isVatPayer ? parseFloat(vatRate.replace(',', '.')) || 0 : 0,
-      })
-    );
-    setTitle('');
-    setQuantity('1');
-    setUnitPrice('');
+    setError(null);
+    startTransition(async () => {
+      try {
+        await addInvoiceItem(invoiceId, {
+          title: trimmedTitle,
+          quantity: parseFloat(quantity.replace(',', '.')) || 1,
+          unit,
+          unitPrice: parseFloat(unitPrice.replace(',', '.')) || 0,
+          vatRate: isVatPayer ? parseFloat(vatRate.replace(',', '.')) || 0 : 0,
+        });
+        setTitle('');
+        setQuantity('1');
+        setUnitPrice('');
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Položku se nepodařilo přidat.'));
+      }
+    });
+  }
+
+  function handleRemove(itemId: string) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await removeInvoiceItem(itemId, invoiceId);
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Položku se nepodařilo odebrat.'));
+      }
+    });
   }
 
   return (
@@ -86,7 +104,7 @@ export function InvoiceItemsEditor({
               <button
                 type="button"
                 disabled={isPending}
-                onClick={() => startTransition(() => removeInvoiceItem(item.id, invoiceId))}
+                onClick={() => handleRemove(item.id)}
                 className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-muted opacity-0 hover:bg-elevated hover:text-text-primary group-hover:opacity-100"
                 aria-label="Odebrat položku"
               >
@@ -116,6 +134,12 @@ export function InvoiceItemsEditor({
           <span>{formatCurrency(total)}</span>
         </div>
       </div>
+
+      {error && (
+        <p className="mt-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
+          {error}
+        </p>
+      )}
 
       {isEditable && (
         <div className="mt-4 space-y-2 border-t border-border pt-3">

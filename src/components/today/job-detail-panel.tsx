@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/ui/badge';
 import { formatDateTime, formatTime, formatCurrency } from '@/lib/format';
 import { setJobStatus, sendJobSms } from '@/lib/actions/today.actions';
 import { startInvoiceDraft } from '@/lib/actions/invoice.actions';
+import { getActionErrorMessage, READ_ONLY_ACCESS_MESSAGE } from '@/lib/action-errors';
 import { JOB_STATUS_LABEL } from '@/lib/job-status';
 import { cn } from '@/lib/utils';
 
@@ -53,6 +54,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
   const [tab, setTab] = useState<Tab>('Přehled');
   const [isPending, startTransition] = useTransition();
   const [smsSent, setSmsSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const itemsTotal = job.items.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
@@ -60,20 +62,45 @@ export function JobDetailPanel({ job }: { job: Job }) {
   );
 
   const handleInvoice = () => {
+    setError(null);
     startTransition(async () => {
-      if (job.activeInvoice) {
-        router.push(`/invoices/${job.activeInvoice.id}`);
-        return;
-      }
+      try {
+        if (job.activeInvoice) {
+          router.push(`/invoices/${job.activeInvoice.id}`);
+          return;
+        }
 
-      const { invoiceId } = await startInvoiceDraft(job.id);
-      router.push(`/invoices/${invoiceId}`);
+        const { invoiceId } = await startInvoiceDraft(job.id);
+        router.push(`/invoices/${invoiceId}`);
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Fakturu se nepodařilo otevřít.'));
+      }
     });
   };
 
   const handleStatusChange = (status: JobStatus) => {
+    setError(null);
     startTransition(async () => {
-      await setJobStatus(job.id, status);
+      try {
+        const result = await setJobStatus(job.id, status);
+        if (!result.success && result.error === 'READ_ONLY_ACCESS') {
+          setError(READ_ONLY_ACCESS_MESSAGE);
+        }
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Stav zakázky se nepodařilo změnit.'));
+      }
+    });
+  };
+
+  const handleSendSms = () => {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await sendJobSms(job.id);
+        setSmsSent(true);
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'SMS se nepodařilo odeslat.'));
+      }
     });
   };
 
@@ -242,6 +269,11 @@ export function JobDetailPanel({ job }: { job: Job }) {
 
       {job.status === 'WAITING' && (
         <div className="border-t border-border p-4">
+          {error && (
+            <p className="mb-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
+              {error}
+            </p>
+          )}
           <button
             type="button"
             disabled={isPending}
@@ -255,7 +287,13 @@ export function JobDetailPanel({ job }: { job: Job }) {
       )}
 
       {job.status === 'IN_PROGRESS' && (
-        <div className="grid grid-cols-2 gap-2 border-t border-border p-4">
+        <div className="border-t border-border p-4">
+          {error && (
+            <p className="mb-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
+              {error}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             disabled={isPending}
@@ -274,11 +312,17 @@ export function JobDetailPanel({ job }: { job: Job }) {
             <CheckCircle2 className="h-4 w-4" />
             Hotovo
           </button>
+          </div>
         </div>
       )}
 
       {job.status === 'BLOCKED' && (
         <div className="border-t border-border p-4">
+          {error && (
+            <p className="mb-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
+              {error}
+            </p>
+          )}
           <button
             type="button"
             disabled={isPending}
@@ -292,7 +336,13 @@ export function JobDetailPanel({ job }: { job: Job }) {
       )}
 
       {job.status === 'DONE' && (
-        <div className="grid grid-cols-2 gap-2 border-t border-border p-4">
+        <div className="border-t border-border p-4">
+          {error && (
+            <p className="mb-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
+              {error}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             disabled={isPending}
@@ -305,17 +355,13 @@ export function JobDetailPanel({ job }: { job: Job }) {
           <button
             type="button"
             disabled={isPending || smsSent}
-            onClick={() =>
-              startTransition(async () => {
-                await sendJobSms(job.id);
-                setSmsSent(true);
-              })
-            }
+            onClick={handleSendSms}
             className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-border disabled:opacity-50"
           >
             <MessageSquareText className="h-4 w-4" />
             {smsSent ? 'SMS odeslána (mock)' : 'Poslat SMS'}
           </button>
+          </div>
         </div>
       )}
     </div>

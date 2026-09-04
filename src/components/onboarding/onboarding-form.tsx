@@ -40,8 +40,13 @@ export function OnboardingForm({ garage }: {
   }
 
   function skip() {
+    setError(null);
     startTransition(async () => {
-      await skipOnboarding();
+      const result = await skipOnboarding();
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
       router.push('/today');
       router.refresh();
     });

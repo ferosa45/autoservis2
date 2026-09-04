@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { setJobStatus, sendJobSms } from '@/lib/actions/today.actions';
 import { startInvoiceDraft } from '@/lib/actions/invoice.actions';
+import { getActionErrorMessage, READ_ONLY_ACCESS_MESSAGE } from '@/lib/action-errors';
 import type { JobStatus, InvoiceStatus } from '@prisma/client';
 
 type LatestInvoice = { id: string; number: string | null; status: InvoiceStatus } | null;
@@ -38,12 +39,12 @@ export function JobActions({
       try {
         const result = await setJobStatus(jobId, nextStatus);
         if (!result.success && result.error === 'READ_ONLY_ACCESS') {
-          setError('Účet je pouze pro čtení. Pro zahájení práce aktivujte předplatné.');
+          setError(READ_ONLY_ACCESS_MESSAGE);
           return;
         }
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Nepodařilo se změnit stav zakázky');
+        setError(getActionErrorMessage(e, 'Nepodařilo se změnit stav zakázky'));
       }
     });
   }
@@ -55,7 +56,7 @@ export function JobActions({
         const { invoiceId } = await startInvoiceDraft(jobId);
         router.push(`/invoices/${invoiceId}`);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Nepodařilo se založit fakturu');
+        setError(getActionErrorMessage(e, 'Nepodařilo se založit fakturu'));
       }
     });
   }
@@ -160,8 +161,13 @@ export function JobActions({
             disabled={isPending || smsSent}
             onClick={() =>
               startTransition(async () => {
-                await sendJobSms(jobId);
-                setSmsSent(true);
+                setError(null);
+                try {
+                  await sendJobSms(jobId);
+                  setSmsSent(true);
+                } catch (e) {
+                  setError(getActionErrorMessage(e, 'Nepodařilo se odeslat SMS'));
+                }
               })
             }
             className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-border disabled:opacity-50"

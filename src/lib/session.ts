@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import type { SubscriptionStatus } from '@prisma/client';
 import type { UserPermissions } from '@/lib/permissions';
+import { READ_ONLY_ACCESS_MESSAGE } from '@/lib/action-errors';
 
 export type SessionContext = {
   userId: string;
@@ -16,8 +17,9 @@ export type SessionContext = {
 export class StaleSessionError extends Error {
   constructor() { super('STALE_SESSION'); this.name = 'StaleSessionError'; }
 }
+
 export class ReadOnlyAccessError extends Error {
-  constructor() { super('READ_ONLY_ACCESS'); this.name = 'READ_ONLY_ACCESS'; }
+  constructor() { super(READ_ONLY_ACCESS_MESSAGE); this.name = 'ReadOnlyAccessError'; }
 }
 export class ForbiddenError extends Error {
   constructor() { super('FORBIDDEN'); this.name = 'FORBIDDEN'; }

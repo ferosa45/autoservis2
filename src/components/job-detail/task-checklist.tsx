@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Wrench, Plus, X } from 'lucide-react';
 import { addJobTask, toggleJobTask, removeJobTask } from '@/lib/actions/job-detail.actions';
+import { getActionErrorMessage } from '@/lib/action-errors';
 import { cn } from '@/lib/utils';
 
 type Task = { id: string; title: string; completed: boolean };
@@ -10,12 +11,42 @@ type Task = { id: string; title: string; completed: boolean };
 export function TaskChecklist({ jobId, tasks }: { jobId: string; tasks: Task[] }) {
   const [newTitle, setNewTitle] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   function handleAdd() {
     const title = newTitle.trim();
     if (!title) return;
-    setNewTitle('');
-    startTransition(() => addJobTask(jobId, title));
+    setError(null);
+    startTransition(async () => {
+      try {
+        await addJobTask(jobId, title);
+        setNewTitle('');
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Práci se nepodařilo přidat.'));
+      }
+    });
+  }
+
+  function handleToggle(task: Task) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await toggleJobTask(task.id, !task.completed, jobId);
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Práci se nepodařilo upravit.'));
+      }
+    });
+  }
+
+  function handleRemove(taskId: string) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await removeJobTask(taskId, jobId);
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Práci se nepodařilo odebrat.'));
+      }
+    });
   }
 
   return (
@@ -31,7 +62,7 @@ export function TaskChecklist({ jobId, tasks }: { jobId: string; tasks: Task[] }
             <button
               type="button"
               disabled={isPending}
-              onClick={() => startTransition(() => toggleJobTask(task.id, !task.completed, jobId))}
+              onClick={() => handleToggle(task)}
               className={cn(
                 'flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors',
                 task.completed ? 'border-status-done-text bg-status-done-bg' : 'border-border hover:border-primary'
@@ -46,7 +77,7 @@ export function TaskChecklist({ jobId, tasks }: { jobId: string; tasks: Task[] }
             <button
               type="button"
               disabled={isPending}
-              onClick={() => startTransition(() => removeJobTask(task.id, jobId))}
+              onClick={() => handleRemove(task.id)}
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-muted opacity-0 hover:bg-elevated hover:text-text-primary group-hover:opacity-100"
               aria-label="Odebrat"
             >
@@ -56,6 +87,12 @@ export function TaskChecklist({ jobId, tasks }: { jobId: string; tasks: Task[] }
         ))}
         {tasks.length === 0 && <p className="text-sm text-text-muted">Zatím žádné práce.</p>}
       </ul>
+
+      {error && (
+        <p className="mt-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
+          {error}
+        </p>
+      )}
 
       <div className="mt-3 flex items-center gap-2">
         <input

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { submitQuickJob } from '@/lib/actions/quick-job.actions';
 import { CustomerSearchField } from './customer-search-field';
 import { VehicleSearchField } from './vehicle-search-field';
+import { READ_ONLY_ACCESS_MESSAGE } from '@/lib/action-errors';
 import type { CustomerSuggestion, VehicleSuggestion } from '@/lib/actions/lookup.actions';
 import type { QuickJobPrefill } from './quick-job-provider';
 import { formatForDatetimeLocal } from '@/lib/format';
@@ -134,7 +135,7 @@ export function QuickJobModal({
       });
 
       if (result.error === 'READ_ONLY_ACCESS') {
-        setErrorMessage('Účet je pouze pro čtení. Pro vytváření nových zakázek aktivujte předplatné.');
+        setErrorMessage(READ_ONLY_ACCESS_MESSAGE);
         return;
       }
 
@@ -331,7 +332,7 @@ export function QuickJobModal({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-semibold">Účet je pouze pro čtení</p>
-                  <p className="mt-0.5">Pro vytváření nových zakázek aktivujte předplatné.</p>
+                  <p className="mt-0.5">{errorMessage}</p>
                 </div>
               </div>
             )}

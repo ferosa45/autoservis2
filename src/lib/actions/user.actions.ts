@@ -3,7 +3,7 @@
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
-import { assertOwner, getSessionContext } from '@/lib/session';
+import { assertOwner, assertWriteAccess, getSessionContext } from '@/lib/session';
 
 export type MechanicInput = {
   name: string;
@@ -26,6 +26,7 @@ export async function listGarageUsers() {
 
 export async function createMechanic(input: MechanicInput) {
   const context = await getSessionContext();
+  assertWriteAccess(context);
   assertOwner(context);
   const name = input.name.trim();
   const email = input.email.trim().toLowerCase();
@@ -39,6 +40,7 @@ export async function createMechanic(input: MechanicInput) {
 
 export async function updateMechanicPermissions(userId: string, input: Omit<MechanicInput, 'name' | 'email' | 'password'> & { active: boolean }) {
   const context = await getSessionContext();
+  assertWriteAccess(context);
   assertOwner(context);
   const user = await prisma.user.findFirst({ where: { id: userId, garageId: context.garageId, role: 'MECHANIC' } });
   if (!user) throw new Error('Mechanik nenalezen.');

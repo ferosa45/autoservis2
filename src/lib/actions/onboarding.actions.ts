@@ -2,10 +2,15 @@
 
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
-import { assertOwner, getSessionContext } from '@/lib/session';
+import { assertOwner, assertWriteAccess, getSessionContext } from '@/lib/session';
+import { READ_ONLY_ACCESS_MESSAGE } from '@/lib/action-errors';
 
 export async function completeOnboarding() {
   const context = await getSessionContext();
+  if (!context.hasWriteAccess) {
+    return;
+  }
+  assertWriteAccess(context);
   assertOwner(context);
   await prisma.garage.update({
     where: { id: context.garageId },
@@ -16,6 +21,10 @@ export async function completeOnboarding() {
 
 export async function saveOnboardingDetails(formData: FormData) {
   const context = await getSessionContext();
+  if (!context.hasWriteAccess) {
+    return { error: READ_ONLY_ACCESS_MESSAGE };
+  }
+  assertWriteAccess(context);
   assertOwner(context);
 
   const name = String(formData.get('name') ?? '').trim();
@@ -63,10 +72,15 @@ export async function saveOnboardingDetails(formData: FormData) {
 
 export async function skipOnboarding() {
   const context = await getSessionContext();
+  if (!context.hasWriteAccess) {
+    return { error: READ_ONLY_ACCESS_MESSAGE };
+  }
+  assertWriteAccess(context);
   assertOwner(context);
   await prisma.garage.update({
     where: { id: context.garageId },
     data: { onboardingCompletedAt: new Date() },
   });
   revalidatePath('/today');
+  return { error: null };
 }

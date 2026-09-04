@@ -42,7 +42,7 @@ export default async function TodayPage({
     prisma.job.count({ where: { garageId: context.garageId } }),
   ]);
 
-  const showWelcome = Boolean(garage && !garage.onboardingCompletedAt && jobCount === 0);
+  const showWelcome = Boolean(context.hasWriteAccess && garage && !garage.onboardingCompletedAt && jobCount === 0);
   const stats = calculateTodayStats(jobs);
 
   const selectedJobId = jobParam ?? jobs.find((j) => j.status === 'IN_PROGRESS')?.id ?? jobs[0]?.id ?? null;

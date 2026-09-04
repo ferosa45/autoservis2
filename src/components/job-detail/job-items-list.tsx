@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { ClipboardList, Plus, X } from 'lucide-react';
 import { addJobItem, removeJobItem } from '@/lib/actions/job-detail.actions';
+import { getActionErrorMessage } from '@/lib/action-errors';
 import { formatCurrency } from '@/lib/format';
 import type { SerializedJobItem } from '@/lib/serialize';
 
@@ -16,6 +17,7 @@ export function JobItemsList({ jobId, items }: { jobId: string; items: JobItem[]
   const [unit, setUnit] = useState('ks');
   const [unitPrice, setUnitPrice] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   const total = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
@@ -23,17 +25,33 @@ export function JobItemsList({ jobId, items }: { jobId: string; items: JobItem[]
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
 
-    startTransition(() =>
-      addJobItem(jobId, {
-        title: trimmedTitle,
-        quantity: parseFloat(quantity.replace(',', '.')) || 1,
-        unit,
-        unitPrice: parseFloat(unitPrice.replace(',', '.')) || 0,
-      })
-    );
-    setTitle('');
-    setQuantity('1');
-    setUnitPrice('');
+    setError(null);
+    startTransition(async () => {
+      try {
+        await addJobItem(jobId, {
+          title: trimmedTitle,
+          quantity: parseFloat(quantity.replace(',', '.')) || 1,
+          unit,
+          unitPrice: parseFloat(unitPrice.replace(',', '.')) || 0,
+        });
+        setTitle('');
+        setQuantity('1');
+        setUnitPrice('');
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Položku se nepodařilo přidat.'));
+      }
+    });
+  }
+
+  function handleRemove(itemId: string) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await removeJobItem(itemId, jobId);
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Položku se nepodařilo odebrat.'));
+      }
+    });
   }
 
   return (
@@ -58,7 +76,7 @@ export function JobItemsList({ jobId, items }: { jobId: string; items: JobItem[]
             <button
               type="button"
               disabled={isPending}
-              onClick={() => startTransition(() => removeJobItem(item.id, jobId))}
+              onClick={() => handleRemove(item.id)}
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-muted opacity-0 hover:bg-elevated hover:text-text-primary group-hover:opacity-100"
               aria-label="Odebrat položku"
             >
@@ -74,6 +92,12 @@ export function JobItemsList({ jobId, items }: { jobId: string; items: JobItem[]
           <span className="text-text-primary">Celkem</span>
           <span className="text-text-primary">{formatCurrency(total)}</span>
         </div>
+      )}
+
+      {error && (
+        <p className="mt-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
+          {error}
+        </p>
       )}
 
       <div className="mt-4 space-y-2 border-t border-border pt-3">

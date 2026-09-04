@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Plus, ExternalLink } from 'lucide-react';
 import { createTask, toggleTask } from '@/lib/actions/today.actions';
+import { getActionErrorMessage } from '@/lib/action-errors';
 import { cn } from '@/lib/utils';
 
 type TaskItem = {
@@ -47,7 +48,18 @@ export function TasksPanel({ tasks, jobs = [] }: { tasks: TaskItem[]; jobs?: Job
         await createTask({ title, dueDate, jobId: jobId || undefined });
         resetForm();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Úkol se nepodařilo vytvořit.');
+        setError(getActionErrorMessage(err, 'Úkol se nepodařilo vytvořit.'));
+      }
+    });
+  };
+
+  const handleToggle = (task: TaskItem) => {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await toggleTask(task.id, !task.completed);
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Úkol se nepodařilo upravit.'));
       }
     });
   };
@@ -67,6 +79,12 @@ export function TasksPanel({ tasks, jobs = [] }: { tasks: TaskItem[]; jobs?: Job
           Přidat úkol
         </button>
       </div>
+
+      {error && !isAdding && (
+        <p className="mb-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
+          {error}
+        </p>
+      )}
 
       {isAdding && (
         <div className="mb-4 rounded-lg border border-border bg-elevated p-3">
@@ -152,7 +170,7 @@ export function TasksPanel({ tasks, jobs = [] }: { tasks: TaskItem[]; jobs?: Job
               <button
                 type="button"
                 disabled={isPending}
-                onClick={() => startTransition(() => toggleTask(task.id, !task.completed))}
+                onClick={() => handleToggle(task)}
                 className={cn(
                   'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
                   task.completed ? 'border-status-done-text bg-status-done-bg' : 'border-border hover:border-primary'

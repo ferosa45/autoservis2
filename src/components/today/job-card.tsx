@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { Phone, User, Play, Package, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { StatusBadge } from '@/components/ui/badge';
+import { getActionErrorMessage, READ_ONLY_ACCESS_MESSAGE } from '@/lib/action-errors';
 import { JOB_STATUS_COLOR } from '@/lib/job-status';
 import { formatTime, formatShortDate } from '@/lib/format';
 import { setJobStatus } from '@/lib/actions/today.actions';
@@ -27,13 +28,23 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
   const colors = JOB_STATUS_COLOR[job.status];
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   const changeStatus = (event: React.MouseEvent<HTMLButtonElement>, status: JobForDay['status']) => {
     event.preventDefault();
     event.stopPropagation();
+    setError(null);
     startTransition(async () => {
-      await setJobStatus(job.id, status);
-      router.refresh();
+      try {
+        const result = await setJobStatus(job.id, status);
+        if (!result.success && result.error === 'READ_ONLY_ACCESS') {
+          setError(READ_ONLY_ACCESS_MESSAGE);
+          return;
+        }
+        router.refresh();
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Stav zakázky se nepodařilo změnit.'));
+      }
     });
   };
 
@@ -119,6 +130,12 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
             Hotovo
           </button>
         </div>
+      )}
+
+      {error && (
+        <p className="rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text sm:ml-[72px]">
+          {error}
+        </p>
       )}
     </div>
   );

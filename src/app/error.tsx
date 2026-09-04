@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, Lock } from 'lucide-react';
 import { logout } from '@/lib/actions/auth.actions';
+import { READ_ONLY_ACCESS_MESSAGE } from '@/lib/action-errors';
 
 export default function AppError({
   error,
@@ -13,7 +14,7 @@ export default function AppError({
   reset: () => void;
 }) {
   const isStaleSession = error.message === 'STALE_SESSION';
-  const isReadOnly = error.message === 'READ_ONLY_ACCESS';
+  const isReadOnly = error.message === READ_ONLY_ACCESS_MESSAGE;
 
   useEffect(() => {
     if (!isStaleSession && !isReadOnly) {
@@ -56,8 +57,7 @@ export default function AppError({
               Zkušební období vypršelo
             </h1>
             <p className="mt-2 text-sm text-text-secondary">
-              Vaše data zůstávají v pořádku a můžete si je prohlížet, ale pro úpravy a
-              zapisování nových zakázek je potřeba aktivovat předplatné.
+              {READ_ONLY_ACCESS_MESSAGE}
             </p>
             <Link
               href="/billing"

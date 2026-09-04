@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileCheck, XCircle, CheckCircle2, Loader2, Download } from 'lucide-react';
 import { issueInvoice, cancelInvoice, markInvoicePaid } from '@/lib/actions/invoice.actions';
+import { getActionErrorMessage } from '@/lib/action-errors';
 import type { InvoiceStatus } from '@prisma/client';
 
 export function InvoiceActions({ invoiceId, status }: { invoiceId: string; status: InvoiceStatus }) {
@@ -18,7 +19,7 @@ export function InvoiceActions({ invoiceId, status }: { invoiceId: string; statu
         await issueInvoice(invoiceId);
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Vystavení se nezdařilo');
+        setError(getActionErrorMessage(e, 'Vystavení se nezdařilo'));
       }
     });
   }
@@ -31,7 +32,7 @@ export function InvoiceActions({ invoiceId, status }: { invoiceId: string; statu
         await cancelInvoice(invoiceId);
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Zrušení se nezdařilo');
+        setError(getActionErrorMessage(e, 'Zrušení se nezdařilo'));
       }
     });
   }
@@ -43,7 +44,7 @@ export function InvoiceActions({ invoiceId, status }: { invoiceId: string; statu
         await markInvoicePaid(invoiceId);
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Označení se nezdařilo');
+        setError(getActionErrorMessage(e, 'Označení se nezdařilo'));
       }
     });
   }

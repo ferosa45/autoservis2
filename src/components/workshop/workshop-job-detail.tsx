@@ -1,10 +1,11 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { Car, Phone, PackageX, CheckCircle2, Loader2 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/badge';
 import { setJobStatus } from '@/lib/actions/today.actions';
 import { toggleJobTask } from '@/lib/actions/job-detail.actions';
+import { getActionErrorMessage, READ_ONLY_ACCESS_MESSAGE } from '@/lib/action-errors';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { SerializedJobItem } from '@/lib/serialize';
@@ -23,12 +24,32 @@ type WorkshopJob = {
 
 export function WorkshopJobDetail({ job }: { job: WorkshopJob }) {
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   const total = job.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
   const handleStatusChange = (status: JobStatus) => {
+    setError(null);
     startTransition(async () => {
-      await setJobStatus(job.id, status);
+      try {
+        const result = await setJobStatus(job.id, status);
+        if (!result.success && result.error === 'READ_ONLY_ACCESS') {
+          setError(READ_ONLY_ACCESS_MESSAGE);
+        }
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Stav zakázky se nepodařilo změnit.'));
+      }
+    });
+  };
+
+  const handleToggleTask = (task: WorkshopJob['tasks'][number]) => {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await toggleJobTask(task.id, !task.completed, job.id);
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Práci se nepodařilo upravit.'));
+      }
     });
   };
 
@@ -79,7 +100,7 @@ export function WorkshopJobDetail({ job }: { job: WorkshopJob }) {
                 <button
                   type="button"
                   disabled={isPending}
-                  onClick={() => startTransition(() => toggleJobTask(task.id, !task.completed, job.id))}
+                  onClick={() => handleToggleTask(task)}
                   className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-elevated"
                 >
                   <span
@@ -130,6 +151,12 @@ export function WorkshopJobDetail({ job }: { job: WorkshopJob }) {
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-muted">Poznámka</h3>
           <p className="text-sm text-text-primary">{job.note}</p>
         </div>
+      )}
+
+      {error && (
+        <p className="mb-4 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-sm text-status-blocked-text">
+          {error}
+        </p>
       )}
 
       {job.status !== 'DONE' && (

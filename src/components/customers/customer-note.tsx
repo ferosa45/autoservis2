@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { StickyNote, Check } from 'lucide-react';
 import { updateCustomerNote } from '@/lib/actions/customer.actions';
+import { getActionErrorMessage } from '@/lib/action-errors';
 
 export function CustomerNote({
   customerId,
@@ -14,11 +15,17 @@ export function CustomerNote({
   const [note, setNote] = useState(initialNote ?? '');
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   function handleSave() {
+    setError(null);
     startTransition(async () => {
-      await updateCustomerNote(customerId, note);
-      setSaved(true);
+      try {
+        await updateCustomerNote(customerId, note);
+        setSaved(true);
+      } catch (err) {
+        setError(getActionErrorMessage(err, 'Poznámku se nepodařilo uložit.'));
+      }
     });
   }
 
@@ -38,6 +45,11 @@ export function CustomerNote({
         placeholder="Volitelná poznámka k zákazníkovi..."
         className="w-full resize-none rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
       />
+      {error && (
+        <p className="mt-2 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
+          {error}
+        </p>
+      )}
       <div className="mt-2 flex justify-end">
         <button
           type="button"
