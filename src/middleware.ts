@@ -22,7 +22,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Middleware se nespouští na statické soubory, API auth routy a Stripe
-  // webhook (ten volá Stripe přímo bez přihlášení, ověřuje se podpisem)
-  matcher: ['/((?!api/auth|api/stripe/webhook|_next/static|_next/image|favicon.ico).*)'],
+  // Middleware se nespouští na statické soubory, API auth routy, cron endpoint
+  // ani Stripe webhook (tyto endpointy mají vlastní autentizaci/ověření).
+  matcher: ['/((?!api/auth|api/cron|api/stripe/webhook|_next/static|_next/image|favicon.ico).*)'],
 };
