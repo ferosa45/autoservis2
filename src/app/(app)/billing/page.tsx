@@ -90,7 +90,7 @@ export default async function BillingPage({
 
         {!context.hasWriteAccess && (
           <p className="mt-4 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
-            Appka je momentálně jen ke čtení - pro úpravy a nové zakázky aktivujte předplatné.
+            Účet je momentálně pouze ke čtení – pro úpravy a nové zakázky aktivujte předplatné.
           </p>
         )}
       </div>
