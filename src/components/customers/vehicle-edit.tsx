@@ -29,10 +29,14 @@ export function VehicleEdit({ customerId, vehicle }: { customerId: string; vehic
     const data = { brand, model, licensePlate, year: year ? Number(year) : null, mileage: mileage ? Number(mileage) : null, note };
     startTransition(async () => {
       try {
-        if (vehicle?.id) await updateVehicle(vehicle.id, data);
-        else await createVehicle(customerId, data);
+        const result = vehicle?.id
+          ? await updateVehicle(vehicle.id, data)
+          : await createVehicle(customerId, data);
+        void result;
         setOpen(false); router.refresh();
-      } catch (e) { setError(e instanceof Error ? e.message : 'Nepodařilo se uložit vozidlo'); }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Nepodařilo se uložit vozidlo');
+      }
     });
   }
 
