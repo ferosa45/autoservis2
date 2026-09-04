@@ -11,9 +11,9 @@ const NAV_ITEMS = [
   { href: '/kalendar', label: 'Kalendář', icon: CalendarDays },
   { href: '/zakazky', label: 'Zakázky', icon: ClipboardList },
   { href: '/zakaznici', label: 'Zákazníci', icon: Users },
-  { href: '/invoices', label: 'Faktury', icon: FileText, permission: 'canViewInvoices' as const },
+  { href: '/faktury', label: 'Faktury', icon: FileText, permission: 'canViewInvoices' as const },
   { href: '/predplatne', label: 'Předplatné', icon: CreditCard, ownerOnly: true },
-  { href: '/settings', label: 'Nastavení', icon: Settings, ownerOnly: true },
+  { href: '/nastaveni', label: 'Nastavení', icon: Settings, ownerOnly: true },
   { href: '/admin', label: 'Admin', icon: ShieldCheck, platformAdminOnly: true },
 ];
 
