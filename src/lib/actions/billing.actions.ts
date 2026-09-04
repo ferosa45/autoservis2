@@ -49,8 +49,8 @@ export async function startCheckout(): Promise<BillingActionState> {
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${baseUrl}/billing?success=1`,
-      cancel_url: `${baseUrl}/billing?canceled=1`,
+      success_url: `${baseUrl}/predplatne?success=1`,
+      cancel_url: `${baseUrl}/predplatne?canceled=1`,
       metadata: { garageId: garage.id },
       subscription_data: { metadata: { garageId: garage.id } },
     });
@@ -83,7 +83,7 @@ export async function openBillingPortal(): Promise<BillingActionState> {
     const stripe = getStripeClient();
     const session = await stripe.billingPortal.sessions.create({
       customer: garage.stripeCustomerId,
-      return_url: `${getBaseUrl()}/billing`,
+      return_url: `${getBaseUrl()}/predplatne`,
     });
     sessionUrl = session.url;
   } catch (e) {
