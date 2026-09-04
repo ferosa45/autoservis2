@@ -36,7 +36,11 @@ export function JobActions({
     setError(null);
     startTransition(async () => {
       try {
-        await setJobStatus(jobId, nextStatus);
+        const result = await setJobStatus(jobId, nextStatus);
+        if (!result.success && result.error === 'READ_ONLY_ACCESS') {
+          setError('Účet je pouze pro čtení. Pro zahájení práce aktivujte předplatné.');
+          return;
+        }
         router.refresh();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Nepodařilo se změnit stav zakázky');
