@@ -58,7 +58,7 @@ export default function LandingPage() {
     <main className="min-h-screen overflow-hidden bg-background text-text-primary">
       <nav className="relative z-20 mx-auto flex max-w-6xl items-center justify-between px-5 py-5 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-lg font-black text-white">G</div>
+          <img src="/icon.svg" alt="Garazio" className="h-9 w-9 rounded-lg" />
           <span className="font-heading text-lg font-extrabold tracking-tight">Garazio</span>
         </Link>
         <div className="hidden items-center gap-7 text-sm font-semibold text-text-secondary md:flex">
