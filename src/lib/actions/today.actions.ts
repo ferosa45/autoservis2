@@ -60,7 +60,7 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
       }
       await tx.job.update({
         where: { id: jobId },
-        data: { status, ...(status === 'DONE' ? { assignedUserId: null } : {}) },
+        data: { status },
       });
 
       if (status === 'BLOCKED') {
