@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { CalendarDays, ClipboardList, Users, FileText, BarChart3, ShieldCheck } from 'lucide-react';
+import { CalendarDays, ClipboardList, Users, FileText, BarChart3, ShieldCheck, UserCog } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { isPlatformAdmin } from '@/lib/admin';
 import { NewJobButton } from '@/components/quick-job/new-job-button';
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/zakazky', label: 'Zakázky', icon: ClipboardList },
   { href: '/zakaznici', label: 'Zákazníci', icon: Users },
   { href: '/invoices', label: 'Faktury', icon: FileText, permission: 'canViewInvoices' as const },
+  { href: '/mechanici', label: 'Mechanici', icon: UserCog, ownerOnly: true },
   { href: '/admin', label: 'Admin', icon: ShieldCheck, platformAdminOnly: true },
 ];
 
