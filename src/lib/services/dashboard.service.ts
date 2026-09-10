@@ -69,6 +69,13 @@ export async function getDashboardData(context: SessionContext, now = new Date()
       return sum + Math.max(0, end.getTime() - session.startedAt.getTime()) / 60000;
     }, 0);
 
+  const workMinutesForDay = (sessions: { startedAt: Date; endedAt: Date | null }[]) =>
+    sessions.reduce((sum, session) => {
+      const start = Math.max(session.startedAt.getTime(), todayStart.getTime());
+      const end = Math.min((session.endedAt ?? now).getTime(), now.getTime());
+      return sum + Math.max(0, end - start) / 60000;
+    }, 0);
+
   const mechanicStats = mechanics.map((mechanic) => {
     const sessions = historyJobs.flatMap((job) =>
       job.workSessions.filter((session) => session.userId === mechanic.id)
@@ -93,7 +100,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
   const todayRevenue = todayJobs
     .filter((job) => job.status === 'DONE')
     .reduce((sum, job) => sum + jobItemsTotal(job.items), 0);
-  const todayMinutes = Math.round(workMinutes(historyJobs.flatMap((job) => job.workSessions)));
+  const todayMinutes = Math.round(workMinutesForDay(historyJobs.flatMap((job) => job.workSessions)));
   const doneMonth = monthJobs.filter((job) => job.status === 'DONE').length;
   const averageJobValue = doneMonth > 0 ? monthRevenue / doneMonth : 0;
 
