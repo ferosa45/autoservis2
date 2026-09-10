@@ -35,7 +35,7 @@ export async function createMechanic(input: MechanicInput) {
   if (exists) throw new Error('Uživatel s tímto emailem už existuje.');
   const password = await bcrypt.hash(input.password, 10);
   await prisma.user.create({ data: { name, email, password, role: 'MECHANIC', garageId: context.garageId, active: true, canInvoice: input.canInvoice, canViewInvoices: input.canViewInvoices, canViewFinancials: input.canViewFinancials } });
-  revalidatePath('/settings');
+  revalidatePath('/mechanici');
 }
 
 export async function updateMechanicPermissions(userId: string, input: Omit<MechanicInput, 'name' | 'email' | 'password'> & { active: boolean }) {
@@ -45,5 +45,43 @@ export async function updateMechanicPermissions(userId: string, input: Omit<Mech
   const user = await prisma.user.findFirst({ where: { id: userId, garageId: context.garageId, role: 'MECHANIC' } });
   if (!user) throw new Error('Mechanik nenalezen.');
   await prisma.user.update({ where: { id: user.id }, data: { active: input.active, canInvoice: input.canInvoice, canViewInvoices: input.canViewInvoices, canViewFinancials: input.canViewFinancials } });
-  revalidatePath('/settings');
+  revalidatePath('/mechanici');
+}
+
+export async function deleteMechanic(userId: string) {
+  const context = await getSessionContext();
+  assertWriteAccess(context);
+  assertOwner(context);
+
+  const user = await prisma.user.findFirst({
+    where: { id: userId, garageId: context.garageId, role: 'MECHANIC' },
+    select: { id: true },
+  });
+
+  if (!user) throw new Error('Mechanik nenalezen.');
+
+  await prisma.$transaction(async (tx) => {
+    // Zakázky zůstávají zachované, pouze se zruší jejich přiřazení.
+    await tx.job.updateMany({
+      where: { garageId: context.garageId, assignedUserId: user.id },
+      data: { assignedUserId: null },
+    });
+
+    // Události zůstanou v historii, ale už nebudou odkazovat na smazaného uživatele.
+    await tx.jobEvent.updateMany({
+      where: { garageId: context.garageId, userId: user.id },
+      data: { userId: null },
+    });
+
+    // WorkSession má povinný vztah na User, proto se při úplném smazání
+    // mechanika musí odstranit i jeho záznamy odpracovaného času.
+    await tx.workSession.deleteMany({
+      where: { garageId: context.garageId, userId: user.id },
+    });
+
+    await tx.user.delete({ where: { id: user.id } });
+  });
+
+  revalidatePath('/mechanici');
+  revalidatePath('/calendar');
 }
