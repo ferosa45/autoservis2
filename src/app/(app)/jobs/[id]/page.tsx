@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getSessionContext } from '@/lib/session';
+import { listActiveMechanics } from '@/lib/actions/user.actions';
 import { getJobDetail } from '@/lib/services/today.service';
 import { serializeJobItems } from '@/lib/serialize';
 import { JobDetailHeader } from '@/components/job-detail/job-detail-header';
@@ -12,11 +13,15 @@ import { JobActions } from '@/components/job-detail/job-actions';
 import { JobTimeEditor } from '@/components/job-detail/job-time-editor';
 import { JobWorkTimeCard } from '@/components/job-detail/job-work-time-card';
 import { JobHistoryTimeline } from '@/components/job-detail/job-history-timeline';
+import { MechanicAssignment } from '@/components/job-detail/mechanic-assignment';
 
 export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const context = await getSessionContext();
-  const job = await getJobDetail(context, id);
+  const [job, mechanics] = await Promise.all([
+    getJobDetail(context, id),
+    listActiveMechanics(),
+  ]);
 
   if (!job) notFound();
 
@@ -49,6 +54,13 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         </div>
 
         <div className="space-y-6">
+          {context.role === 'OWNER' && (
+            <MechanicAssignment
+              jobId={job.id}
+              current={job.assignedUser ? { id: job.assignedUser.id, name: job.assignedUser.name, active: job.assignedUser.active } : null}
+              mechanics={mechanics}
+            />
+          )}
           <JobTimeEditor jobId={job.id} scheduledStart={job.scheduledStart} scheduledEnd={job.scheduledEnd} />
           <JobWorkTimeCard sessions={job.workSessions} />
           <JobActions jobId={job.id} status={job.status} latestInvoice={activeInvoice} />
