@@ -2,7 +2,6 @@
 
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
-import { prisma } from '@/lib/prisma';
 import { assertOwner, assertWriteAccess, getSessionContext } from '@/lib/session';
 
 export type MechanicInput = {
@@ -21,6 +20,17 @@ export async function listGarageUsers() {
     where: { garageId: context.garageId },
     orderBy: [{ role: 'asc' }, { name: 'asc' }],
     select: { id: true, name: true, email: true, role: true, active: true, canInvoice: true, canViewInvoices: true, canViewFinancials: true },
+  });
+}
+
+export async function listActiveMechanics() {
+  const context = await getSessionContext();
+  if (context.role !== 'OWNER') return [];
+
+  return prisma.user.findMany({
+    where: { garageId: context.garageId, role: 'MECHANIC', active: true },
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true },
   });
 }
 
@@ -61,20 +71,16 @@ export async function deleteMechanic(userId: string) {
   if (!user) throw new Error('Mechanik nenalezen.');
 
   await prisma.$transaction(async (tx) => {
-    // Zakázky zůstávají zachované, pouze se zruší jejich přiřazení.
     await tx.job.updateMany({
       where: { garageId: context.garageId, assignedUserId: user.id },
       data: { assignedUserId: null },
     });
 
-    // Události zůstanou v historii, ale už nebudou odkazovat na smazaného uživatele.
     await tx.jobEvent.updateMany({
       where: { garageId: context.garageId, userId: user.id },
       data: { userId: null },
     });
 
-    // WorkSession má povinný vztah na User, proto se při úplném smazání
-    // mechanika musí odstranit i jeho záznamy odpracovaného času.
     await tx.workSession.deleteMany({
       where: { garageId: context.garageId, userId: user.id },
     });
