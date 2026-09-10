@@ -1,4 +1,4 @@
-import { Search, Bell, Wrench } from 'lucide-react';
+import { Search, Bell } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { LogoutButton } from './logout-button';
@@ -18,10 +18,7 @@ export async function Topbar() {
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-3 sm:h-16 sm:gap-4 sm:px-6">
       <div className="flex items-center gap-2 md:hidden">
-        <Wrench className="h-4 w-4 text-primary" />
-        <span className="font-heading text-sm font-bold text-text-primary">
-          Auto<span className="text-primary">Servis</span>
-        </span>
+        <img src="/garazio-logo.svg" alt="Garazio" className="h-6 w-auto" />
       </div>
 
       <form method="GET" action="/customers" className="relative hidden w-72 md:block">
