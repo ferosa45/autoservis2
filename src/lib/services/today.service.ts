@@ -15,12 +15,17 @@ export async function getJobsForDay(context: SessionContext, date: Date) {
   return prisma.job.findMany({
     where: { garageId: context.garageId, scheduledStart: { gte: start, lte: end } },
     select: {
-      id: true, number: true, scheduledStart: true, scheduledEnd: true, status: true,
-      customerRequest: true, updatedAt: true,
+      id: true,
+      number: true,
+      scheduledStart: true,
+      scheduledEnd: true,
+      status: true,
+      customerRequest: true,
+      updatedAt: true,
       customer: { select: { name: true, phone: true } },
       vehicle: { select: { brand: true, model: true, licensePlate: true } },
-      assignedUser: { select: { id: true, name: true } },
-      tasks: { select: { id: true, title: true, completed: true } },
+      assignedUser: { select: { id: true, name: true, active: true } },
+      tasks: { select: { id: true, title: true, completed: true }, orderBy: { createdAt: 'asc' } },
       items: { select: { quantity: true, unitPrice: true } },
     },
     orderBy: { scheduledStart: 'asc' },
@@ -32,15 +37,24 @@ export type JobForDay = Awaited<ReturnType<typeof getJobsForDay>>[number];
 export async function getJobDetail(context: SessionContext, jobId: string) {
   return prisma.job.findFirst({
     where: { id: jobId, garageId: context.garageId },
-    include: {
-      customer: true,
-      vehicle: true,
-      tasks: true,
-      items: true,
-      assignedUser: true,
-      workSessions: { include: { user: true }, orderBy: { startedAt: 'asc' } },
-      events: { include: { user: { select: { name: true } } }, orderBy: { createdAt: 'desc' } },
-      invoices: { orderBy: { createdAt: 'desc' }, take: 5 },
+    select: {
+      id: true,
+      status: true,
+      createdAt: true,
+      scheduledEnd: true,
+      customerRequest: true,
+      note: true,
+      customer: { select: { name: true, phone: true } },
+      vehicle: { select: { brand: true, model: true, licensePlate: true } },
+      assignedUser: { select: { id: true, name: true, active: true } },
+      tasks: { select: { id: true, title: true, completed: true }, orderBy: { createdAt: 'asc' } },
+      items: { select: { id: true, title: true, quantity: true, unit: true, unitPrice: true }, orderBy: { createdAt: 'asc' } },
+      invoices: {
+        where: { status: { in: ['DRAFT', 'ISSUED', 'PAID'] } },
+        select: { id: true, status: true },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
     },
   });
 }
