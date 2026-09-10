@@ -31,7 +31,7 @@ export async function listActiveMechanics() {
   return prisma.user.findMany({
     where: { garageId: context.garageId, role: 'MECHANIC', active: true },
     orderBy: { name: 'asc' },
-    select: { id: true, name: true },
+    select: { id: true, name: true, active: true },
   });
 }
 
