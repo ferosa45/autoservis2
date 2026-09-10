@@ -1,13 +1,10 @@
 import { getSessionContext } from '@/lib/session';
 import { getGarage } from '@/lib/services/garage.service';
 import { GarageSettingsForm } from '@/components/settings/garage-settings-form';
-import { MechanicsSettings } from '@/components/settings/mechanics-settings';
-import { listGarageUsers } from '@/lib/actions/user.actions';
 
 export default async function SettingsPage() {
   const context = await getSessionContext();
   const garage = await getGarage(context);
-  const users = context.role === 'OWNER' ? await listGarageUsers() : [];
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
@@ -25,7 +22,6 @@ export default async function SettingsPage() {
           Nastavení servisu spravuje majitel. Zde najdete pouze nastavení dostupná pro váš účet.
         </div>
       )}
-      {context.role === 'OWNER' && <MechanicsSettings initial={users} />}
     </div>
   );
 }
