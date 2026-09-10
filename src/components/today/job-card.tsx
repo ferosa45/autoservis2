@@ -81,9 +81,9 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-muted">
               <span className="flex items-center gap-1 truncate"><User className="h-3 w-3 shrink-0" /> {job.customer.name}</span>
               <span className="flex items-center gap-1"><Phone className="h-3 w-3 shrink-0" /> {job.customer.phone}</span>
-              {job.status === 'IN_PROGRESS' && job.assignedUser && (
+              {job.assignedUser && (
                 <span className="flex items-center gap-1 font-medium text-primary">
-                  <User className="h-3 w-3 shrink-0" /> Pracuje: {job.assignedUser.name}
+                  <User className="h-3 w-3 shrink-0" /> Mechanik: {job.assignedUser.name}
                 </span>
               )}
             </div>
