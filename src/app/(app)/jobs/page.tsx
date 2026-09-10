@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Search, ClipboardList, Car, User } from 'lucide-react';
+import { Search, ClipboardList, Car, User, Wrench } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { listJobs } from '@/lib/services/job.service';
 import { formatShortDate, formatTime } from '@/lib/format';
@@ -76,7 +76,6 @@ export default async function JobsListPage({
         </div>
       ) : (
         <>
-          {/* Desktop: tabulka */}
           <div className="hidden overflow-hidden rounded-lg border border-border bg-surface md:block">
             <table className="w-full text-sm">
               <thead>
@@ -86,6 +85,7 @@ export default async function JobsListPage({
                   <th className="px-4 py-3 font-medium">Zákazník</th>
                   <th className="px-4 py-3 font-medium">Vozidlo</th>
                   <th className="px-4 py-3 font-medium">Požadavek</th>
+                  <th className="px-4 py-3 font-medium">Mechanik</th>
                   <th className="px-4 py-3 font-medium">Stav</th>
                 </tr>
               </thead>
@@ -112,6 +112,16 @@ export default async function JobsListPage({
                         )}
                       </td>
                       <td className="max-w-xs truncate px-4 py-3 text-text-secondary">{job.customerRequest}</td>
+                      <td className="px-4 py-3 text-text-secondary">
+                        {job.assignedUser ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            <Wrench className="h-3.5 w-3.5 text-text-muted" />
+                            {job.assignedUser.name}
+                          </span>
+                        ) : (
+                          <span className="text-text-muted">Nepřiřazeno</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <span
                           className={cn(
@@ -131,7 +141,6 @@ export default async function JobsListPage({
             </table>
           </div>
 
-          {/* Mobile: karty */}
           <div className="space-y-3 md:hidden">
             {jobs.map((job) => {
               const colors = JOB_STATUS_COLOR[job.status];
@@ -188,6 +197,18 @@ export default async function JobsListPage({
                               {job.vehicle.licensePlate}
                             </span>
                           )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-text-muted">
+                        <Wrench className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs text-text-muted">Mechanik</div>
+                        <div className="truncate font-medium text-text-primary">
+                          {job.assignedUser?.name ?? 'Nepřiřazeno'}
                         </div>
                       </div>
                     </div>
