@@ -47,7 +47,7 @@ export async function getJobDetail(context: SessionContext, jobId: string) {
       customerRequest: true,
       note: true,
       customer: { select: { id: true, name: true, phone: true, email: true } },
-      vehicle: { select: { brand: true, model: true, licensePlate: true } },
+      vehicle: { select: { brand: true, model: true, licensePlate: true, year: true, mileage: true } },
       assignedUser: { select: { id: true, name: true, active: true } },
       tasks: { select: { id: true, title: true, completed: true }, orderBy: { createdAt: 'asc' } },
       items: { select: { id: true, title: true, quantity: true, unit: true, unitPrice: true }, orderBy: { createdAt: 'asc' } },
