@@ -15,6 +15,7 @@ import { TodayHeader } from '@/components/today/today-header';
 import { StatsCards } from '@/components/today/stats-cards';
 import { JobTimeline } from '@/components/today/job-timeline';
 import { JobDetailPanel } from '@/components/today/job-detail-panel';
+import { MechanicAssignment } from '@/components/job-detail/mechanic-assignment';
 import { TasksPanel } from '@/components/today/tasks-panel';
 import { QuickActions } from '@/components/today/quick-actions';
 
@@ -146,7 +147,16 @@ export default async function TodayPage({
 
       <div className="w-full shrink-0 space-y-4 border-t border-border p-3 sm:p-4 md:w-[380px] md:overflow-y-auto md:border-l md:border-t-0">
         {selectedJob ? (
-          <JobDetailPanel job={selectedJob} mechanics={mechanics} isOwner={context.role === 'OWNER'} />
+          <>
+            {context.role === 'OWNER' && (
+              <MechanicAssignment
+                jobId={selectedJob.id}
+                current={selectedJob.assignedUser}
+                mechanics={mechanics}
+              />
+            )}
+            <JobDetailPanel job={selectedJob} />
+          </>
         ) : (
           <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-text-muted">
             Vyberte zakázku pro zobrazení detailu.
