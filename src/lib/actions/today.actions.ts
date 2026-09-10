@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import type { JobStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { getSessionContext, assertWriteAccess } from '@/lib/session';
+import { getSessionContext, assertOwner, assertWriteAccess } from '@/lib/session';
 import { MockNotificationService } from '@/lib/notifications/mock-notification-service';
 
 const notificationService = new MockNotificationService();
@@ -60,7 +60,7 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
       }
       await tx.job.update({
         where: { id: jobId },
-        data: { status, ...(status === 'DONE' || status === 'WAITING' ? { assignedUserId: null } : {}) },
+        data: { status, ...(status === 'DONE' ? { assignedUserId: null } : {}) },
       });
 
       if (status === 'BLOCKED') {
@@ -95,6 +95,36 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
   revalidatePath('/workshop');
 
   return { success: true };
+}
+
+export async function assignMechanic(jobId: string, userId: string | null) {
+  const context = await getSessionContext();
+  assertWriteAccess(context);
+  assertOwner(context);
+
+  const job = await prisma.job.findFirst({
+    where: { id: jobId, garageId: context.garageId },
+    select: { id: true },
+  });
+  if (!job) throw new Error('Zakázka nenalezena.');
+
+  if (userId) {
+    const mechanic = await prisma.user.findFirst({
+      where: { id: userId, garageId: context.garageId, role: 'MECHANIC', active: true },
+      select: { id: true },
+    });
+    if (!mechanic) throw new Error('Vybraný mechanik není aktivní nebo nepatří do tohoto servisu.');
+  }
+
+  await prisma.job.update({
+    where: { id: job.id },
+    data: { assignedUserId: userId },
+  });
+
+  revalidatePath('/today');
+  revalidatePath('/calendar');
+  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath('/jobs');
 }
 
 export async function toggleTask(taskId: string, completed: boolean) {
