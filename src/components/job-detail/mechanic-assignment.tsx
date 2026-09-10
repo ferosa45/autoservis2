@@ -8,6 +8,7 @@ import { getActionErrorMessage } from '@/lib/action-errors';
 export type MechanicOption = {
   id: string;
   name: string;
+  active: boolean;
 };
 
 export function MechanicAssignment({
