@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { CalendarDays, ClipboardList, Users, FileText, Settings, CreditCard, BarChart3, ShieldCheck, UserCog } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { isPlatformAdmin } from '@/lib/admin';
@@ -31,8 +32,9 @@ export async function Sidebar() {
 
   return (
     <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-border bg-surface">
-      <div className="px-5 py-4">
-        <img src="/garazio-logo.svg" alt="Garazio" className="h-8 w-auto" />
+      <div className="flex items-center gap-2 px-5 py-4">
+        <Image src="/garazio-logo.svg" alt="Garazio" width={32} height={32} className="h-8 w-8 object-contain" />
+        <span className="font-heading text-lg font-bold text-text-primary">Garazio</span>
       </div>
       <div className="px-4"><NewJobButton /></div>
       <nav className="mt-6 flex flex-1 flex-col gap-1 px-3">{visibleItems.map((item) => <SidebarNavLink key={item.href} href={item.href} label={item.label} icon={<item.icon className="h-4 w-4" />} />)}</nav>
