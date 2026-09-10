@@ -1,4 +1,4 @@
-import { Wrench, CalendarDays, ClipboardList, Users, FileText, Settings, CreditCard, BarChart3, ShieldCheck, UserCog } from 'lucide-react';
+import { CalendarDays, ClipboardList, Users, FileText, Settings, CreditCard, BarChart3, ShieldCheck, UserCog } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { isPlatformAdmin } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
@@ -31,7 +31,9 @@ export async function Sidebar() {
 
   return (
     <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-border bg-surface">
-      <div className="flex items-center gap-2 px-5 py-5"><Wrench className="h-5 w-5 text-primary" /><span className="font-heading text-lg font-bold text-text-primary">Auto<span className="text-primary">Servis</span></span></div>
+      <div className="px-5 py-4">
+        <img src="/garazio-logo.svg" alt="Garazio" className="h-8 w-auto" />
+      </div>
       <div className="px-4"><NewJobButton /></div>
       <nav className="mt-6 flex flex-1 flex-col gap-1 px-3">{visibleItems.map((item) => <SidebarNavLink key={item.href} href={item.href} label={item.label} icon={<item.icon className="h-4 w-4" />} />)}</nav>
       <div className="border-t border-border p-4"><div className="rounded-lg border border-border bg-elevated p-3"><p className="truncate text-sm font-medium text-text-primary">{garage?.name}</p><p className="mt-0.5 text-xs text-text-muted">{context.role === 'OWNER' ? 'Majitel servisu' : 'Mechanik'}</p></div></div>
