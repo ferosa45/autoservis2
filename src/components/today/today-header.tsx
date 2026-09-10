@@ -1,10 +1,15 @@
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatFullDate, isSameDay } from '@/lib/format';
+import { formatFullDate, formatShortDate, isSameDay } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 function toDateParam(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  // Nepoužívat toISOString(): v českém časovém pásmu může lokální půlnoc
+  // spadnout do předchozího UTC dne.
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function TodayHeader({ date }: { date: Date }) {
@@ -36,8 +41,9 @@ export function TodayHeader({ date }: { date: Date }) {
             'rounded-md px-3 py-1.5 text-sm font-medium',
             isToday ? 'bg-primary text-white' : 'text-text-secondary hover:bg-elevated'
           )}
+          aria-label="Přejít na dnešek"
         >
-          Dnes
+          {isToday ? 'Dnes' : formatShortDate(date)}
         </Link>
         <Link
           href={`/today?date=${toDateParam(next)}`}
