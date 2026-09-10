@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2, User, Car, Wrench, Clock, X, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { submitQuickJob } from '@/lib/actions/quick-job.actions';
+import { listActiveMechanics } from '@/lib/actions/user.actions';
 import { CustomerSearchField } from './customer-search-field';
 import { VehicleSearchField } from './vehicle-search-field';
 import { READ_ONLY_ACCESS_MESSAGE } from '@/lib/action-errors';
@@ -48,6 +49,7 @@ type FormState = {
   tasks: string[];
   scheduledStart: string;
   scheduledEnd: string;
+  assignedUserId: string | null;
 };
 
 function initialFormState(prefill?: QuickJobPrefill): FormState {
@@ -64,6 +66,7 @@ function initialFormState(prefill?: QuickJobPrefill): FormState {
     tasks: [''],
     scheduledStart: formatForDatetimeLocal(start),
     scheduledEnd: formatForDatetimeLocal(end),
+    assignedUserId: null,
   };
 }
 
@@ -79,16 +82,16 @@ export function QuickJobModal({
   const router = useRouter();
   const [step, setStep] = useState<Step>('form');
   const [form, setForm] = useState<FormState>(() => initialFormState(prefill));
+  const [mechanics, setMechanics] = useState<{ id: string; name: string }[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, startSubmitTransition] = useTransition();
 
-  // Při každém otevření (i s jiným prefillem, např. jiný klik na volný
-  // termín v kalendáři) se formulář znovu inicializuje.
   useEffect(() => {
     if (open) {
       setStep('form');
       setForm(initialFormState(prefill));
       setErrorMessage(null);
+      void listActiveMechanics().then(setMechanics).catch(() => setMechanics([]));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -132,6 +135,7 @@ export function QuickJobModal({
         tasks: form.tasks.map((t) => t.trim()).filter(Boolean),
         scheduledStart: new Date(form.scheduledStart).toISOString(),
         scheduledEnd: form.scheduledEnd ? new Date(form.scheduledEnd).toISOString() : null,
+        assignedUserId: form.assignedUserId,
       });
 
       if (result.error === 'READ_ONLY_ACCESS') {
@@ -236,6 +240,24 @@ export function QuickJobModal({
               </FieldGroup>
 
               <FieldGroup icon={Wrench} title="Práce">
+                {mechanics.length > 0 && (
+                  <div className="mb-4 rounded-lg border border-border bg-elevated/40 p-3">
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-text-primary">Mechanik</span>
+                      <select
+                        value={form.assignedUserId ?? ''}
+                        onChange={(e) => setForm({ ...form, assignedUserId: e.target.value || null })}
+                        className="w-full rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-text-primary focus:border-primary focus:outline-none"
+                      >
+                        <option value="">Nepřiřazeno</option>
+                        {mechanics.map((mechanic) => (
+                          <option key={mechanic.id} value={mechanic.id}>{mechanic.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                )}
+
                 <div className="mb-2 flex flex-wrap gap-1.5">
                   {QUICK_TASKS.map((label) => (
                     <button
@@ -297,8 +319,6 @@ export function QuickJobModal({
                       value={form.scheduledStart}
                       onChange={(e) => {
                         const nextStart = e.target.value;
-                        // Posun začátku posune i konec o stejný rozdíl, ať zůstane
-                        // rozumná délka zakázky - uživatel může konec dál upravit ručně.
                         const prevStartDate = new Date(form.scheduledStart);
                         const nextStartDate = new Date(nextStart);
                         const endDate = new Date(form.scheduledEnd);
