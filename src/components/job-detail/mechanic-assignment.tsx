@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { Loader2, UserRound } from 'lucide-react';
 import { assignMechanic } from '@/lib/actions/today.actions';
 import { getActionErrorMessage } from '@/lib/action-errors';
@@ -23,6 +23,11 @@ export function MechanicAssignment({
   const [value, setValue] = useState(current?.id ?? '');
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setValue(current?.id ?? '');
+    setError(null);
+  }, [jobId, current?.id]);
 
   function handleChange(nextValue: string) {
     const previous = value;
