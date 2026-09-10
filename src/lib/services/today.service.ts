@@ -39,8 +39,10 @@ export async function getJobDetail(context: SessionContext, jobId: string) {
     where: { id: jobId, garageId: context.garageId },
     select: {
       id: true,
+      number: true,
       status: true,
       createdAt: true,
+      scheduledStart: true,
       scheduledEnd: true,
       customerRequest: true,
       note: true,
@@ -51,9 +53,28 @@ export async function getJobDetail(context: SessionContext, jobId: string) {
       items: { select: { id: true, title: true, quantity: true, unit: true, unitPrice: true }, orderBy: { createdAt: 'asc' } },
       invoices: {
         where: { status: { in: ['DRAFT', 'ISSUED', 'PAID'] } },
-        select: { id: true, status: true },
+        select: { id: true, number: true, status: true },
         orderBy: { createdAt: 'desc' },
         take: 1,
+      },
+      workSessions: {
+        select: {
+          id: true,
+          startedAt: true,
+          endedAt: true,
+          user: { select: { id: true, name: true } },
+        },
+        orderBy: { startedAt: 'asc' },
+      },
+      events: {
+        select: {
+          id: true,
+          type: true,
+          message: true,
+          createdAt: true,
+          user: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
       },
     },
   });
