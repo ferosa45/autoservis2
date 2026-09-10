@@ -22,6 +22,13 @@ function rightSideLabel(job: JobForDay): string {
   }
 }
 
+function toDateParam(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boolean }) {
   const primaryTask = job.tasks[0]?.title ?? job.customerRequest;
   const secondaryTask = job.tasks[1]?.title;
@@ -48,6 +55,8 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
     });
   };
 
+  const dateParam = toDateParam(job.scheduledStart);
+
   return (
     <div
       className={cn(
@@ -57,7 +66,7 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
         isSelected && 'ring-2 ring-primary'
       )}
     >
-      <Link href={`/today?job=${job.id}`} className="flex min-w-0 flex-1 gap-2 sm:gap-4">
+      <Link href={`/today?date=${dateParam}&job=${job.id}`} className="flex min-w-0 flex-1 gap-2 sm:gap-4">
         <div className={cn('w-12 shrink-0 pt-1 text-sm font-medium sm:w-14', colors.text)}>
           {formatTime(job.scheduledStart)}
         </div>
