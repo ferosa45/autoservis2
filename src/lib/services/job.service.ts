@@ -27,7 +27,11 @@ export async function listJobs(context: SessionContext, filters: JobListFilters 
           }
         : {}),
     },
-    include: { customer: true, vehicle: true },
+    include: {
+      customer: true,
+      vehicle: true,
+      assignedUser: { select: { id: true, name: true, active: true } },
+    },
     orderBy: { scheduledStart: 'desc' },
     take: 100,
   });
@@ -44,6 +48,7 @@ export type CreateJobFromQuickInput = {
   tasks: string[];
   scheduledStart: string;
   scheduledEnd: string | null;
+  assignedUserId?: string | null;
 };
 
 export async function createJobFromQuickInput(
@@ -145,6 +150,24 @@ export async function createJobFromQuickInput(
       throw new Error('Vyberte vozidlo nebo zadejte nové vozidlo.');
     }
 
+    let assignedUserId: string | null = null;
+    if (input.assignedUserId) {
+      if (context.role !== 'OWNER') {
+        throw new Error('Mechanika může přiřadit pouze majitel servisu.');
+      }
+      const mechanic = await tx.user.findFirst({
+        where: {
+          id: input.assignedUserId,
+          garageId: context.garageId,
+          role: 'MECHANIC',
+          active: true,
+        },
+        select: { id: true },
+      });
+      if (!mechanic) throw new Error('Vybraný mechanik není aktivní nebo nepatří do tohoto servisu.');
+      assignedUserId = mechanic.id;
+    }
+
     const jobCount = await tx.job.count({ where: { garageId: context.garageId } });
     const number = String(jobCount + 1);
 
@@ -156,6 +179,7 @@ export async function createJobFromQuickInput(
         scheduledStart: new Date(input.scheduledStart),
         scheduledEnd: input.scheduledEnd ? new Date(input.scheduledEnd) : null,
         status: 'WAITING',
+        assignedUserId,
         customerRequest: input.tasks.join(', ') || 'Bez upřesnění',
         garageId: context.garageId,
       },
@@ -164,7 +188,7 @@ export async function createJobFromQuickInput(
     await tx.jobEvent.create({
       data: {
         type: 'CREATED',
-        message: 'Zakázka vytvořena',
+        message: assignedUserId ? 'Zakázka vytvořena a přiřazena mechanikovi' : 'Zakázka vytvořena',
         jobId: job.id,
         garageId: context.garageId,
         createdAt: job.createdAt,
