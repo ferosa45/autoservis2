@@ -81,7 +81,11 @@ export function calculateWeekStats(jobs: WeekJob[]) {
 
 export async function getMechanics(context: SessionContext) {
   return prisma.user.findMany({
-    where: { garageId: context.garageId },
+    where: {
+      garageId: context.garageId,
+      role: 'MECHANIC',
+      active: true,
+    },
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   });
