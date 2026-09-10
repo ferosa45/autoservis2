@@ -4,6 +4,7 @@ import { serializeJobItems } from '@/lib/serialize';
 import { getSessionContext } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { completeOnboarding } from '@/lib/actions/onboarding.actions';
+import { listActiveMechanics } from '@/lib/actions/user.actions';
 import {
   getJobsForDay,
   getJobDetail,
@@ -32,7 +33,7 @@ export default async function TodayPage({
   const date = parseDate(dateParam);
   const context = await getSessionContext();
 
-  const [jobs, tasks, garage, jobCount] = await Promise.all([
+  const [jobs, tasks, garage, jobCount, mechanics] = await Promise.all([
     getJobsForDay(context, date),
     getTasksForDay(context, date),
     prisma.garage.findUnique({
@@ -40,6 +41,7 @@ export default async function TodayPage({
       select: { name: true, onboardingCompletedAt: true },
     }),
     prisma.job.count({ where: { garageId: context.garageId } }),
+    listActiveMechanics(),
   ]);
 
   const showWelcome = Boolean(context.hasWriteAccess && garage && !garage.onboardingCompletedAt && jobCount === 0);
@@ -62,7 +64,9 @@ export default async function TodayPage({
           model: rawSelectedJob.vehicle.model,
           licensePlate: rawSelectedJob.vehicle.licensePlate,
         },
-        assignedUser: rawSelectedJob.assignedUser ? { name: rawSelectedJob.assignedUser.name } : null,
+        assignedUser: rawSelectedJob.assignedUser
+          ? { id: rawSelectedJob.assignedUser.id, name: rawSelectedJob.assignedUser.name, active: rawSelectedJob.assignedUser.active }
+          : null,
         tasks: rawSelectedJob.tasks.map((t) => ({ id: t.id, title: t.title, completed: t.completed })),
         items: serializeJobItems(rawSelectedJob.items),
         activeInvoice: (() => {
@@ -142,7 +146,7 @@ export default async function TodayPage({
 
       <div className="w-full shrink-0 space-y-4 border-t border-border p-3 sm:p-4 md:w-[380px] md:overflow-y-auto md:border-l md:border-t-0">
         {selectedJob ? (
-          <JobDetailPanel job={selectedJob} />
+          <JobDetailPanel job={selectedJob} mechanics={mechanics} isOwner={context.role === 'OWNER'} />
         ) : (
           <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-text-muted">
             Vyberte zakázku pro zobrazení detailu.
