@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Search, Bell } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
@@ -18,7 +19,8 @@ export async function Topbar() {
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-3 sm:h-16 sm:gap-4 sm:px-6">
       <div className="flex items-center gap-2 md:hidden">
-        <img src="/garazio-logo.svg" alt="Garazio" className="h-6 w-auto" />
+        <Image src="/garazio-logo.svg" alt="Garazio" width={24} height={24} className="h-6 w-6 object-contain" />
+        <span className="font-heading text-sm font-bold text-text-primary">Garazio</span>
       </div>
 
       <form method="GET" action="/customers" className="relative hidden w-72 md:block">
