@@ -34,7 +34,10 @@ export default async function TodayPage({
   const date = parseDate(dateParam);
   const context = await getSessionContext();
 
-  const [jobs, tasks, garage, jobCount, mechanics] = await Promise.all([
+  // When a job is selected, load its detail in parallel with the day data.
+  // Previously this was awaited only after all day queries finished, making
+  // a click feel like the page had frozen for a moment.
+  const [jobs, tasks, garage, jobCount, mechanics, rawSelectedJob] = await Promise.all([
     getJobsForDay(context, date),
     getTasksForDay(context, date),
     prisma.garage.findUnique({
@@ -43,35 +46,43 @@ export default async function TodayPage({
     }),
     prisma.job.count({ where: { garageId: context.garageId } }),
     listActiveMechanics(),
+    jobParam ? getJobDetail(context, jobParam) : Promise.resolve(null),
   ]);
 
   const showWelcome = Boolean(context.hasWriteAccess && garage && !garage.onboardingCompletedAt && jobCount === 0);
   const stats = calculateTodayStats(jobs);
 
   const selectedJobId = jobParam ?? jobs.find((j) => j.status === 'IN_PROGRESS')?.id ?? jobs[0]?.id ?? null;
-  const rawSelectedJob = selectedJobId ? await getJobDetail(context, selectedJobId) : null;
 
-  const selectedJob = rawSelectedJob
+  // If no job was explicitly selected, use the default job's detail. For an
+  // explicit selection the detail was already fetched in parallel above.
+  const resolvedSelectedJob = jobParam
+    ? rawSelectedJob
+    : selectedJobId
+      ? await getJobDetail(context, selectedJobId)
+      : null;
+
+  const selectedJob = resolvedSelectedJob
     ? {
-        id: rawSelectedJob.id,
-        status: rawSelectedJob.status,
-        createdAt: rawSelectedJob.createdAt,
-        scheduledEnd: rawSelectedJob.scheduledEnd,
-        customerRequest: rawSelectedJob.customerRequest,
-        note: rawSelectedJob.note,
-        customer: { name: rawSelectedJob.customer.name, phone: rawSelectedJob.customer.phone },
+        id: resolvedSelectedJob.id,
+        status: resolvedSelectedJob.status,
+        createdAt: resolvedSelectedJob.createdAt,
+        scheduledEnd: resolvedSelectedJob.scheduledEnd,
+        customerRequest: resolvedSelectedJob.customerRequest,
+        note: resolvedSelectedJob.note,
+        customer: { name: resolvedSelectedJob.customer.name, phone: resolvedSelectedJob.customer.phone },
         vehicle: {
-          brand: rawSelectedJob.vehicle.brand,
-          model: rawSelectedJob.vehicle.model,
-          licensePlate: rawSelectedJob.vehicle.licensePlate,
+          brand: resolvedSelectedJob.vehicle.brand,
+          model: resolvedSelectedJob.vehicle.model,
+          licensePlate: resolvedSelectedJob.vehicle.licensePlate,
         },
-        assignedUser: rawSelectedJob.assignedUser
-          ? { id: rawSelectedJob.assignedUser.id, name: rawSelectedJob.assignedUser.name, active: rawSelectedJob.assignedUser.active }
+        assignedUser: resolvedSelectedJob.assignedUser
+          ? { id: resolvedSelectedJob.assignedUser.id, name: resolvedSelectedJob.assignedUser.name, active: resolvedSelectedJob.assignedUser.active }
           : null,
-        tasks: rawSelectedJob.tasks.map((t) => ({ id: t.id, title: t.title, completed: t.completed })),
-        items: serializeJobItems(rawSelectedJob.items),
+        tasks: resolvedSelectedJob.tasks.map((t) => ({ id: t.id, title: t.title, completed: t.completed })),
+        items: serializeJobItems(resolvedSelectedJob.items),
         activeInvoice: (() => {
-          const invoice = rawSelectedJob.invoices.find(
+          const invoice = resolvedSelectedJob.invoices.find(
             (inv) => inv.status === 'DRAFT' || inv.status === 'ISSUED' || inv.status === 'PAID'
           );
           if (!invoice) return null;
