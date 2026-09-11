@@ -54,12 +54,24 @@ const faqs = [
   ['Mohu mít v systému více mechaniků?', 'Ano. Garazio počítá s týmem servisu a umožňuje pracovat s jednotlivými uživateli a jejich oprávněními.'],
 ];
 
+function GarazioMark() {
+  return (
+    <svg viewBox="0 0 512 512" aria-hidden="true" className="h-9 w-9 shrink-0 rounded-lg">
+      <circle cx="256" cy="256" r="252" fill="#151b21" />
+      <path fill="#fff" d="M365 123c-27-17-59-27-94-27-95 0-172 77-172 172 0 51 22 97 57 129l45-31c-25-24-40-58-40-98 0-73 59-132 132-132 27 0 52 8 73 21l-1 0 42-34z" />
+      <path fill="#ff5a00" d="M148 348l79-54c0-47 38-85 85-85 19 0 37 6 51 16l-63 20-15 51 18 34 54-8 63-20c-6 30-24 56-51 71-42 24-94 18-129-13l-69 48c-7-5-14-11-23-18z" />
+      <path fill="#151b21" d="M274 286l12-41 42-12-12 42-42 11z" />
+    </svg>
+  );
+}
+
 export default function LandingPage() {
   return (
     <main className="min-h-screen overflow-hidden bg-background text-text-primary">
       <nav className="relative z-20 mx-auto flex max-w-6xl items-center justify-between px-5 py-5 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <Image src="/garazio-logo.svg" alt="Garazio" width={36} height={36} className="h-9 w-9 rounded-lg" priority />
+          <Image src="/garazio-logo.svg" alt="Garazio" width={36} height={36} className="hidden h-9 w-9 rounded-lg md:block" priority />
+          <span className="md:hidden"><GarazioMark /></span>
           <span className="font-heading text-lg font-extrabold tracking-tight">Garazio</span>
         </Link>
         <div className="hidden items-center gap-7 text-sm font-semibold text-text-secondary md:flex">
