@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -58,7 +59,7 @@ export default function LandingPage() {
     <main className="min-h-screen overflow-hidden bg-background text-text-primary">
       <nav className="relative z-20 mx-auto flex max-w-6xl items-center justify-between px-5 py-5 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <img src="/garazio-logo.svg" alt="Garazio" className="h-9 w-9 rounded-lg" />
+          <Image src="/garazio-logo.svg" alt="Garazio" width={36} height={36} className="h-9 w-9 rounded-lg" priority />
           <span className="font-heading text-lg font-extrabold tracking-tight">Garazio</span>
         </Link>
         <div className="hidden items-center gap-7 text-sm font-semibold text-text-secondary md:flex">
@@ -68,8 +69,8 @@ export default function LandingPage() {
           <a href="#faq" className="transition hover:text-text-primary">FAQ</a>
         </div>
         <div className="relative z-20 flex items-center gap-2">
-          <Link href="/login" className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-text-secondary transition hover:text-text-primary sm:block">Přihlásit se</Link>
-          <a href="/signup" className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110">Vyzkoušet zdarma</a>
+          <Link href="/login" className="rounded-lg px-2 py-2 text-xs font-semibold text-text-secondary transition hover:text-text-primary sm:px-3 sm:text-sm">Přihlásit se</Link>
+          <Link href="/signup" className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110 sm:px-4 sm:py-2.5 sm:text-sm">Vyzkoušet zdarma</Link>
         </div>
       </nav>
 
@@ -83,8 +84,7 @@ export default function LandingPage() {
               Pro malé a střední autoservisy
             </div>
             <h1 className="max-w-2xl font-heading text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
-              Mějte svůj autoservis.<br />
-              <span className="text-primary">Konečně pod kontrolou.</span>
+              Mějte svůj autoservis <span className="text-primary">konečně pod kontrolou.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-7 text-text-secondary sm:text-lg">
               Zakázky, zákazníci, vozidla, mechanici, úkoly i fakturace. Všechno, co potřebujete pro každodenní provoz servisu, přehledně na jednom místě.
