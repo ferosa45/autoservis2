@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Search, ClipboardList, Car, User, Wrench } from 'lucide-react';
+import { Search, ClipboardList, Car, User, Wrench, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getSessionContext } from '@/lib/session';
 import { listJobs } from '@/lib/services/job.service';
 import { formatShortDate, formatTime } from '@/lib/format';
@@ -18,13 +18,20 @@ const STATUS_TABS: { value: JobStatus | ''; label: string }[] = [
 export default async function JobsListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
 }) {
-  const { q, status } = await searchParams;
+  const { q, status, page: pageParam } = await searchParams;
   const context = await getSessionContext();
 
   const validStatus = STATUS_TABS.find((t) => t.value === status)?.value || undefined;
-  const jobs = await listJobs(context, { query: q, status: validStatus || undefined });
+  const requestedPage = Math.max(Number.parseInt(pageParam ?? '1', 10) || 1, 1);
+  const result = await listJobs(context, {
+    query: q,
+    status: validStatus || undefined,
+    page: requestedPage,
+    pageSize: 20,
+  });
+  const { jobs, total, page, pageSize, totalPages } = result;
 
   function tabHref(value: string) {
     const params = new URLSearchParams();
@@ -33,6 +40,28 @@ export default async function JobsListPage({
     const qs = params.toString();
     return qs ? `/jobs?${qs}` : '/jobs';
   }
+
+  function pageHref(targetPage: number) {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (validStatus) params.set('status', validStatus);
+    if (targetPage > 1) params.set('page', String(targetPage));
+    const qs = params.toString();
+    return qs ? `/jobs?${qs}` : '/jobs';
+  }
+
+  const firstItem = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const lastItem = Math.min(page * pageSize, total);
+
+  const pageNumbers = Array.from(
+    { length: Math.min(totalPages, 5) },
+    (_, index) => {
+      if (totalPages <= 5) return index + 1;
+      if (page <= 3) return index + 1;
+      if (page >= totalPages - 2) return totalPages - 4 + index;
+      return page - 2 + index;
+    }
+  );
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -76,6 +105,11 @@ export default async function JobsListPage({
         </div>
       ) : (
         <>
+          <div className="flex items-center justify-between text-sm text-text-muted">
+            <span>{firstItem}–{lastItem} z {total} zakázek</span>
+            <span>20 na stránku</span>
+          </div>
+
           <div className="hidden overflow-hidden rounded-lg border border-border bg-surface md:block">
             <table className="w-full text-sm">
               <thead>
@@ -224,6 +258,50 @@ export default async function JobsListPage({
               );
             })}
           </div>
+
+          {totalPages > 1 && (
+            <nav className="flex items-center justify-center gap-1" aria-label="Stránkování zakázek">
+              <Link
+                href={pageHref(page - 1)}
+                aria-disabled={page === 1}
+                className={cn(
+                  'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text-secondary transition-colors',
+                  page === 1 ? 'pointer-events-none opacity-40' : 'hover:bg-elevated hover:text-text-primary'
+                )}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Předchozí stránka</span>
+              </Link>
+
+              {pageNumbers.map((pageNumber) => (
+                <Link
+                  key={pageNumber}
+                  href={pageHref(pageNumber)}
+                  aria-current={pageNumber === page ? 'page' : undefined}
+                  className={cn(
+                    'inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-sm font-medium transition-colors',
+                    pageNumber === page
+                      ? 'bg-primary text-white'
+                      : 'text-text-secondary hover:bg-elevated hover:text-text-primary'
+                  )}
+                >
+                  {pageNumber}
+                </Link>
+              ))}
+
+              <Link
+                href={pageHref(page + 1)}
+                aria-disabled={page === totalPages}
+                className={cn(
+                  'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text-secondary transition-colors',
+                  page === totalPages ? 'pointer-events-none opacity-40' : 'hover:bg-elevated hover:text-text-primary'
+                )}
+              >
+                <ChevronRight className="h-4 w-4" />
+                <span className="sr-only">Další stránka</span>
+              </Link>
+            </nav>
+          )}
         </>
       )}
     </div>
