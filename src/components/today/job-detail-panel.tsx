@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Car, PackageX, CheckCircle2, MessageSquareText, Pencil, X, Play, Receipt } from 'lucide-react';
+import { Car, PackageX, CheckCircle2, MessageSquareText, Pencil, X, Play, Receipt, Loader2 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/badge';
 import { formatDateTime, formatTime, formatCurrency } from '@/lib/format';
 import { setJobStatus, sendJobSms } from '@/lib/actions/today.actions';
@@ -85,14 +85,11 @@ export function JobDetailPanel({ job }: { job: Job }) {
 
   const handleStatusChange = (status: JobStatus) => {
     setError(null);
-    const previousStatus = localStatus;
-    setLocalStatus(status);
 
     startTransition(async () => {
       try {
         const result = await setJobStatus(job.id, status);
         if (!result.success) {
-          setLocalStatus(previousStatus);
           if (result.error === 'READ_ONLY_ACCESS') {
             setError(READ_ONLY_ACCESS_MESSAGE);
           }
@@ -100,7 +97,6 @@ export function JobDetailPanel({ job }: { job: Job }) {
         }
         router.refresh();
       } catch (err) {
-        setLocalStatus(previousStatus);
         setError(getActionErrorMessage(err, 'Stav zakázky se nepodařilo změnit.'));
       }
     });
@@ -200,8 +196,8 @@ export function JobDetailPanel({ job }: { job: Job }) {
               onClick={() => handleStatusChange('IN_PROGRESS')}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
             >
-              <Play className="h-4 w-4" />
-              Zahájit práci
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              {isPending ? 'Spouštím…' : 'Zahájit práci'}
             </button>
           )}
 
@@ -213,8 +209,8 @@ export function JobDetailPanel({ job }: { job: Job }) {
                 onClick={() => handleStatusChange('BLOCKED')}
                 className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-border disabled:opacity-50"
               >
-                <PackageX className="h-4 w-4" />
-                Čeká na díl
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageX className="h-4 w-4" />}
+                {isPending ? 'Ukládám…' : 'Čeká na díl'}
               </button>
               <button
                 type="button"
@@ -222,8 +218,8 @@ export function JobDetailPanel({ job }: { job: Job }) {
                 onClick={() => handleStatusChange('DONE')}
                 className="flex items-center justify-center gap-1.5 rounded-lg bg-status-done-text px-3 py-2.5 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
               >
-                <CheckCircle2 className="h-4 w-4" />
-                Hotovo
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {isPending ? 'Dokončuji…' : 'Hotovo'}
               </button>
             </div>
           )}
@@ -235,8 +231,8 @@ export function JobDetailPanel({ job }: { job: Job }) {
               onClick={() => handleStatusChange('IN_PROGRESS')}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
             >
-              <Play className="h-4 w-4" />
-              Pokračovat v práci
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              {isPending ? 'Spouštím…' : 'Pokračovat v práci'}
             </button>
           )}
 
