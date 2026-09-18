@@ -148,7 +148,6 @@ export default async function TodayPage({
         <StatsCards
           totalToday={stats.totalToday}
           waitingForPart={stats.waitingForPart}
-          done={stats.done}
           inProgress={stats.inProgress}
           revenueToday={stats.revenueToday}
         />
