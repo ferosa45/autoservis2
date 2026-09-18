@@ -6,15 +6,19 @@ export function WeekOverviewPanel({
   waitingForPart,
   done,
   revenueThisWeek,
+  showRevenue = true,
 }: {
   totalThisWeek: number;
   waitingForPart: number;
   done: number;
   revenueThisWeek: number;
+  showRevenue?: boolean;
 }) {
   const items = [
     { icon: CalendarDays, value: String(totalThisWeek), label: 'zakázek tento týden' },
-    { icon: FileText, value: formatCurrency(revenueThisWeek), label: 'obrat tento týden' },
+    ...(showRevenue
+      ? [{ icon: FileText, value: formatCurrency(revenueThisWeek), label: 'obrat tento týden' }]
+      : []),
     { icon: PackageX, value: String(waitingForPart), label: 'čeká na díl' },
     { icon: CheckCircle2, value: String(done), label: 'hotová' },
   ];
