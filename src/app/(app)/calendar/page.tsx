@@ -66,6 +66,7 @@ export default async function CalendarPage({
           waitingForPart={stats.waitingForPart}
           done={stats.done}
           revenueThisWeek={stats.revenueThisWeek}
+          showRevenue={context.role === 'OWNER'}
         />
         <MiniMonthCalendar weekStart={weekStart} />
         <CalendarFilters mechanics={mechanics} />
