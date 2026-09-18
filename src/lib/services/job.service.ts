@@ -5,36 +5,54 @@ import type { SessionContext } from '@/lib/session';
 export type JobListFilters = {
   query?: string;
   status?: JobStatus;
+  page?: number;
+  pageSize?: number;
 };
 
 export async function listJobs(context: SessionContext, filters: JobListFilters = {}) {
   const q = filters.query?.trim();
+  const pageSize = Math.min(Math.max(filters.pageSize ?? 20, 1), 100);
+  const page = Math.max(filters.page ?? 1, 1);
 
-  return prisma.job.findMany({
-    where: {
-      garageId: context.garageId,
-      ...(filters.status ? { status: filters.status } : {}),
-      ...(q
-        ? {
-            OR: [
-              { number: { contains: q, mode: 'insensitive' } },
-              { customerRequest: { contains: q, mode: 'insensitive' } },
-              { customer: { name: { contains: q, mode: 'insensitive' } } },
-              { vehicle: { licensePlate: { contains: q, mode: 'insensitive' } } },
-              { vehicle: { brand: { contains: q, mode: 'insensitive' } } },
-              { vehicle: { model: { contains: q, mode: 'insensitive' } } },
-            ],
-          }
-        : {}),
-    },
-    include: {
-      customer: true,
-      vehicle: true,
-      assignedUser: { select: { id: true, name: true, active: true } },
-    },
-    orderBy: { scheduledStart: 'desc' },
-    take: 100,
-  });
+  const where = {
+    garageId: context.garageId,
+    ...(filters.status ? { status: filters.status } : {}),
+    ...(q
+      ? {
+          OR: [
+            { number: { contains: q, mode: 'insensitive' } },
+            { customerRequest: { contains: q, mode: 'insensitive' } },
+            { customer: { name: { contains: q, mode: 'insensitive' } } },
+            { vehicle: { licensePlate: { contains: q, mode: 'insensitive' } } },
+            { vehicle: { brand: { contains: q, mode: 'insensitive' } } },
+            { vehicle: { model: { contains: q, mode: 'insensitive' } } },
+          ],
+        }
+      : {}),
+  };
+
+  const [jobs, total] = await prisma.$transaction([
+    prisma.job.findMany({
+      where,
+      include: {
+        customer: true,
+        vehicle: true,
+        assignedUser: { select: { id: true, name: true, active: true } },
+      },
+      orderBy: { scheduledStart: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.job.count({ where }),
+  ]);
+
+  return {
+    jobs,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(Math.ceil(total / pageSize), 1),
+  };
 }
 
 export type CreateJobFromQuickInput = {
