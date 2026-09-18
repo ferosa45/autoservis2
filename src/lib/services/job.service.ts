@@ -1,6 +1,14 @@
-import type { JobStatus } from '@prisma/client';
+import type { JobStatus, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import type { SessionContext } from '@/lib/session';
+
+type JobListItem = Prisma.JobGetPayload<{
+  include: {
+    customer: true;
+    vehicle: true;
+    assignedUser: { select: { id: true; name: true; active: true } };
+  };
+}>;
 
 export type JobListFilters = {
   query?: string;
@@ -31,7 +39,7 @@ export async function listJobs(context: SessionContext, filters: JobListFilters 
       : {}),
   };
 
-  const [jobs, total] = await Promise.all([
+  const [jobs, total] = await Promise.all<[Promise<JobListItem[]>, Promise<number>]>([
     prisma.job.findMany({
       where,
       include: {
