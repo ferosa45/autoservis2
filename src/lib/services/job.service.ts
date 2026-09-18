@@ -39,7 +39,7 @@ export async function listJobs(context: SessionContext, filters: JobListFilters 
       : {}),
   };
 
-  const [jobs, total] = await Promise.all<[Promise<JobListItem[]>, Promise<number>]>([
+  const [jobs, total] = await Promise.all([
     prisma.job.findMany({
       where,
       include: {
