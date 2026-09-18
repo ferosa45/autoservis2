@@ -4,18 +4,18 @@ import { formatCurrency } from '@/lib/format';
 export function StatsCards({
   totalToday,
   waitingForPart,
-  done,
+  inProgress,
   revenueToday,
 }: {
   totalToday: number;
   waitingForPart: number;
-  done: number;
+  inProgress: number;
   revenueToday: number;
 }) {
   const items = [
     { icon: CalendarDays, value: String(totalToday), label: 'zakázek dnes', iconClass: 'text-text-secondary' },
+    { icon: CheckCircle2, value: String(inProgress), label: 'pracuje se', iconClass: 'text-status-done-text' },
     { icon: PackageX, value: String(waitingForPart), label: 'čeká na díl', iconClass: 'text-status-blocked-text' },
-    { icon: CheckCircle2, value: String(done), label: 'hotová', iconClass: 'text-status-done-text' },
     { icon: FileText, value: formatCurrency(revenueToday), label: 'obrat dnes', iconClass: 'text-text-secondary' },
   ];
 
