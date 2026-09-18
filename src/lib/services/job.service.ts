@@ -50,7 +50,7 @@ export async function listJobs(context: SessionContext, filters: JobListFilters 
       orderBy: { scheduledStart: 'desc' },
       skip: (page - 1) * pageSize,
       take: pageSize,
-    }),
+    }) as unknown as Promise<JobListItem[]>,
     prisma.job.count({ where }),
   ]);
 
