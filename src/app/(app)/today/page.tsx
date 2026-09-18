@@ -17,7 +17,6 @@ import { JobTimeline } from '@/components/today/job-timeline';
 import { JobDetailPanel } from '@/components/today/job-detail-panel';
 import { MechanicAssignment } from '@/components/job-detail/mechanic-assignment';
 import { TasksPanel } from '@/components/today/tasks-panel';
-import { QuickActions } from '@/components/today/quick-actions';
 
 function parseDate(dateParam: string | undefined): Date {
   if (!dateParam) return new Date();
@@ -150,10 +149,10 @@ export default async function TodayPage({
           totalToday={stats.totalToday}
           waitingForPart={stats.waitingForPart}
           done={stats.done}
+          inProgress={stats.inProgress}
           revenueToday={stats.revenueToday}
         />
         <JobTimeline jobs={jobs} date={date} selectedJobId={selectedJobId} />
-        <QuickActions />
       </div>
 
       <div className="w-full shrink-0 space-y-4 border-t border-border p-3 sm:p-4 md:w-[380px] md:overflow-y-auto md:border-l md:border-t-0">
