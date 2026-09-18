@@ -6,21 +6,25 @@ export function StatsCards({
   waitingForPart,
   inProgress,
   revenueToday,
+  showRevenue = true,
 }: {
   totalToday: number;
   waitingForPart: number;
   inProgress: number;
   revenueToday: number;
+  showRevenue?: boolean;
 }) {
   const items = [
     { icon: CalendarDays, value: String(totalToday), label: 'zakázek dnes', iconClass: 'text-text-secondary' },
     { icon: CheckCircle2, value: String(inProgress), label: 'pracuje se', iconClass: 'text-status-done-text' },
     { icon: PackageX, value: String(waitingForPart), label: 'čeká na díl', iconClass: 'text-status-blocked-text' },
-    { icon: FileText, value: formatCurrency(revenueToday), label: 'obrat dnes', iconClass: 'text-text-secondary' },
+    ...(showRevenue
+      ? [{ icon: FileText, value: formatCurrency(revenueToday), label: 'obrat dnes', iconClass: 'text-text-secondary' }]
+      : []),
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className={`grid grid-cols-2 gap-3 ${showRevenue ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
       {items.map((item) => (
         <div
           key={item.label}
