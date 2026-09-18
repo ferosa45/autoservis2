@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Car, PackageX, CheckCircle2, MessageSquareText, Pencil, X, Play, Receipt } from 'lucide-react';
@@ -52,7 +52,12 @@ type Tab = (typeof TABS)[number];
 export function JobDetailPanel({ job }: { job: Job }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('Přehled');
+  const [localStatus, setLocalStatus] = useState<JobStatus>(job.status);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setLocalStatus(job.status);
+  }, [job.status]);
   const [smsSent, setSmsSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,13 +85,22 @@ export function JobDetailPanel({ job }: { job: Job }) {
 
   const handleStatusChange = (status: JobStatus) => {
     setError(null);
+    const previousStatus = localStatus;
+    setLocalStatus(status);
+
     startTransition(async () => {
       try {
         const result = await setJobStatus(job.id, status);
-        if (!result.success && result.error === 'READ_ONLY_ACCESS') {
-          setError(READ_ONLY_ACCESS_MESSAGE);
+        if (!result.success) {
+          setLocalStatus(previousStatus);
+          if (result.error === 'READ_ONLY_ACCESS') {
+            setError(READ_ONLY_ACCESS_MESSAGE);
+          }
+          return;
         }
+        router.refresh();
       } catch (err) {
+        setLocalStatus(previousStatus);
         setError(getActionErrorMessage(err, 'Stav zakázky se nepodařilo změnit.'));
       }
     });
@@ -114,7 +128,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
   return (
     <div className="flex h-full flex-col rounded-lg border border-border bg-surface">
       <div className="flex items-center justify-between border-b border-border p-4">
-        <StatusBadge status={job.status} />
+        <StatusBadge status={localStatus} />
         <div className="flex items-center gap-1">
           <Link
             href={`/jobs/${job.id}`}
@@ -179,7 +193,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
             </p>
           )}
 
-          {job.status === 'WAITING' && (
+          {localStatus === 'WAITING' && (
             <button
               type="button"
               disabled={isPending}
@@ -191,7 +205,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
             </button>
           )}
 
-          {job.status === 'IN_PROGRESS' && (
+          {localStatus === 'IN_PROGRESS' && (
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -214,7 +228,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
             </div>
           )}
 
-          {job.status === 'BLOCKED' && (
+          {localStatus === 'BLOCKED' && (
             <button
               type="button"
               disabled={isPending}
@@ -226,7 +240,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
             </button>
           )}
 
-          {job.status === 'DONE' && (
+          {localStatus === 'DONE' && (
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -271,7 +285,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
                 )}
                 <div className="flex justify-between">
                   <dt className="text-text-secondary">Stav</dt>
-                  <dd className="text-text-primary">{JOB_STATUS_LABEL[job.status]}</dd>
+                  <dd className="text-text-primary">{JOB_STATUS_LABEL[localStatus]}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-text-secondary">Mechanik</dt>
