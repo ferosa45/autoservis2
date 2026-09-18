@@ -171,6 +171,86 @@ export function JobDetailPanel({ job }: { job: Job }) {
         ))}
       </div>
 
+      {(job.status === 'WAITING' || job.status === 'IN_PROGRESS' || job.status === 'BLOCKED' || job.status === 'DONE') && (
+        <div className="shrink-0 border-b border-border bg-surface p-4">
+          {error && (
+            <p className="mb-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
+              {error}
+            </p>
+          )}
+
+          {job.status === 'WAITING' && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => handleStatusChange('IN_PROGRESS')}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+            >
+              <Play className="h-4 w-4" />
+              Zahájit práci
+            </button>
+          )}
+
+          {job.status === 'IN_PROGRESS' && (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => handleStatusChange('BLOCKED')}
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-border disabled:opacity-50"
+              >
+                <PackageX className="h-4 w-4" />
+                Čeká na díl
+              </button>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => handleStatusChange('DONE')}
+                className="flex items-center justify-center gap-1.5 rounded-lg bg-status-done-text px-3 py-2.5 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Hotovo
+              </button>
+            </div>
+          )}
+
+          {job.status === 'BLOCKED' && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => handleStatusChange('IN_PROGRESS')}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+            >
+              <Play className="h-4 w-4" />
+              Pokračovat v práci
+            </button>
+          )}
+
+          {job.status === 'DONE' && (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={handleInvoice}
+                className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+              >
+                <Receipt className="h-4 w-4" />
+                {isPending ? 'Otevírám…' : invoiceButtonLabel}
+              </button>
+              <button
+                type="button"
+                disabled={isPending || smsSent}
+                onClick={handleSendSms}
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-border disabled:opacity-50"
+              >
+                <MessageSquareText className="h-4 w-4" />
+                {smsSent ? 'SMS odeslána (mock)' : 'Poslat SMS'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto p-4">
         {tab === 'Přehled' ? (
           <div className="flex flex-col gap-5">
@@ -267,103 +347,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
         )}
       </div>
 
-      {job.status === 'WAITING' && (
-        <div className="border-t border-border p-4">
-          {error && (
-            <p className="mb-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
-              {error}
-            </p>
-          )}
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => handleStatusChange('IN_PROGRESS')}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
-          >
-            <Play className="h-4 w-4" />
-            Zahájit práci
-          </button>
-        </div>
-      )}
 
-      {job.status === 'IN_PROGRESS' && (
-        <div className="border-t border-border p-4">
-          {error && (
-            <p className="mb-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
-              {error}
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => handleStatusChange('BLOCKED')}
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-border disabled:opacity-50"
-          >
-            <PackageX className="h-4 w-4" />
-            Čeká na díl
-          </button>
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => handleStatusChange('DONE')}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-status-done-text px-3 py-2.5 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Hotovo
-          </button>
-          </div>
-        </div>
-      )}
-
-      {job.status === 'BLOCKED' && (
-        <div className="border-t border-border p-4">
-          {error && (
-            <p className="mb-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
-              {error}
-            </p>
-          )}
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => handleStatusChange('IN_PROGRESS')}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
-          >
-            <Play className="h-4 w-4" />
-            Pokračovat v práci
-          </button>
-        </div>
-      )}
-
-      {job.status === 'DONE' && (
-        <div className="border-t border-border p-4">
-          {error && (
-            <p className="mb-3 rounded-lg border border-status-blocked-border bg-status-blocked-bg px-3 py-2 text-xs text-status-blocked-text">
-              {error}
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={handleInvoice}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
-          >
-            <Receipt className="h-4 w-4" />
-            {isPending ? 'Otevírám…' : invoiceButtonLabel}
-          </button>
-          <button
-            type="button"
-            disabled={isPending || smsSent}
-            onClick={handleSendSms}
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-border disabled:opacity-50"
-          >
-            <MessageSquareText className="h-4 w-4" />
-            {smsSent ? 'SMS odeslána (mock)' : 'Poslat SMS'}
-          </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
