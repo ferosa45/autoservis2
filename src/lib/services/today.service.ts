@@ -95,10 +95,10 @@ export async function getTasksForDay(context: SessionContext, date: Date) {
 export function calculateTodayStats(jobs: JobForDay[]) {
   const totalToday = jobs.length;
   const waitingForPart = jobs.filter((j) => j.status === 'BLOCKED').length;
-  const done = jobs.filter((j) => j.status === 'DONE').length;
+  const inProgress = jobs.filter((j) => j.status === 'IN_PROGRESS').length;
   const revenueToday = jobs.filter((j) => j.status === 'DONE').reduce((sum, job) => {
     const jobTotal = job.items.reduce((itemSum, item) => itemSum + Number(item.quantity) * Number(item.unitPrice), 0);
     return sum + jobTotal;
   }, 0);
-  return { totalToday, waitingForPart, done, revenueToday };
+  return { totalToday, waitingForPart, inProgress, revenueToday };
 }
