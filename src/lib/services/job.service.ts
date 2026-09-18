@@ -22,7 +22,7 @@ export async function listJobs(context: SessionContext, filters: JobListFilters 
   const pageSize = Math.min(Math.max(filters.pageSize ?? 20, 1), 100);
   const page = Math.max(filters.page ?? 1, 1);
 
-  const where = {
+  const where: Prisma.JobWhereInput = {
     garageId: context.garageId,
     ...(filters.status ? { status: filters.status } : {}),
     ...(q
