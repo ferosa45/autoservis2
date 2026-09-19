@@ -149,18 +149,18 @@ export function InvoiceItemsEditor({
             placeholder="Název položky"
             className="w-full rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
           />
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             <input
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="Množství"
               inputMode="decimal"
-              className="w-20 rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
+              className="min-w-0 w-full rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none sm:w-20"
             />
             <select
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
-              className="rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary focus:border-primary focus:outline-none"
+              className="min-w-0 w-full rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary focus:border-primary focus:outline-none sm:w-auto"
             >
               {UNITS.map((u) => (
                 <option key={u} value={u}>
@@ -173,7 +173,7 @@ export function InvoiceItemsEditor({
               onChange={(e) => setUnitPrice(e.target.value)}
               placeholder="Cena/jedn."
               inputMode="decimal"
-              className="flex-1 rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
+              className="col-span-2 min-w-0 w-full rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none sm:col-span-1 sm:flex-1"
             />
             {isVatPayer && (
               <input
@@ -181,14 +181,14 @@ export function InvoiceItemsEditor({
                 onChange={(e) => setVatRate(e.target.value)}
                 placeholder="DPH %"
                 inputMode="decimal"
-                className="w-16 rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none"
+                className="min-w-0 w-full rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none sm:w-16"
               />
             )}
             <button
               type="button"
               onClick={handleAdd}
               disabled={!title.trim() || isPending}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-text-secondary hover:bg-border disabled:opacity-40"
+              className="flex h-9 w-9 shrink-0 items-center justify-center justify-self-end rounded-lg bg-elevated text-text-secondary hover:bg-border disabled:opacity-40 sm:justify-self-auto"
               aria-label="Přidat položku"
             >
               <Plus className="h-4 w-4" />
