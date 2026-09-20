@@ -71,6 +71,13 @@ export async function getDashboardData(context: SessionContext, now = new Date()
   const invoiceTotal = (invoices: { total: unknown }[]) =>
     invoices.reduce((sum, invoice) => sum + Number(invoice.total), 0);
 
+  const workMinutesForMonth = (sessions: { startedAt: Date; endedAt: Date | null }[]) =>
+    sessions.reduce((sum, session) => {
+      const start = Math.max(session.startedAt.getTime(), monthStart.getTime());
+      const end = Math.min((session.endedAt ?? now).getTime(), now.getTime());
+      return sum + Math.max(0, end - start) / 60000;
+    }, 0);
+
   const workMinutesForDay = (sessions: { startedAt: Date; endedAt: Date | null }[]) =>
     sessions.reduce((sum, session) => {
       const start = Math.max(session.startedAt.getTime(), todayStart.getTime());
