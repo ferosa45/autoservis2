@@ -13,10 +13,17 @@ function endOfDay(date: Date) {
   return result;
 }
 
-export async function getDashboardData(context: SessionContext, now = new Date()) {
+export async function getDashboardData(context: SessionContext, now = new Date(), monthKey?: string) {
   const todayStart = startOfDay(now);
   const todayEnd = endOfDay(now);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const parsedMonth = monthKey?.match(/^(\\d{4})-(\\d{2})$/);
+  const selectedYear = parsedMonth ? Number(parsedMonth[1]) : now.getFullYear();
+  const selectedMonth = parsedMonth ? Number(parsedMonth[2]) - 1 : now.getMonth();
+  const monthStart = new Date(selectedYear, selectedMonth, 1);
+  const monthEnd = endOfDay(new Date(selectedYear, selectedMonth + 1, 0));
+  const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === now.getMonth();
+  const monthDataEnd = isCurrentMonth ? todayEnd : monthEnd;
   const historyStart = new Date(todayStart);
   historyStart.setDate(historyStart.getDate() - 29);
 
@@ -30,7 +37,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
       },
     }),
     prisma.job.findMany({
-      where: { garageId: context.garageId, scheduledStart: { gte: monthStart, lte: todayEnd } },
+      where: { garageId: context.garageId, scheduledStart: { gte: monthStart, lte: monthDataEnd } },
       select: {
         id: true,
         status: true,
@@ -58,7 +65,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     prisma.workSession.findMany({
       where: {
         garageId: context.garageId,
-        startedAt: { lt: now },
+        startedAt: { lt: monthDataEnd },
         OR: [{ endedAt: null }, { endedAt: { gte: monthStart } }],
       },
       select: { userId: true, startedAt: true, endedAt: true },
@@ -74,7 +81,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
   const workMinutesForMonth = (sessions: { startedAt: Date; endedAt: Date | null }[]) =>
     sessions.reduce((sum, session) => {
       const start = Math.max(session.startedAt.getTime(), monthStart.getTime());
-      const end = Math.min((session.endedAt ?? now).getTime(), now.getTime());
+      const end = Math.min((session.endedAt ?? monthDataEnd).getTime(), monthDataEnd.getTime());
       return sum + Math.max(0, end - start) / 60000;
     }, 0);
 
@@ -121,6 +128,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
       workMinutes: todayMinutes,
     },
     month: {
+      key: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`,
       jobs: monthJobs.length,
       done: doneMonth,
       revenue: monthRevenue,
