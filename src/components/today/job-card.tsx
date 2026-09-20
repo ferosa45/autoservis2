@@ -51,6 +51,7 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
           setPendingStatus(null);
           return;
         }
+        setPendingStatus(null);
         router.refresh();
       } catch (err) {
         setPendingStatus(null);
