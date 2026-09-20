@@ -58,7 +58,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     prisma.workSession.findMany({
       where: {
         garageId: context.garageId,
-        startedAt: { lt: todayEnd },
+        startedAt: { lt: now },
         OR: [{ endedAt: null }, { endedAt: { gte: monthStart } }],
       },
       select: { userId: true, startedAt: true, endedAt: true },
@@ -70,12 +70,6 @@ export async function getDashboardData(context: SessionContext, now = new Date()
 
   const invoiceTotal = (invoices: { total: unknown }[]) =>
     invoices.reduce((sum, invoice) => sum + Number(invoice.total), 0);
-
-  const workMinutes = (sessions: { startedAt: Date; endedAt: Date | null }[]) =>
-    sessions.reduce((sum, session) => {
-      const end = session.endedAt ?? now;
-      return sum + Math.max(0, end.getTime() - session.startedAt.getTime()) / 60000;
-    }, 0);
 
   const workMinutesForDay = (sessions: { startedAt: Date; endedAt: Date | null }[]) =>
     sessions.reduce((sum, session) => {
