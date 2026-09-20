@@ -10,15 +10,23 @@ function formatMinutes(minutes: number) {
   return `${hours} h ${mins} min`;
 }
 
+function formatMonth(monthKey: string) {
+  const [year, month] = monthKey.split('-').map(Number);
+  return new Intl.DateTimeFormat('cs-CZ', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1));
+}
+
 function formatDay(date: string) {
   return new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' }).format(new Date(`${date}T12:00:00`));
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const context = await getSessionContext();
   if (context.role !== 'OWNER') redirect('/today');
 
-  const data = await getDashboardData(context);
+  const params = await searchParams;
+  const currentMonthKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const selectedMonthKey = /^\\d{4}-\\d{2}$/.test(params.month ?? '') ? params.month! : currentMonthKey;
+  const data = await getDashboardData(context, new Date(), selectedMonthKey);
   const maxJobs = Math.max(...data.daily.map((day) => day.jobs), 1);
   const maxRevenue = Math.max(...data.daily.map((day) => day.revenue), 1);
   const firstDay = data.daily[0];
@@ -28,7 +36,7 @@ export default async function DashboardPage() {
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Majitel servisu</p>
         <h1 className="mt-1 font-heading text-2xl font-bold text-text-primary">Přehled servisu</h1>
-        <p className="mt-1 text-sm text-text-muted">Rychlý přehled dnešního provozu a výsledků za tento měsíc.</p>
+        <p className="mt-1 text-sm text-text-muted">Rychlý přehled dnešního provozu a výsledků za vybraný měsíc.</p>
       </div>
 
       <section>
@@ -50,7 +58,14 @@ export default async function DashboardPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 font-heading text-sm font-bold text-text-primary">Tento měsíc</h2>
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-heading text-sm font-bold text-text-primary">{formatMonth(data.month.key)}</h2>
+          <form method="get" className="flex items-center gap-2">
+            <label htmlFor="dashboard-month" className="text-xs text-text-muted">Měsíc</label>
+            <input id="dashboard-month" name="month" type="month" defaultValue={data.month.key} className="rounded-md border border-border bg-surface px-2 py-1.5 text-sm text-text-primary" />
+            <button type="submit" className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover">Zobrazit</button>
+          </form>
+        </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
             { icon: CalendarDays, value: data.month.jobs, label: 'zakázek' },
@@ -70,7 +85,7 @@ export default async function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-border bg-surface p-4 sm:p-5">
           <div className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-text-secondary" /><h2 className="font-heading text-sm font-bold text-text-primary">Práce mechaniků</h2></div>
-          <p className="mt-1 text-xs text-text-muted">Odpracovaný čas za tento kalendářní měsíc.</p>
+          <p className="mt-1 text-xs text-text-muted">Odpracovaný čas za vybraný kalendářní měsíc.</p>
           <div className="mt-4 divide-y divide-border">
             {data.mechanics.length === 0 ? <p className="py-4 text-sm text-text-muted">Zatím nejsou evidováni žádní aktivní mechanici.</p> : data.mechanics.map((mechanic) => <div key={mechanic.id} className="flex items-center justify-between py-3"><span className="text-sm font-medium text-text-primary">{mechanic.name}</span><span className="text-sm font-semibold text-text-secondary">{formatMinutes(mechanic.minutes)}</span></div>)}
           </div>
