@@ -70,7 +70,7 @@ export default async function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-border bg-surface p-4 sm:p-5">
           <div className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-text-secondary" /><h2 className="font-heading text-sm font-bold text-text-primary">Práce mechaniků</h2></div>
-          <p className="mt-1 text-xs text-text-muted">Odpracovaný čas za posledních 30 dní.</p>
+          <p className="mt-1 text-xs text-text-muted">Odpracovaný čas za tento kalendářní měsíc.</p>
           <div className="mt-4 divide-y divide-border">
             {data.mechanics.length === 0 ? <p className="py-4 text-sm text-text-muted">Zatím nejsou evidováni žádní aktivní mechanici.</p> : data.mechanics.map((mechanic) => <div key={mechanic.id} className="flex items-center justify-between py-3"><span className="text-sm font-medium text-text-primary">{mechanic.name}</span><span className="text-sm font-semibold text-text-secondary">{formatMinutes(mechanic.minutes)}</span></div>)}
           </div>
