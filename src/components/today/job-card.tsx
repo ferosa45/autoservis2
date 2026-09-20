@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Phone, User, Play, Package, CheckCircle2, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { StatusBadge } from '@/components/ui/badge';
 import { getActionErrorMessage, READ_ONLY_ACCESS_MESSAGE } from '@/lib/action-errors';
 import { JOB_STATUS_COLOR } from '@/lib/job-status';
@@ -12,8 +12,8 @@ import { setJobStatus } from '@/lib/actions/today.actions';
 import { cn } from '@/lib/utils';
 import type { JobForDay } from '@/lib/services/today.service';
 
-function rightSideLabel(job: JobForDay): string {
-  switch (job.status) {
+function rightSideLabel(job: JobForDay, status: JobForDay['status'] = job.status): string {
+  switch (status) {
     case 'DONE': return job.scheduledEnd ? `Konec: ${formatTime(job.scheduledEnd)}` : 'Hotovo';
     case 'IN_PROGRESS': return job.scheduledEnd ? `Předpoklad: ${formatTime(job.scheduledEnd)}` : 'Pracuje se';
     case 'BLOCKED': return `Od: ${formatShortDate(job.updatedAt)}`;
@@ -32,28 +32,38 @@ function toDateParam(date: Date): string {
 export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boolean }) {
   const primaryTask = job.tasks[0]?.title ?? job.customerRequest;
   const secondaryTask = job.tasks[1]?.title;
-  const colors = JOB_STATUS_COLOR[job.status];
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [displayStatus, setDisplayStatus] = useState<JobForDay['status']>(job.status);
   const [pendingStatus, setPendingStatus] = useState<JobForDay['status'] | null>(null);
+  const colors = JOB_STATUS_COLOR[displayStatus];
+
+  useEffect(() => {
+    if (!isPending) {
+      setDisplayStatus(job.status);
+    }
+  }, [job.status, isPending]);
   const [error, setError] = useState<string | null>(null);
 
   const changeStatus = (event: React.MouseEvent<HTMLButtonElement>, status: JobForDay['status']) => {
     event.preventDefault();
     event.stopPropagation();
     setError(null);
+    setDisplayStatus(status);
     setPendingStatus(status);
     startTransition(async () => {
       try {
         const result = await setJobStatus(job.id, status);
         if (!result.success && result.error === 'READ_ONLY_ACCESS') {
           setError(READ_ONLY_ACCESS_MESSAGE);
+          setDisplayStatus(job.status);
           setPendingStatus(null);
           return;
         }
         setPendingStatus(null);
         router.refresh();
       } catch (err) {
+        setDisplayStatus(job.status);
         setPendingStatus(null);
         setError(getActionErrorMessage(err, 'Stav zakázky se nepodařilo změnit.'));
       }
@@ -104,15 +114,15 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-end">
-            <StatusBadge status={job.status} className="border-white/10 bg-black/20" />
-            <span className={cn('text-xs', colors.text)}>{rightSideLabel(job)}</span>
+            <StatusBadge status={displayStatus} className="border-white/10 bg-black/20" />
+            <span className={cn('text-xs', colors.text)}>{rightSideLabel(job, displayStatus)}</span>
           </div>
         </div>
       </Link>
 
-      {job.status !== 'DONE' && (
+      {displayStatus !== 'DONE' && (
         <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:hidden">
-          {(job.status === 'WAITING' || job.status === 'BLOCKED') && (
+          {(displayStatus === 'WAITING' || displayStatus === 'BLOCKED') && (
             <button
               type="button"
               disabled={isPending}
@@ -120,7 +130,7 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
               className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
             >
               {pendingStatus === 'IN_PROGRESS' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-              {pendingStatus === 'IN_PROGRESS' ? 'Spouštím…' : job.status === 'WAITING' ? 'Zahájit' : 'Pokračovat'}
+              {pendingStatus === 'IN_PROGRESS' ? 'Spouštím…' : displayStatus === 'WAITING' ? 'Zahájit' : 'Pokračovat'}
             </button>
           )}
 
