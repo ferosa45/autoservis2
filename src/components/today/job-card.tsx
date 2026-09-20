@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Phone, User, Play, Package, CheckCircle2 } from 'lucide-react';
+import { Phone, User, Play, Package, CheckCircle2, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { StatusBadge } from '@/components/ui/badge';
@@ -35,21 +35,25 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
   const colors = JOB_STATUS_COLOR[job.status];
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [pendingStatus, setPendingStatus] = useState<JobForDay['status'] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const changeStatus = (event: React.MouseEvent<HTMLButtonElement>, status: JobForDay['status']) => {
     event.preventDefault();
     event.stopPropagation();
     setError(null);
+    setPendingStatus(status);
     startTransition(async () => {
       try {
         const result = await setJobStatus(job.id, status);
         if (!result.success && result.error === 'READ_ONLY_ACCESS') {
           setError(READ_ONLY_ACCESS_MESSAGE);
+          setPendingStatus(null);
           return;
         }
         router.refresh();
       } catch (err) {
+        setPendingStatus(null);
         setError(getActionErrorMessage(err, 'Stav zakázky se nepodařilo změnit.'));
       }
     });
@@ -114,8 +118,8 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
               onClick={(event) => changeStatus(event, 'IN_PROGRESS')}
               className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
             >
-              <Play className="h-3.5 w-3.5" />
-              {isPending ? 'Spouštím…' : job.status === 'WAITING' ? 'Zahájit' : 'Pokračovat'}
+              {pendingStatus === 'IN_PROGRESS' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+              {pendingStatus === 'IN_PROGRESS' ? 'Spouštím…' : job.status === 'WAITING' ? 'Zahájit' : 'Pokračovat'}
             </button>
           )}
 
@@ -125,8 +129,8 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
             onClick={(event) => changeStatus(event, 'BLOCKED')}
             className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-black/20 px-3 py-2.5 text-xs font-semibold text-text-primary hover:bg-black/30 disabled:opacity-50"
           >
-            <Package className="h-3.5 w-3.5" />
-            Čeká na díl
+            {pendingStatus === 'BLOCKED' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Package className="h-3.5 w-3.5" />}
+            {pendingStatus === 'BLOCKED' ? 'Ukládám…' : 'Čeká na díl'}
           </button>
 
           <button
@@ -135,8 +139,8 @@ export function JobCard({ job, isSelected }: { job: JobForDay; isSelected: boole
             onClick={(event) => changeStatus(event, 'DONE')}
             className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg bg-status-done-text px-3 py-2.5 text-xs font-semibold text-background hover:opacity-90 disabled:opacity-50"
           >
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Hotovo
+            {pendingStatus === 'DONE' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+            {pendingStatus === 'DONE' ? 'Dokončuji…' : 'Hotovo'}
           </button>
         </div>
       )}
