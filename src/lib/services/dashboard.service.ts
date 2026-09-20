@@ -20,7 +20,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
   const historyStart = new Date(todayStart);
   historyStart.setDate(historyStart.getDate() - 29);
 
-  const [todayJobs, monthJobs, historyJobs, mechanics] = await Promise.all([
+  const [todayJobs, monthJobs, historyJobs, mechanics, monthWorkSessions] = await Promise.all([
     prisma.job.findMany({
       where: { garageId: context.garageId, scheduledStart: { gte: todayStart, lte: todayEnd } },
       select: {
@@ -55,6 +55,14 @@ export async function getDashboardData(context: SessionContext, now = new Date()
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     }),
+    prisma.workSession.findMany({
+      where: {
+        garageId: context.garageId,
+        startedAt: { lt: todayEnd },
+        OR: [{ endedAt: null }, { endedAt: { gte: monthStart } }],
+      },
+      select: { userId: true, startedAt: true, endedAt: true },
+    }),
   ]);
 
   const jobItemsTotal = (items: { quantity: unknown; unitPrice: unknown }[]) =>
@@ -77,10 +85,8 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     }, 0);
 
   const mechanicStats = mechanics.map((mechanic) => {
-    const sessions = historyJobs.flatMap((job) =>
-      job.workSessions.filter((session) => session.userId === mechanic.id)
-    );
-    return { id: mechanic.id, name: mechanic.name, minutes: Math.round(workMinutes(sessions)) };
+    const sessions = monthWorkSessions.filter((session) => session.userId === mechanic.id);
+    return { id: mechanic.id, name: mechanic.name, minutes: Math.round(workMinutesForMonth(sessions)) };
   });
 
   const daily = Array.from({ length: 30 }, (_, index) => {
