@@ -54,6 +54,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
   const [tab, setTab] = useState<Tab>('Přehled');
   const [localStatus, setLocalStatus] = useState<JobStatus>(job.status);
   const [isPending, startTransition] = useTransition();
+  const [pendingStatus, setPendingStatus] = useState<JobStatus | null>(null);
 
   useEffect(() => {
     setLocalStatus(job.status);
@@ -85,6 +86,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
 
   const handleStatusChange = (status: JobStatus) => {
     setError(null);
+    setPendingStatus(status);
 
     startTransition(async () => {
       try {
@@ -93,10 +95,12 @@ export function JobDetailPanel({ job }: { job: Job }) {
           if (result.error === 'READ_ONLY_ACCESS') {
             setError(READ_ONLY_ACCESS_MESSAGE);
           }
+          setPendingStatus(null);
           return;
         }
         router.refresh();
       } catch (err) {
+        setPendingStatus(null);
         setError(getActionErrorMessage(err, 'Stav zakázky se nepodařilo změnit.'));
       }
     });
@@ -196,8 +200,8 @@ export function JobDetailPanel({ job }: { job: Job }) {
               onClick={() => handleStatusChange('IN_PROGRESS')}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
             >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              {isPending ? 'Spouštím…' : 'Zahájit práci'}
+              {pendingStatus === 'IN_PROGRESS' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              {pendingStatus === 'IN_PROGRESS' ? 'Spouštím…' : 'Zahájit práci'}
             </button>
           )}
 
@@ -209,8 +213,8 @@ export function JobDetailPanel({ job }: { job: Job }) {
                 onClick={() => handleStatusChange('BLOCKED')}
                 className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm font-medium text-text-primary hover:bg-border disabled:opacity-50"
               >
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageX className="h-4 w-4" />}
-                {isPending ? 'Ukládám…' : 'Čeká na díl'}
+                {pendingStatus === 'BLOCKED' ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageX className="h-4 w-4" />}
+                {pendingStatus === 'BLOCKED' ? 'Ukládám…' : 'Čeká na díl'}
               </button>
               <button
                 type="button"
@@ -218,8 +222,8 @@ export function JobDetailPanel({ job }: { job: Job }) {
                 onClick={() => handleStatusChange('DONE')}
                 className="flex items-center justify-center gap-1.5 rounded-lg bg-status-done-text px-3 py-2.5 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
               >
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                {isPending ? 'Dokončuji…' : 'Hotovo'}
+                {pendingStatus === 'DONE' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {pendingStatus === 'DONE' ? 'Dokončuji…' : 'Hotovo'}
               </button>
             </div>
           )}
@@ -231,8 +235,8 @@ export function JobDetailPanel({ job }: { job: Job }) {
               onClick={() => handleStatusChange('IN_PROGRESS')}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
             >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              {isPending ? 'Spouštím…' : 'Pokračovat v práci'}
+              {pendingStatus === 'IN_PROGRESS' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              {pendingStatus === 'IN_PROGRESS' ? 'Spouštím…' : 'Pokračovat v práci'}
             </button>
           )}
 
