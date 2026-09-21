@@ -17,7 +17,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
   const todayStart = startOfDay(now);
   const todayEnd = endOfDay(now);
 
-  const parsedMonth = monthKey?.match(/^(\\d{4})-(\\d{2})$/);
+  const parsedMonth = monthKey?.match(/^(\d{4})-(\d{2})$/);
   const selectedYear = parsedMonth ? Number(parsedMonth[1]) : now.getFullYear();
   const selectedMonth = parsedMonth ? Number(parsedMonth[2]) - 1 : now.getMonth();
   const monthStart = new Date(selectedYear, selectedMonth, 1);
