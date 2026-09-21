@@ -11,7 +11,10 @@ function formatMinutes(minutes: number) {
 }
 
 function formatMonth(monthKey: string) {
-  const [year, month] = monthKey.split('-').map(Number);
+  const match = /^(\\d{4})-(\\d{2})$/.exec(monthKey);
+  if (!match) return monthKey;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
   return new Intl.DateTimeFormat('cs-CZ', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1));
 }
 
