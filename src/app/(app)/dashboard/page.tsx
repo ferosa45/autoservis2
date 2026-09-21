@@ -11,7 +11,7 @@ function formatMinutes(minutes: number) {
 }
 
 function formatMonth(monthKey: string) {
-  const match = /^(\\d{4})-(\\d{2})$/.exec(monthKey);
+  const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
   if (!match) return monthKey;
   const year = Number(match[1]);
   const month = Number(match[2]);
@@ -28,7 +28,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const params = await searchParams;
   const currentMonthKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-  const selectedMonthKey = /^\\d{4}-\\d{2}$/.test(params.month ?? '') ? params.month! : currentMonthKey;
+  const selectedMonthKey = /^\d{4}-\d{2}$/.test(params.month ?? '') ? params.month! : currentMonthKey;
   const data = await getDashboardData(context, new Date(), selectedMonthKey);
   const maxJobs = Math.max(...data.daily.map((day) => day.jobs), 1);
   const maxRevenue = Math.max(...data.daily.map((day) => day.revenue), 1);
