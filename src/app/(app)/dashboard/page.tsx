@@ -65,7 +65,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <h2 className="font-heading text-sm font-bold text-text-primary">{formatMonth(data.month.key)}</h2>
           <form method="get" className="flex items-center gap-2">
             <label htmlFor="dashboard-month" className="text-xs text-text-muted">Měsíc</label>
-            <input id="dashboard-month" name="month" type="month" defaultValue={data.month.key} className="rounded-md border border-border bg-surface px-2 py-1.5 text-sm text-text-primary" />
+            <input id="dashboard-month" name="month" type="month" defaultValue={data.month.key} className="rounded-md border border-border bg-surface px-2 py-1.5 text-sm text-text-primary" style={{ colorScheme: 'dark' }} />
             <button type="submit" className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover">Zobrazit</button>
           </form>
         </div>
