@@ -85,7 +85,7 @@ export async function addJobItem(jobId: string, input: AddJobItemInput) {
       garageId: context.garageId,
     },
   });
-  revalidatePath(`/jobs/${valid.jobId}`);
+  revalidatePath(`/jobs/${validInput.jobId}`);
 }
 
 export async function removeJobItem(itemId: string, jobId: string) {
