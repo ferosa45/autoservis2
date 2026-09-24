@@ -58,10 +58,14 @@ export function JobActions({
     setError(null);
     startTransition(async () => {
       try {
-        const { invoiceId } = await startInvoiceDraft(jobId);
-        router.push(`/invoices/${invoiceId}`);
+        const result = await startInvoiceDraft(jobId);
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+        router.push(`/invoices/${result.invoiceId}`);
       } catch (e) {
-        setError(getActionErrorMessage(e, 'Nepodařilo se založit fakturu'));
+        setError('Nepodařilo se založit fakturu. Zkuste to prosím znovu.');
       }
     });
   }
