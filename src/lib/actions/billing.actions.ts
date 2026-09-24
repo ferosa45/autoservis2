@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { getSessionContext } from '@/lib/session';
+import { getSessionContext, requireOwner } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { getStripeClient } from '@/lib/stripe';
 
@@ -30,8 +30,12 @@ function friendlyStripeError(e: unknown): string {
 
 export async function startCheckout(): Promise<BillingActionState> {
   const context = await getSessionContext();
+  requireOwner(context);
   const garage = await prisma.garage.findUnique({ where: { id: context.garageId } });
   if (!garage) return { error: 'Servis nenalezen.' };
+  if (garage.subscriptionStatus === 'ACTIVE' || garage.subscriptionStatus === 'TRIALING' || garage.subscriptionStatus === 'PAST_DUE') {
+    return { error: 'Servis už má aktivní předplatné. Pro jeho správu otevřete správu předplatného.' };
+  }
 
   const priceId = process.env.STRIPE_PRICE_ID;
   if (!priceId) {
@@ -81,6 +85,7 @@ export async function startCheckout(): Promise<BillingActionState> {
 
 export async function openBillingPortal(): Promise<BillingActionState> {
   const context = await getSessionContext();
+  requireOwner(context);
   const garage = await prisma.garage.findUnique({ where: { id: context.garageId } });
 
   if (!garage?.stripeCustomerId) {
