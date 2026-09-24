@@ -27,7 +27,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
   const historyStart = new Date(todayStart);
   historyStart.setDate(historyStart.getDate() - 29);
 
-  const [todayJobs, monthJobs, historyJobs, mechanics, monthWorkSessions] = await Promise.all([
+  const [todayJobs, monthJobs, historyJobs, mechanics, monthWorkSessions, revenueInvoices] = await Promise.all([
     prisma.job.findMany({
       where: { garageId: context.garageId, scheduledStart: { gte: todayStart, lte: todayEnd } },
       select: {
@@ -70,6 +70,15 @@ export async function getDashboardData(context: SessionContext, now = new Date()
       },
       select: { userId: true, startedAt: true, endedAt: true },
     }),
+    prisma.invoice.findMany({
+      where: {
+        garageId: context.garageId,
+        status: { in: ['ISSUED', 'PAID'] },
+        issueDate: { gte: monthStart, lte: monthDataEnd },
+      },
+      select: { total: true, issueDate: true },
+      orderBy: { issueDate: 'asc' },
+    }),
   ]);
 
   const jobItemsTotal = (items: { quantity: unknown; unitPrice: unknown }[]) =>
@@ -106,14 +115,16 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     return {
       date: date.toISOString().slice(0, 10),
       jobs: jobs.length,
-      revenue: jobs.reduce((sum, job) => sum + invoiceTotal(job.invoices), 0),
+      revenue: revenueInvoices
+        .filter((invoice) => invoice.issueDate >= date && invoice.issueDate < next)
+        .reduce((sum, invoice) => sum + Number(invoice.total), 0),
     };
   });
 
-  const monthRevenue = invoiceTotal(monthJobs.flatMap((job) => job.invoices));
-  const todayRevenue = todayJobs
-    .filter((job) => job.status === 'DONE')
-    .reduce((sum, job) => sum + jobItemsTotal(job.items), 0);
+  const monthRevenue = revenueInvoices.reduce((sum, invoice) => sum + Number(invoice.total), 0);
+  const todayRevenue = revenueInvoices
+    .filter((invoice) => invoice.issueDate >= todayStart && invoice.issueDate <= todayEnd)
+    .reduce((sum, invoice) => sum + Number(invoice.total), 0);
   const todayMinutes = Math.round(workMinutesForDay(historyJobs.flatMap((job) => job.workSessions)));
   const doneMonth = monthJobs.filter((job) => job.status === 'DONE').length;
   const averageJobValue = doneMonth > 0 ? monthRevenue / doneMonth : 0;
