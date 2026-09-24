@@ -63,7 +63,13 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           )}
           <JobTimeEditor jobId={job.id} scheduledStart={job.scheduledStart} scheduledEnd={job.scheduledEnd} />
           <JobWorkTimeCard sessions={job.workSessions} />
-          <JobActions jobId={job.id} status={job.status} latestInvoice={activeInvoice} />
+          <JobActions
+            jobId={job.id}
+            status={job.status}
+            latestInvoice={activeInvoice}
+            canInvoice={context.permissions.canInvoice}
+            canViewInvoices={context.permissions.canViewInvoices}
+          />
         </div>
       </div>
     </div>
