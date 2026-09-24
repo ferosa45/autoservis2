@@ -78,10 +78,9 @@ export function calculateWeekStats(jobs: WeekJob[]) {
   const waitingForPart = jobs.filter((j) => j.status === 'BLOCKED').length;
   const done = jobs.filter((j) => j.status === 'DONE').length;
 
-  const revenueThisWeek = jobs.reduce(
-    (sum, job) => sum + job.invoices.reduce((invoiceSum, invoice) => invoiceSum + Number(invoice.total), 0),
-    0
-  );
+  const revenueThisWeek = jobs
+    .filter((job) => job.status === 'DONE')
+    .reduce((sum, job) => sum + job.items.reduce((itemSum, item) => itemSum + Number(item.quantity) * Number(item.unitPrice ?? 0), 0), 0);
 
   return { totalThisWeek, waitingForPart, done, revenueThisWeek };
 }
