@@ -214,7 +214,6 @@ export async function issueInvoice(invoiceId: string): Promise<{ ok: true; numbe
 
 export async function cancelInvoice(invoiceId: string): Promise<InvoiceActionResult> {
   const validInvoiceId = invoiceIdSchema.parse(invoiceId);
-  const validInvoiceId = invoiceIdSchema.parse(invoiceId);
   const context = await getSessionContext();
   try {
   assertWriteAccess(context);
