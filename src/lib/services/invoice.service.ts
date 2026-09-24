@@ -1,28 +1,21 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import type { SessionContext } from '@/lib/session';
 
-const DECIMAL_10_2_MAX = 99999999.99;
+const DECIMAL_10_2_MAX = new Prisma.Decimal('99999999.99');
 
 export const invoiceItemInputSchema = z.object({
   title: z.string().trim().min(1).max(255),
-  quantity: z.number().finite().positive().max(DECIMAL_10_2_MAX),
+  quantity: z.number().finite().positive().max(99999999.99),
   unit: z.string().trim().min(1).max(20),
-  unitPrice: z.number().finite().min(0).max(DECIMAL_10_2_MAX),
+  unitPrice: z.number().finite().min(0).max(99999999.99),
   vatRate: z.number().finite().min(0).max(999.99),
 }).superRefine((value, ctx) => {
-  const subtotal = round2(value.quantity * value.unitPrice);
-  const vatAmount = round2(subtotal * (value.vatRate / 100));
-  const total = round2(subtotal + vatAmount);
-  if (!Number.isFinite(subtotal) || subtotal > DECIMAL_10_2_MAX) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['quantity'], message: 'Částka položky je příliš vysoká.' });
-  }
-  if (!Number.isFinite(vatAmount) || vatAmount > DECIMAL_10_2_MAX) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['vatRate'], message: 'DPH u položky je příliš vysoké.' });
-  }
-  if (!Number.isFinite(total) || total > DECIMAL_10_2_MAX) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unitPrice'], message: 'Celková částka položky je příliš vysoká.' });
-  }
+  const { subtotal, vatAmount, total } = computeItemAmounts(value.quantity, value.unitPrice, value.vatRate);
+  if (subtotal.gt(DECIMAL_10_2_MAX)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['quantity'], message: 'Částka položky je příliš vysoká.' });
+  if (vatAmount.gt(DECIMAL_10_2_MAX)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['vatRate'], message: 'DPH u položky je příliš vysoké.' });
+  if (total.gt(DECIMAL_10_2_MAX)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unitPrice'], message: 'Celková částka položky je příliš vysoká.' });
 });
 
 export type ValidatedInvoiceItemInput = z.infer<typeof invoiceItemInputSchema>;
@@ -33,32 +26,48 @@ export function validateInvoiceItemInput(input: unknown): ValidatedInvoiceItemIn
   return result.data;
 }
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
+function round2Decimal(value: Prisma.Decimal): Prisma.Decimal {
+  return value.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
 }
 
-/**
- * Dopočítá subtotal/vatAmount/total jedné položky. Vždy volat na serveru -
- * nikdy nevěřit částkám poslaným z klienta.
- */
+/** Výpočet každé položky: základ, DPH a celkem se zaokrouhlují na 2 desetinná místa. */
 export function computeItemAmounts(quantity: number, unitPrice: number, vatRate: number) {
-  const subtotal = round2(quantity * unitPrice);
-  const vatAmount = round2(subtotal * (vatRate / 100));
-  const total = round2(subtotal + vatAmount);
+  const subtotal = round2Decimal(new Prisma.Decimal(quantity).mul(unitPrice));
+  const vatAmount = round2Decimal(subtotal.mul(new Prisma.Decimal(vatRate).div(100)));
+  const total = round2Decimal(subtotal.add(vatAmount));
   return { subtotal, vatAmount, total };
 }
 
-/**
- * Přepočítá součty celé faktury ze součtu jejích položek. Volat po každé
- * změně položky, nikdy nepočítat na klientovi.
- */
-export function computeInvoiceTotals(
-  items: { subtotal: unknown; vatAmount: unknown; total: unknown }[]
-) {
-  const subtotal = round2(items.reduce((sum, i) => sum + Number(i.subtotal), 0));
-  const vatTotal = round2(items.reduce((sum, i) => sum + Number(i.vatAmount), 0));
-  const total = round2(items.reduce((sum, i) => sum + Number(i.total), 0));
-  return { subtotal, vatTotal, total };
+export function computeInvoiceTotals(items: { subtotal: unknown; vatAmount: unknown; total: unknown }[]) {
+  return {
+    subtotal: round2Decimal(items.reduce((sum, i) => sum.add(new Prisma.Decimal(i.subtotal)), new Prisma.Decimal(0))),
+    vatTotal: round2Decimal(items.reduce((sum, i) => sum.add(new Prisma.Decimal(i.vatAmount)), new Prisma.Decimal(0))),
+    total: round2Decimal(items.reduce((sum, i) => sum.add(new Prisma.Decimal(i.total)), new Prisma.Decimal(0))),
+  };
+}
+
+export type VatBreakdown = { rate: Prisma.Decimal; base: Prisma.Decimal; vat: Prisma.Decimal; total: Prisma.Decimal };
+
+export function computeVatBreakdown(items: { vatRate: unknown; subtotal: unknown; vatAmount: unknown; total: unknown }[]): VatBreakdown[] {
+  const groups = new Map<string, VatBreakdown>();
+  for (const item of items) {
+    const rate = round2Decimal(new Prisma.Decimal(item.vatRate));
+    const key = rate.toFixed(2);
+    const current = groups.get(key);
+    if (current) {
+      current.base = round2Decimal(current.base.add(new Prisma.Decimal(item.subtotal)));
+      current.vat = round2Decimal(current.vat.add(new Prisma.Decimal(item.vatAmount)));
+      current.total = round2Decimal(current.total.add(new Prisma.Decimal(item.total)));
+    } else {
+      groups.set(key, {
+        rate,
+        base: round2Decimal(new Prisma.Decimal(item.subtotal)),
+        vat: round2Decimal(new Prisma.Decimal(item.vatAmount)),
+        total: round2Decimal(new Prisma.Decimal(item.total)),
+      });
+    }
+  }
+  return [...groups.values()].sort((x, y) => x.rate.comparedTo(y.rate));
 }
 
 /**
