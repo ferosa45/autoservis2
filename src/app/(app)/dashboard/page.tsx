@@ -77,7 +77,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           {[
             { icon: CalendarDays, value: data.month.jobs, label: 'zakázek' },
             { icon: CheckCircle2, value: data.month.done, label: 'dokončených' },
-            { icon: TrendingUp, value: formatCurrency(data.month.revenue), label: 'vyfakturováno' },
+            { icon: TrendingUp, value: formatCurrency(data.month.revenue), label: 'obrat' },
+            { icon: Banknote, value: formatCurrency(data.month.invoiced), label: 'vyfakturováno' },
             { icon: Wrench, value: formatCurrency(data.month.averageJobValue), label: 'průměrná zakázka' },
           ].map((item) => (
             <div key={item.label} className="rounded-lg border border-border bg-surface p-4">
