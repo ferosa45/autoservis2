@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getSessionContext, assertWriteAccess, requirePermission } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
-import { createInvoiceDraftFromJob, computeItemAmounts, computeInvoiceTotals } from '@/lib/services/invoice.service';
+import { createInvoiceDraftFromJob, computeItemAmounts, computeInvoiceTotals, validateInvoiceItemInput } from '@/lib/services/invoice.service';
 
 export async function startInvoiceDraft(jobId: string): Promise<{ invoiceId: string }> {
   const context = await getSessionContext();
@@ -38,17 +38,17 @@ export type InvoiceItemInput = { title: string; quantity: number; unit: string; 
 
 export async function addInvoiceItem(invoiceId: string, input: InvoiceItemInput) {
   const context = await requireInvoiceEditAccess(invoiceId);
-  const title = input.title.trim(); if (!title) return;
-  const amounts = computeItemAmounts(input.quantity, input.unitPrice, input.vatRate);
-  await prisma.invoiceItem.create({ data: { invoiceId, garageId: context.garageId, title, quantity: input.quantity > 0 ? input.quantity : 1, unit: input.unit.trim() || 'ks', unitPrice: input.unitPrice >= 0 ? input.unitPrice : 0, vatRate: input.vatRate >= 0 ? input.vatRate : 0, ...amounts } });
+  const valid = validateInvoiceItemInput(input);
+  const amounts = computeItemAmounts(valid.quantity, valid.unitPrice, valid.vatRate);
+  await prisma.invoiceItem.create({ data: { invoiceId, garageId: context.garageId, ...valid, ...amounts } });
   await recalculateInvoiceTotals(invoiceId); revalidatePath(`/invoices/${invoiceId}`);
 }
 
 export async function updateInvoiceItem(itemId: string, invoiceId: string, input: InvoiceItemInput) {
   const context = await requireInvoiceEditAccess(invoiceId);
-  const title = input.title.trim(); if (!title) return;
-  const amounts = computeItemAmounts(input.quantity, input.unitPrice, input.vatRate);
-  await prisma.invoiceItem.updateMany({ where: { id: itemId, garageId: context.garageId, invoiceId }, data: { title, quantity: input.quantity > 0 ? input.quantity : 1, unit: input.unit.trim() || 'ks', unitPrice: input.unitPrice >= 0 ? input.unitPrice : 0, vatRate: input.vatRate >= 0 ? input.vatRate : 0, ...amounts } });
+  const valid = validateInvoiceItemInput(input);
+  const amounts = computeItemAmounts(valid.quantity, valid.unitPrice, valid.vatRate);
+  await prisma.invoiceItem.updateMany({ where: { id: itemId, garageId: context.garageId, invoiceId }, data: { ...valid, ...amounts } });
   await recalculateInvoiceTotals(invoiceId); revalidatePath(`/invoices/${invoiceId}`);
 }
 
@@ -66,17 +66,63 @@ export async function updateInvoiceMeta(invoiceId: string, input: { dueDate: str
 export async function issueInvoice(invoiceId: string) {
   const context = await getSessionContext(); assertWriteAccess(context); requirePermission(context, 'canInvoice');
   const issued = await prisma.$transaction(async (tx) => {
-    const invoice = await tx.invoice.findFirst({ where: { id: invoiceId, garageId: context.garageId }, include: { items: true } });
+    const claimed = await tx.invoice.updateMany({
+      where: { id: invoiceId, garageId: context.garageId, status: 'DRAFT' },
+      data: { status: 'ISSUED' },
+    });
+    if (claimed.count !== 1) {
+      throw new Error('Faktura už byla vystavena nebo neexistuje');
+    }
+
+    const invoice = await tx.invoice.findFirst({
+      where: { id: invoiceId, garageId: context.garageId },
+      include: { items: true },
+    });
     if (!invoice) throw new Error('Faktura nenalezena');
-    if (invoice.status !== 'DRAFT') throw new Error('Faktura už byla vystavena');
     if (invoice.items.length === 0) throw new Error('Faktura nemá žádné položky');
+
     const garage = await tx.garage.findUnique({ where: { id: context.garageId } });
     if (!garage) throw new Error('Servis nenalezen');
-    if (garage.isVatPayer && garage.defaultVatRate == null) throw new Error('Jako plátce DPH musíte v Nastavení doplnit výchozí sazbu DPH');
-    const updatedGarage = await tx.garage.update({ where: { id: context.garageId }, data: { nextInvoiceNumber: { increment: 1 } } });
+    if (!garage.ico?.trim()) throw new Error('Před vystavením faktury doplňte IČO servisu.');
+    if (!garage.street?.trim() || !garage.city?.trim() || !garage.zip?.trim()) {
+      throw new Error('Před vystavením faktury doplňte úplnou adresu servisu.');
+    }
+    if (garage.isVatPayer && !garage.dic?.trim()) {
+      throw new Error('Před vystavením faktury plátce DPH doplňte DIČ.');
+    }
+    if (garage.isVatPayer && garage.defaultVatRate == null) {
+      throw new Error('Jako plátce DPH musíte v Nastavení doplnit výchozí sazbu DPH');
+    }
+
+    const issueDate = new Date();
+    const dueDate = new Date(issueDate);
+    dueDate.setDate(dueDate.getDate() + garage.invoiceDueDays);
+
+    const updatedGarage = await tx.garage.update({
+      where: { id: context.garageId },
+      data: { nextInvoiceNumber: { increment: 1 } },
+    });
     const assignedNumber = updatedGarage.nextInvoiceNumber - 1;
     const formattedNumber = garage.invoicePrefix ? `${garage.invoicePrefix}${String(assignedNumber).padStart(4, '0')}` : String(assignedNumber);
-    const issuedInvoice = await tx.invoice.update({ where: { id: invoiceId }, data: { number: formattedNumber, status: 'ISSUED', ...computeInvoiceTotals(invoice.items) } });
+    const issuedInvoice = await tx.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        number: formattedNumber,
+        status: 'ISSUED',
+        supplierName: garage.companyName || garage.name,
+        supplierIco: garage.ico,
+        supplierDic: garage.dic,
+        supplierStreet: garage.street,
+        supplierCity: garage.city,
+        supplierZip: garage.zip,
+        supplierBankAccount: garage.bankAccount,
+        supplierIban: garage.iban,
+        supplierIsVatPayer: garage.isVatPayer,
+        issueDate,
+        dueDate,
+        ...computeInvoiceTotals(invoice.items),
+      },
+    });
     if (issuedInvoice.jobId) {
       await tx.jobEvent.create({
         data: {
