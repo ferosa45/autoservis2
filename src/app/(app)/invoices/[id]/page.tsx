@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getSessionContext, assertPermission } from '@/lib/session';
+import { getSessionContext, requirePermission } from '@/lib/session';
 import { getInvoiceDetail } from '@/lib/services/invoice.service';
 import { prisma } from '@/lib/prisma';
 import { serializeInvoiceItems } from '@/lib/serialize';
@@ -12,7 +12,7 @@ import { InvoiceActions } from '@/components/invoices/invoice-actions';
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const context = await getSessionContext();
-  assertPermission(context, 'canViewInvoices');
+  requirePermission(context, 'canViewInvoices');
   const [invoice, garage] = await Promise.all([
     getInvoiceDetail(context, id),
     prisma.garage.findUnique({ where: { id: context.garageId }, select: { isVatPayer: true } }),
