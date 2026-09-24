@@ -3,7 +3,6 @@
 import { useState, useTransition } from 'react';
 import { Check, Clock } from 'lucide-react';
 import { updateInvoiceMeta } from '@/lib/actions/invoice.actions';
-import { getActionErrorMessage } from '@/lib/action-errors';
 import { formatForDatetimeLocal } from '@/lib/format';
 
 export function InvoiceMetaEditor({
@@ -36,10 +35,11 @@ export function InvoiceMetaEditor({
     setError(null);
     startTransition(async () => {
       try {
-        await updateInvoiceMeta(invoiceId, { dueDate: due, note });
+        const result = await updateInvoiceMeta(invoiceId, { dueDate: due, note });
+        if (!result.ok) { setError(result.error); return; }
         setSaved(true);
-      } catch (err) {
-        setError(getActionErrorMessage(err, 'Fakturu se nepodařilo uložit.'));
+      } catch {
+        setError('Fakturu se nepodařilo uložit. Zkuste to prosím znovu.');
       }
     });
   }
