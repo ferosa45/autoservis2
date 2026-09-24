@@ -172,6 +172,7 @@ export type InvoicePdfData = {
   supplierCity: string | null;
   supplierZip: string | null;
   supplierBankAccount: string | null;
+  supplierIban: string | null;
   customerName: string;
   customerIco: string | null;
   customerDic: string | null;
@@ -219,7 +220,8 @@ function buildPartyBox(
   ico: string | null,
   dic: string | null,
   bankAccount?: string | null,
-  extraNote?: string | null
+  extraNote?: string | null,
+  secondExtraNote?: string | null
 ) {
   const children = [
     h(Text, { style: styles.partyLabel, key: 'label' }, label),
@@ -229,7 +231,8 @@ function buildPartyBox(
   if (ico) children.push(h(Text, { style: styles.partyLine, key: 'ico' }, `IČO: ${ico}`));
   if (dic) children.push(h(Text, { style: styles.partyLine, key: 'dic' }, `DIČ: ${dic}`));
   if (bankAccount) children.push(h(Text, { style: styles.partyLine, key: 'bank' }, `Účet: ${bankAccount}`));
-  if (extraNote) children.push(h(Text, { style: styles.vatNote, key: 'vatNote' }, extraNote));
+  if (extraNote) children.push(h(Text, { style: styles.partyLine, key: 'extraNote' }, extraNote));
+  if (secondExtraNote) children.push(h(Text, { style: styles.vatNote, key: 'vatNote' }, secondExtraNote));
   return h(View, { style: styles.partyBox }, ...children);
 }
 
@@ -322,7 +325,8 @@ export function buildInvoiceDocument(data: InvoicePdfData) {
         data.supplierIco,
         data.supplierDic,
         data.supplierBankAccount,
-        vatStatusNote
+        data.supplierIban ? `IBAN: ${data.supplierIban}` : vatStatusNote,
+        data.supplierIban ? vatStatusNote : null
       ),
       buildPartyBox('Odběratel', data.customerName, customerAddress, data.customerIco, data.customerDic)
     ),
