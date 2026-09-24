@@ -105,6 +105,7 @@ export async function updateInvoiceMeta(invoiceId: string, input: { dueDate: str
 
 export async function issueInvoice(invoiceId: string): Promise<{ ok: true; number: string | null } | { ok: false; error: string }> {
   const validInvoiceId = invoiceIdSchema.parse(invoiceId);
+  const validInvoiceId = invoiceIdSchema.parse(invoiceId);
   const context = await getSessionContext(); assertWriteAccess(context); requirePermission(context, 'canInvoice');
 
   class InvoiceIssueValidationError extends Error {}
@@ -171,7 +172,7 @@ export async function issueInvoice(invoiceId: string): Promise<{ ok: true; numbe
     const assignedNumber = updatedGarage.nextInvoiceNumber - 1;
     const formattedNumber = garage.invoicePrefix ? `${garage.invoicePrefix}${String(assignedNumber).padStart(4, '0')}` : String(assignedNumber);
     const issuedInvoice = await tx.invoice.update({
-      where: { id: invoiceId },
+      where: { id: validInvoiceId },
       data: {
         number: formattedNumber,
         status: 'ISSUED',
@@ -256,6 +257,7 @@ export async function cancelInvoice(invoiceId: string): Promise<InvoiceActionRes
 }
 
 export async function markInvoicePaid(invoiceId: string): Promise<InvoiceActionResult> {
+  const validInvoiceId = invoiceIdSchema.parse(invoiceId);
   const context = await getSessionContext();
   try {
   assertWriteAccess(context);
