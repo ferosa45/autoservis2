@@ -63,35 +63,36 @@ export async function updateInvoiceMeta(invoiceId: string, input: { dueDate: str
   await prisma.invoice.update({ where: { id: invoiceId }, data: { dueDate: new Date(input.dueDate), note: input.note.trim() || null } }); revalidatePath(`/invoices/${invoiceId}`);
 }
 
-export async function issueInvoice(invoiceId: string) {
+export async function issueInvoice(invoiceId: string): Promise<{ ok: true; number: string | null } | { ok: false; error: string }> {
   const context = await getSessionContext(); assertWriteAccess(context); requirePermission(context, 'canInvoice');
-  const issued = await prisma.$transaction(async (tx) => {
+
+  class InvoiceIssueValidationError extends Error {}
+
+  try {
+    const issued = await prisma.$transaction(async (tx) => {
     const claimed = await tx.invoice.updateMany({
       where: { id: invoiceId, garageId: context.garageId, status: 'DRAFT' },
       data: { status: 'ISSUED' },
     });
     if (claimed.count !== 1) {
-      throw new Error('Faktura už byla vystavena nebo neexistuje');
+      throw new InvoiceIssueValidationError('Faktura už byla vystavena nebo neexistuje.');
     }
 
     const invoice = await tx.invoice.findFirst({
       where: { id: invoiceId, garageId: context.garageId },
       include: { items: true },
     });
-    if (!invoice) throw new Error('Faktura nenalezena');
-    if (invoice.items.length === 0) throw new Error('Faktura nemá žádné položky');
+    if (!invoice) throw new InvoiceIssueValidationError('Faktura nenalezena.');
+    if (invoice.items.length === 0) throw new InvoiceIssueValidationError('Faktura nemá žádné položky.');
 
     const garage = await tx.garage.findUnique({ where: { id: context.garageId } });
-    if (!garage) throw new Error('Servis nenalezen');
-    if (!garage.ico?.trim()) throw new Error('Před vystavením faktury doplňte IČO servisu.');
+    if (!garage) throw new InvoiceIssueValidationError('Servis nenalezen.');
+    if (!garage.ico?.trim()) throw new InvoiceIssueValidationError('Před vystavením faktury doplňte IČO servisu.');
     if (!garage.street?.trim() || !garage.city?.trim() || !garage.zip?.trim()) {
-      throw new Error('Před vystavením faktury doplňte úplnou adresu servisu.');
+      throw new InvoiceIssueValidationError('Před vystavením faktury doplňte úplnou adresu servisu.');
     }
     if (garage.isVatPayer && !garage.dic?.trim()) {
-      throw new Error('Před vystavením faktury plátce DPH doplňte DIČ.');
-    }
-    if (garage.isVatPayer && garage.defaultVatRate == null) {
-      throw new Error('Jako plátce DPH musíte v Nastavení doplnit výchozí sazbu DPH');
+      throw new InvoiceIssueValidationError('Před vystavením faktury plátce DPH doplňte DIČ.');
     }
 
     const normalizedItems = invoice.items.map((item) => {
@@ -159,8 +160,15 @@ export async function issueInvoice(invoiceId: string) {
       });
     }
     return issuedInvoice;
-  }, { timeout: 15000, maxWait: 10000 });
-  revalidatePath(`/invoices/${invoiceId}`); if (issued.jobId) revalidatePath(`/jobs/${issued.jobId}`); revalidatePath('/invoices'); return { number: issued.number };
+    }, { timeout: 15000, maxWait: 10000 });
+    revalidatePath(`/invoices/${invoiceId}`); if (issued.jobId) revalidatePath(`/jobs/${issued.jobId}`); revalidatePath('/invoices');
+    return { ok: true, number: issued.number };
+  } catch (error) {
+    if (error instanceof InvoiceIssueValidationError) {
+      return { ok: false, error: error.message };
+    }
+    return { ok: false, error: 'Vystavení faktury se nezdařilo. Zkuste to prosím znovu.' };
+  }
 }
 
 export async function cancelInvoice(invoiceId: string) {
