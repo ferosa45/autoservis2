@@ -105,7 +105,6 @@ export async function updateInvoiceMeta(invoiceId: string, input: { dueDate: str
 
 export async function issueInvoice(invoiceId: string): Promise<{ ok: true; number: string | null } | { ok: false; error: string }> {
   const validInvoiceId = invoiceIdSchema.parse(invoiceId);
-  const validInvoiceId = invoiceIdSchema.parse(invoiceId);
   const context = await getSessionContext(); assertWriteAccess(context); requirePermission(context, 'canInvoice');
 
   class InvoiceIssueValidationError extends Error {}
