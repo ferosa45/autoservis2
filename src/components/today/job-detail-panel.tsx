@@ -68,7 +68,7 @@ export function JobDetailPanel({ job, showFinancials, canInvoice, canViewInvoice
   );
 
   const handleInvoice = () => {
-    if (!canViewInvoices) return;
+    if (!canInvoice && !canViewInvoices) return;
     setError(null);
     startTransition(async () => {
       try {
