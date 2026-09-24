@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { getSessionContext, assertWriteAccess, requirePermission } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+import { invoiceIdSchema, jobIdSchema, taskIdSchema } from '@/lib/validation/action-schemas';
 import { createInvoiceDraftFromJob, computeItemAmounts, computeInvoiceTotals, validateInvoiceItemInput } from '@/lib/services/invoice.service';
 
 export type StartInvoiceDraftResult =
@@ -10,13 +12,14 @@ export type StartInvoiceDraftResult =
   | { ok: false; error: string };
 
 export async function startInvoiceDraft(jobId: string): Promise<StartInvoiceDraftResult> {
+  const validJobId = jobIdSchema.parse(jobId);
   const context = await getSessionContext();
 
   try {
     assertWriteAccess(context);
     requirePermission(context, 'canInvoice');
-    const invoice = await createInvoiceDraftFromJob(context, jobId);
-    revalidatePath(`/jobs/${jobId}`);
+    const invoice = await createInvoiceDraftFromJob(context, validJobId);
+    revalidatePath(`/jobs/${validJobId}`);
     return { ok: true, invoiceId: invoice.id };
   } catch (error) {
     return {
@@ -89,8 +92,10 @@ export async function removeInvoiceItem(itemId: string, invoiceId: string): Prom
 
 export async function updateInvoiceMeta(invoiceId: string, input: { dueDate: string; note: string }): Promise<InvoiceActionResult> {
   try {
-  await requireInvoiceEditAccess(invoiceId);
-  await prisma.invoice.update({ where: { id: invoiceId }, data: { dueDate: new Date(input.dueDate), note: input.note.trim() || null } }); revalidatePath(`/invoices/${invoiceId}`);
+  const validInvoiceId = invoiceIdSchema.parse(invoiceId);
+  const validInput = z.object({ dueDate: z.string().trim().max(20).refine((v) => !Number.isNaN(new Date(v).getTime()), 'Neplatné datum splatnosti'), note: z.string().max(5000) }).parse(input);
+  await requireInvoiceEditAccess(validInvoiceId);
+  await prisma.invoice.update({ where: { id: validInvoiceId }, data: { dueDate: new Date(validInput.dueDate), note: validInput.note.trim() || null } }); revalidatePath(`/invoices/${invoiceId}`);
   return { ok: true };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'Fakturu se nepodařilo uložit.' };
