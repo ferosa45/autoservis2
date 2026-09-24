@@ -49,7 +49,7 @@ type Job = {
 const TABS = ['Přehled', 'Práce a díly'] as const;
 type Tab = (typeof TABS)[number];
 
-export function JobDetailPanel({ job }: { job: Job }) {
+export function JobDetailPanel({ job, showFinancials }: { job: Job; showFinancials: boolean }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('Přehled');
   const [localStatus, setLocalStatus] = useState<JobStatus>(job.status);
@@ -63,7 +63,7 @@ export function JobDetailPanel({ job }: { job: Job }) {
   const [error, setError] = useState<string | null>(null);
 
   const itemsTotal = job.items.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
+    (sum, item) => sum + item.quantity * (item.unitPrice ?? 0),
     0
   );
 
@@ -340,17 +340,17 @@ export function JobDetailPanel({ job }: { job: Job }) {
                     <div>
                       <p className="text-text-primary">{item.title}</p>
                       <p className="text-xs text-text-muted">
-                        {item.quantity} {item.unit} × {formatCurrency(item.unitPrice)}
+                        {item.quantity} {item.unit}{showFinancials && item.unitPrice !== null ? ` × ${formatCurrency(item.unitPrice)}` : ''}
                       </p>
                     </div>
-                    <p className="text-text-primary">
-                      {formatCurrency(item.quantity * item.unitPrice)}
-                    </p>
+                    {showFinancials && item.unitPrice !== null && (
+                      <p className="text-text-primary">{formatCurrency(item.quantity * item.unitPrice)}</p>
+                    )}
                   </div>
                 ))}
                 {job.items.length === 0 && <p className="text-sm text-text-muted">Žádné položky</p>}
               </div>
-              {job.items.length > 0 && (
+              {job.items.length > 0 && showFinancials && (
                 <div className="mt-3 flex justify-between border-t border-border pt-3 text-sm font-semibold">
                   <span className="text-text-primary">Celkem</span>
                   <span className="text-text-primary">{formatCurrency(itemsTotal)}</span>
