@@ -3,6 +3,8 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
+import { consumeRateLimit, getClientIp, normalizeEmail } from '@/lib/auth-rate-limit';
 import { prisma } from '@/lib/prisma';
 import { appUrl, passwordChangedEmail, passwordResetEmail, sendEmail } from '@/lib/email/send';
 
@@ -22,10 +24,19 @@ export async function requestPasswordReset(
   _prevState: PasswordResetRequestState,
   formData: FormData
 ): Promise<PasswordResetRequestState> {
-  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const email = normalizeEmail(String(formData.get('email') ?? ''));
 
   if (!email) {
     return { sent: false, error: 'Zadejte prosím emailovou adresu.' };
+  }
+
+  const requestHeaders = await headers();
+  const ip = getClientIp(requestHeaders);
+  const ipAllowed = await consumeRateLimit('password-reset:ip:' + ip, { limit: 5, windowMs: 60 * 60 * 1000 });
+  const emailAllowed = await consumeRateLimit('password-reset:email:' + email, { limit: 3, windowMs: 60 * 60 * 1000 });
+
+  if (!ipAllowed || !emailAllowed) {
+    return { sent: true, error: null };
   }
 
   const user = await prisma.user.findUnique({
@@ -84,10 +95,10 @@ export async function resetPassword(
     return { success: false, error: 'Tento odkaz pro obnovení hesla už není platný. Požádejte o nový.' };
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 12);
 
   await prisma.$transaction([
-    prisma.user.update({ where: { id: resetToken.userId }, data: { password: passwordHash } }),
+    prisma.user.update({ where: { id: resetToken.userId }, data: { password: passwordHash, passwordChangedAt: new Date() } }),
     prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } }),
     prisma.passwordResetToken.deleteMany({ where: { userId: resetToken.userId, id: { not: resetToken.id } } }),
   ]);
