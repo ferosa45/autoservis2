@@ -165,7 +165,12 @@ export default async function TodayPage({
                 mechanics={mechanics}
               />
             )}
-            <JobDetailPanel job={selectedJob} showFinancials={context.permissions.canViewFinancials} />
+            <JobDetailPanel
+              job={selectedJob}
+              showFinancials={context.permissions.canViewFinancials}
+              canInvoice={context.permissions.canInvoice}
+              canViewInvoices={context.permissions.canViewInvoices}
+            />
           </>
         ) : (
           <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-text-muted">
