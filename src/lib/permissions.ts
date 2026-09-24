@@ -18,5 +18,6 @@ export function hasPermission(
   permission: keyof UserPermissions
 ): boolean {
   if (role === 'OWNER') return true;
+  if (permission === 'canViewInvoices' && permissions.canInvoice) return true;
   return permissions[permission];
 }
