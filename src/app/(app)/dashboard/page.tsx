@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getSessionContext } from '@/lib/session';
+import { getSessionContext, requirePermission } from '@/lib/session';
 import { getDashboardData } from '@/lib/services/dashboard.service';
 import { formatCurrency } from '@/lib/format';
 import { CalendarDays, CheckCircle2, Clock3, Banknote, TrendingUp, Wrench, AlertTriangle } from 'lucide-react';
@@ -24,7 +24,11 @@ function formatDay(date: string) {
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const context = await getSessionContext();
-  if (context.role !== 'OWNER') redirect('/today');
+  try {
+    requirePermission(context, 'canViewFinancials');
+  } catch {
+    redirect('/today');
+  }
 
   const params = await searchParams;
   const currentMonthKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
