@@ -12,7 +12,7 @@ function dayRange(date: Date) {
 export async function getJobsForDay(context: SessionContext, date: Date) {
   const { start, end } = dayRange(date);
 
-  return prisma.job.findMany({
+  const jobs = await prisma.job.findMany({
     where: { garageId: context.garageId, scheduledStart: { gte: start, lte: end } },
     select: {
       id: true,
@@ -32,6 +32,14 @@ export async function getJobsForDay(context: SessionContext, date: Date) {
     },
     orderBy: { scheduledStart: 'asc' },
   });
+
+  return jobs.map((job) => ({
+    ...job,
+    items: job.items.map((item) => ({
+      ...item,
+      unitPrice: 'unitPrice' in item ? item.unitPrice : null,
+    })),
+  }));
 }
 
 export type JobForDay = Awaited<ReturnType<typeof getJobsForDay>>[number];
@@ -111,7 +119,7 @@ export function calculateTodayStats(jobs: JobForDay[]) {
   const waitingForPart = jobs.filter((j) => j.status === 'BLOCKED').length;
   const inProgress = jobs.filter((j) => j.status === 'IN_PROGRESS').length;
   const revenueToday = jobs.filter((j) => j.status === 'DONE').reduce((sum, job) => {
-    const jobTotal = job.items.reduce((itemSum, item) => itemSum + Number(item.quantity) * Number(item.unitPrice), 0);
+    const jobTotal = job.items.reduce((itemSum, item) => itemSum + Number(item.quantity) * Number(item.unitPrice ?? 0), 0);
     return sum + jobTotal;
   }, 0);
   return { totalToday, waitingForPart, inProgress, revenueToday };
