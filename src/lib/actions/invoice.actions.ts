@@ -94,6 +94,30 @@ export async function issueInvoice(invoiceId: string) {
       throw new Error('Jako plátce DPH musíte v Nastavení doplnit výchozí sazbu DPH');
     }
 
+    const normalizedItems = invoice.items.map((item) => {
+      const valid = validateInvoiceItemInput({
+        title: item.title,
+        quantity: Number(item.quantity),
+        unit: item.unit,
+        unitPrice: Number(item.unitPrice),
+        vatRate: Number(item.vatRate),
+      });
+      return { item, valid, amounts: computeItemAmounts(valid.quantity, valid.unitPrice, valid.vatRate) };
+    });
+
+    await Promise.all(
+      normalizedItems.map(({ item, valid, amounts }) =>
+        tx.invoiceItem.update({
+          where: { id: item.id },
+          data: { ...valid, ...amounts },
+        })
+      )
+    );
+
+    const invoiceTotals = computeInvoiceTotals(
+      normalizedItems.map(({ amounts }) => amounts)
+    );
+
     const issueDate = new Date();
     const dueDate = new Date(issueDate);
     dueDate.setDate(dueDate.getDate() + garage.invoiceDueDays);
@@ -120,7 +144,7 @@ export async function issueInvoice(invoiceId: string) {
         supplierIsVatPayer: garage.isVatPayer,
         issueDate,
         dueDate,
-        ...computeInvoiceTotals(invoice.items),
+        ...invoiceTotals,
       },
     });
     if (issuedInvoice.jobId) {
