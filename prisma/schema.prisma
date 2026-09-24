@@ -285,6 +285,9 @@ model Invoice {
   supplierStreet String?
   supplierCity String?
   supplierZip String?
+  supplierBankAccount String?
+  supplierIban String?
+  supplierIsVatPayer Boolean @default(false)
   customerName String
   customerIco String?
   customerDic String?
