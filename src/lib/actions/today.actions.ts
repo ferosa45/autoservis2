@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import type { JobStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { getSessionContext, assertOwner, assertWriteAccess } from '@/lib/session';
+import { getSessionContext, requireOwner, assertWriteAccess } from '@/lib/session';
 import { MockNotificationService } from '@/lib/notifications/mock-notification-service';
 
 const notificationService = new MockNotificationService();
@@ -100,7 +100,7 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
 export async function assignMechanic(jobId: string, userId: string | null) {
   const context = await getSessionContext();
   assertWriteAccess(context);
-  assertOwner(context);
+  requireOwner(context);
 
   const job = await prisma.job.findFirst({
     where: { id: jobId, garageId: context.garageId },
