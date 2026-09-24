@@ -5,6 +5,8 @@ import type { JobStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getSessionContext, requireOwner, assertWriteAccess } from '@/lib/session';
 import { MockNotificationService } from '@/lib/notifications/mock-notification-service';
+import { z } from 'zod';
+import { createTaskSchema, jobIdSchema, jobStatusSchema, taskIdSchema } from '@/lib/validation/action-schemas';
 
 const notificationService = new MockNotificationService();
 
@@ -13,13 +15,15 @@ type SetJobStatusResult =
   | { success: false; error: 'READ_ONLY_ACCESS' };
 
 export async function setJobStatus(jobId: string, status: JobStatus): Promise<SetJobStatusResult> {
+  const validJobId = jobIdSchema.parse(jobId);
+  const validStatus = jobStatusSchema.parse(status);
   const context = await getSessionContext();
   if (!context.hasWriteAccess) {
     return { success: false, error: 'READ_ONLY_ACCESS' };
   }
   assertWriteAccess(context);
 
-  const job = await prisma.job.findFirst({ where: { id: jobId, garageId: context.garageId }, select: { id: true, status: true } });
+  const job = await prisma.job.findFirst({ where: { id: validJobId, garageId: context.garageId }, select: { id: true, status: true } });
   if (!job) throw new Error('Zakázka nenalezena');
 
   const now = new Date();
@@ -30,7 +34,7 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
       orderBy: { startedAt: 'desc' },
     });
 
-    if (status === 'IN_PROGRESS') {
+    if (validStatus === 'IN_PROGRESS') {
       const switchingMechanic = Boolean(activeSession && activeSession.userId !== context.userId);
       if (activeSession && activeSession.userId !== context.userId) {
         await tx.workSession.update({ where: { id: activeSession.id }, data: { endedAt: now } });
@@ -40,7 +44,7 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
           data: { jobId, userId: context.userId, garageId: context.garageId, startedAt: now },
         });
       }
-      await tx.job.update({ where: { id: jobId }, data: { status, assignedUserId: context.userId } });
+      await tx.job.update({ where: { id: jobId }, data: { status: validStatus, assignedUserId: context.userId } });
 
       if (job.status !== 'IN_PROGRESS' || switchingMechanic) {
         await tx.jobEvent.create({
@@ -60,10 +64,10 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
       }
       await tx.job.update({
         where: { id: jobId },
-        data: { status },
+        data: { status: validStatus },
       });
 
-      if (status === 'BLOCKED') {
+      if (validStatus === 'BLOCKED') {
         await tx.jobEvent.create({
           data: {
             type: 'WAITING_FOR_PART',
@@ -74,7 +78,7 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
             createdAt: now,
           },
         });
-      } else if (status === 'DONE') {
+      } else if (validStatus === 'DONE') {
         await tx.jobEvent.create({
           data: {
             type: 'COMPLETED',
@@ -91,26 +95,28 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
 
   revalidatePath('/today');
   revalidatePath('/calendar');
-  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath(`/jobs/${validJobId}`);
   revalidatePath('/workshop');
 
   return { success: true };
 }
 
 export async function assignMechanic(jobId: string, userId: string | null) {
+  const validJobId = jobIdSchema.parse(jobId);
+  const validUserId = userId === null ? null : z.string().trim().min(1).max(100).parse(userId);
   const context = await getSessionContext();
   assertWriteAccess(context);
   requireOwner(context);
 
   const job = await prisma.job.findFirst({
-    where: { id: jobId, garageId: context.garageId },
+    where: { id: validJobId, garageId: context.garageId },
     select: { id: true },
   });
   if (!job) throw new Error('Zakázka nenalezena.');
 
-  if (userId) {
+  if (validUserId) {
     const mechanic = await prisma.user.findFirst({
-      where: { id: userId, garageId: context.garageId, role: 'MECHANIC', active: true },
+      where: { id: validUserId, garageId: context.garageId, role: 'MECHANIC', active: true },
       select: { id: true },
     });
     if (!mechanic) throw new Error('Vybraný mechanik není aktivní nebo nepatří do tohoto servisu.');
@@ -118,40 +124,43 @@ export async function assignMechanic(jobId: string, userId: string | null) {
 
   await prisma.job.update({
     where: { id: job.id },
-    data: { assignedUserId: userId },
+    data: { assignedUserId: validUserId },
   });
 
   revalidatePath('/today');
   revalidatePath('/calendar');
-  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath(`/jobs/${validJobId}`);
   revalidatePath('/jobs');
 }
 
 export async function toggleTask(taskId: string, completed: boolean) {
+  const validTaskId = taskIdSchema.parse(taskId);
+  const validCompleted = z.boolean().parse(completed);
   const context = await getSessionContext();
   assertWriteAccess(context);
-  const result = await prisma.task.updateMany({ where: { id: taskId, garageId: context.garageId }, data: { completed } });
+  const result = await prisma.task.updateMany({ where: { id: validTaskId, garageId: context.garageId }, data: { completed: validCompleted } });
   if (result.count === 0) throw new Error('Úkol nenalezen');
   revalidatePath('/today');
 }
 
 export async function createTask(input: { title: string; dueDate?: string; jobId?: string }) {
+  const valid = createTaskSchema.parse(input);
   const context = await getSessionContext();
   assertWriteAccess(context);
-  const title = input.title.trim();
+  const title = valid.title;
   if (!title) throw new Error('Název úkolu je povinný');
   if (title.length > 200) throw new Error('Název úkolu je příliš dlouhý');
 
   let jobId: string | null = null;
-  if (input.jobId) {
-    const job = await prisma.job.findFirst({ where: { id: input.jobId, garageId: context.garageId }, select: { id: true } });
+  if (valid.jobId) {
+    const job = await prisma.job.findFirst({ where: { id: valid.jobId, garageId: context.garageId }, select: { id: true } });
     if (!job) throw new Error('Zakázka nenalezena');
     jobId = job.id;
   }
 
   let dueDate: Date | null = null;
-  if (input.dueDate) {
-    const parsed = new Date(`${input.dueDate}T23:59:59.999`);
+  if (valid.dueDate) {
+    const parsed = new Date(`${valid.dueDate}T23:59:59.999`);
     if (Number.isNaN(parsed.getTime())) throw new Error('Neplatný termín úkolu');
     dueDate = parsed;
   }
