@@ -22,7 +22,7 @@ function SubmitButton() {
   );
 }
 
-export function LoginForm({ resetSuccess = false }: { resetSuccess?: boolean }) {
+export function LoginForm({ resetSuccess = false, verifiedSuccess = false }: { resetSuccess?: boolean; verifiedSuccess?: boolean }) {
   const [state, formAction] = useFormState(authenticate, initialState);
 
   return (
@@ -38,6 +38,12 @@ export function LoginForm({ resetSuccess = false }: { resetSuccess?: boolean }) 
           <p className="mb-6 text-sm text-text-secondary">
             Přihlaste se ke svému autoservisu.
           </p>
+
+          {verifiedSuccess && (
+            <p className="mb-4 rounded-lg border border-status-done-border bg-status-done-bg px-3 py-2 text-sm text-status-done-text">
+              Email byl ověřen. Nyní se můžete přihlásit.
+            </p>
+          )}
 
           {resetSuccess && (
             <p className="mb-4 rounded-lg border border-status-done-border bg-status-done-bg px-3 py-2 text-sm text-status-done-text">
