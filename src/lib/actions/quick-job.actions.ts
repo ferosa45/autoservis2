@@ -41,7 +41,7 @@ export async function parseQuickJobPreview(input: string): Promise<QuickJobParse
 
 export type SubmitQuickJobResult =
   | { jobId: string; error?: never }
-  | { jobId: null; error: 'READ_ONLY_ACCESS' };
+  | { jobId: null; error: string };
 
 export async function submitQuickJob(input: CreateJobFromQuickInput): Promise<SubmitQuickJobResult> {
   const context = await getSessionContext();
@@ -50,11 +50,26 @@ export async function submitQuickJob(input: CreateJobFromQuickInput): Promise<Su
     return { jobId: null, error: 'READ_ONLY_ACCESS' };
   }
 
-  assertWriteAccess(context);
-  const job = await createJobFromQuickInput(context, input);
+  try {
+    assertWriteAccess(context);
+    const job = await createJobFromQuickInput(context, input);
 
-  revalidatePath('/today');
-  revalidatePath('/calendar');
+    revalidatePath('/today');
+    revalidatePath('/calendar');
 
-  return { jobId: job.id };
+    return { jobId: job.id };
+  } catch (error) {
+    // Never send database/Prisma internals to the client.
+    if (error instanceof Error && error.name.startsWith('Prisma')) {
+      return {
+        jobId: null,
+        error: 'Zakázku se nepodařilo vytvořit. Zkuste to prosím znovu.',
+      };
+    }
+
+    return {
+      jobId: null,
+      error: error instanceof Error ? error.message : 'Zakázku se nepodařilo vytvořit.',
+    };
+  }
 }
