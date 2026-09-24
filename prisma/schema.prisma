@@ -96,6 +96,8 @@ model User {
   garageId String
   garage Garage @relation(fields: [garageId], references: [id])
   active Boolean @default(true)
+  emailVerifiedAt DateTime?
+  passwordChangedAt DateTime @default(now())
   canInvoice Boolean @default(false)
   canViewInvoices Boolean @default(false)
   canViewFinancials Boolean @default(false)
@@ -105,7 +107,28 @@ model User {
   workSessions WorkSession[]
   jobEvents JobEvent[]
   passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
   @@index([garageId])
+}
+
+model EmailVerificationToken {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AuthRateLimit {
+  key String @id
+  count Int @default(0)
+  windowStartedAt DateTime
+  updatedAt DateTime @updatedAt
+  @@index([updatedAt])
 }
 
 model PasswordResetToken {
