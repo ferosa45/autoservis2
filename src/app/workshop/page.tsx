@@ -5,12 +5,7 @@ import { serializeJobItems } from '@/lib/serialize';
 import { WorkshopHeader } from '@/components/workshop/workshop-header';
 import { WorkshopJobList } from '@/components/workshop/workshop-job-list';
 import { WorkshopJobDetail } from '@/components/workshop/workshop-job-detail';
-
-function parseDate(dateParam: string | undefined): Date {
-  if (!dateParam) return new Date();
-  const parsed = new Date(`${dateParam}T00:00:00`);
-  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-}
+import { parsePragueDateParam } from '@/lib/date-time';
 
 export default async function WorkshopPage({
   searchParams,
