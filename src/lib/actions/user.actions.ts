@@ -3,7 +3,7 @@
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
-import { assertOwner, assertWriteAccess, getSessionContext } from '@/lib/session';
+import { requireOwner, assertWriteAccess, getSessionContext } from '@/lib/session';
 
 export type MechanicInput = {
   name: string;
@@ -16,7 +16,7 @@ export type MechanicInput = {
 
 export async function listGarageUsers() {
   const context = await getSessionContext();
-  assertOwner(context);
+  requireOwner(context);
   return prisma.user.findMany({
     where: { garageId: context.garageId },
     orderBy: [{ role: 'asc' }, { name: 'asc' }],
@@ -38,7 +38,7 @@ export async function listActiveMechanics() {
 export async function createMechanic(input: MechanicInput) {
   const context = await getSessionContext();
   assertWriteAccess(context);
-  assertOwner(context);
+  requireOwner(context);
   const name = input.name.trim();
   const email = input.email.trim().toLowerCase();
   if (!name || !email || input.password.length < 8) throw new Error('Vyplňte jméno, platný email a heslo alespoň 8 znaků.');
@@ -52,7 +52,7 @@ export async function createMechanic(input: MechanicInput) {
 export async function updateMechanicPermissions(userId: string, input: Omit<MechanicInput, 'name' | 'email' | 'password'> & { active: boolean }) {
   const context = await getSessionContext();
   assertWriteAccess(context);
-  assertOwner(context);
+  requireOwner(context);
   const user = await prisma.user.findFirst({ where: { id: userId, garageId: context.garageId, role: 'MECHANIC' } });
   if (!user) throw new Error('Mechanik nenalezen.');
   await prisma.user.update({ where: { id: user.id }, data: { active: input.active, canInvoice: input.canInvoice, canViewInvoices: input.canViewInvoices, canViewFinancials: input.canViewFinancials } });
@@ -62,7 +62,7 @@ export async function updateMechanicPermissions(userId: string, input: Omit<Mech
 export async function deleteMechanic(userId: string) {
   const context = await getSessionContext();
   assertWriteAccess(context);
-  assertOwner(context);
+  requireOwner(context);
 
   const user = await prisma.user.findFirst({
     where: { id: userId, garageId: context.garageId, role: 'MECHANIC' },
