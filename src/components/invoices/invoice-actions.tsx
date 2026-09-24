@@ -16,7 +16,11 @@ export function InvoiceActions({ invoiceId, status }: { invoiceId: string; statu
     setError(null);
     startTransition(async () => {
       try {
-        await issueInvoice(invoiceId);
+        const result = await issueInvoice(invoiceId);
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
         router.refresh();
       } catch (e) {
         setError(getActionErrorMessage(e, 'Vystavení se nezdařilo'));
