@@ -36,10 +36,15 @@ export async function getSessionContext(): Promise<SessionContext> {
     prisma.garage.findUnique({ where: { id: session.user.garageId }, select: { id: true, subscriptionStatus: true, trialEndsAt: true, suspendedAt: true } }),
     prisma.user.findFirst({
       where: { id: session.user.id, garageId: session.user.garageId },
-      select: { id: true, role: true, active: true, canInvoice: true, canViewInvoices: true, canViewFinancials: true },
+      select: { id: true, role: true, active: true, emailVerifiedAt: true, passwordChangedAt: true, canInvoice: true, canViewInvoices: true, canViewFinancials: true },
     }),
   ]);
-  if (!garage || !user || !user.active || garage.suspendedAt) redirect('/login');
+  if (!garage || !user || !user.active || !user.emailVerifiedAt || garage.suspendedAt) redirect('/login');
+
+  const tokenPasswordChangedAt = session.user.passwordChangedAt;
+  if (!tokenPasswordChangedAt || new Date(tokenPasswordChangedAt).getTime() !== user.passwordChangedAt.getTime()) {
+    redirect('/login');
+  }
 
   return {
     userId: user.id,
