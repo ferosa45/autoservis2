@@ -102,9 +102,9 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     return {
       date: `${getPragueDateParts(date).year}-${String(getPragueDateParts(date).month + 1).padStart(2, '0')}-${String(getPragueDateParts(date).day).padStart(2, '0')}`,
       jobs: jobs.length,
-      revenue: jobs
+      revenue: Number(jobs
         .filter((job) => job.status === 'DONE')
-        .reduce((sum, job) => sum.add(jobItemsTotal(job.items)), new Prisma.Decimal(0)),
+        .reduce((sum, job) => sum.add(jobItemsTotal(job.items)), new Prisma.Decimal(0))),
     };
   });
 
