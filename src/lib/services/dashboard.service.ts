@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import type { SessionContext } from '@/lib/session';
 import { addPragueDays, endOfPragueDay, endOfPragueMonth, getPragueDateParts, startOfPragueDay, startOfPragueMonth } from '@/lib/date-time';
@@ -31,7 +32,6 @@ export async function getDashboardData(context: SessionContext, now = new Date()
         id: true,
         status: true,
         items: { select: { quantity: true, unitPrice: true } },
-        invoices: { where: { status: { in: ['ISSUED', 'PAID'] } }, select: { total: true } },
       },
     }),
     prisma.job.findMany({
@@ -43,7 +43,6 @@ export async function getDashboardData(context: SessionContext, now = new Date()
         assignedUser: { select: { id: true, name: true } },
         items: { select: { quantity: true, unitPrice: true } },
         workSessions: { select: { userId: true, startedAt: true, endedAt: true } },
-        invoices: { where: { status: { in: ['ISSUED', 'PAID'] } }, select: { total: true } },
       },
       orderBy: { scheduledStart: 'asc' },
     }),
@@ -66,13 +65,16 @@ export async function getDashboardData(context: SessionContext, now = new Date()
         status: { in: ['ISSUED', 'PAID'] },
         issueDate: { gte: monthStart, lte: monthDataEnd },
       },
-      select: { total: true, issueDate: true },
+      select: { subtotal: true, issueDate: true },
       orderBy: { issueDate: 'asc' },
     }),
   ]);
 
   const jobItemsTotal = (items: { quantity: unknown; unitPrice: unknown }[]) =>
-    items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.unitPrice), 0);
+    items.reduce(
+      (sum, item) => sum.add(new Prisma.Decimal(item.quantity).mul(new Prisma.Decimal(item.unitPrice))),
+      new Prisma.Decimal(0)
+    );
 
   const workMinutesForMonth = (sessions: { startedAt: Date; endedAt: Date | null }[]) =>
     sessions.reduce((sum, session) => {
@@ -102,20 +104,22 @@ export async function getDashboardData(context: SessionContext, now = new Date()
       jobs: jobs.length,
       revenue: jobs
         .filter((job) => job.status === 'DONE')
-        .reduce((sum, job) => sum + jobItemsTotal(job.items), 0),
+        .reduce((sum, job) => sum.add(jobItemsTotal(job.items)), new Prisma.Decimal(0)),
     };
   });
 
   const todayRevenue = todayJobs
     .filter((job) => job.status === 'DONE')
-    .reduce((sum, job) => sum + jobItemsTotal(job.items), 0);
+    .reduce((sum, job) => sum.add(jobItemsTotal(job.items)), new Prisma.Decimal(0));
   const monthRevenue = monthJobs
     .filter((job) => job.status === 'DONE')
-    .reduce((sum, job) => sum + jobItemsTotal(job.items), 0);
-  const monthInvoiced = revenueInvoices.reduce((sum, invoice) => sum + Number(invoice.total), 0);
+    .reduce((sum, job) => sum.add(jobItemsTotal(job.items)), new Prisma.Decimal(0));
+  const monthInvoiced = revenueInvoices.reduce(
+    (sum, invoice) => sum.add(new Prisma.Decimal(invoice.subtotal)),
+    new Prisma.Decimal(0)
+  );
   const todayMinutes = Math.round(workMinutesForDay(historyJobs.flatMap((job) => job.workSessions)));
   const doneMonth = monthJobs.filter((job) => job.status === 'DONE').length;
-  const averageJobValue = doneMonth > 0 ? monthRevenue / doneMonth : 0;
 
   return {
     today: {
@@ -123,16 +127,16 @@ export async function getDashboardData(context: SessionContext, now = new Date()
       inProgress: todayJobs.filter((job) => job.status === 'IN_PROGRESS').length,
       waitingForPart: todayJobs.filter((job) => job.status === 'BLOCKED').length,
       done: todayJobs.filter((job) => job.status === 'DONE').length,
-      revenue: todayRevenue,
+      revenue: Number(todayRevenue),
       workMinutes: todayMinutes,
     },
     month: {
       key: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`,
       jobs: monthJobs.length,
       done: doneMonth,
-      revenue: monthRevenue,
-      invoiced: monthInvoiced,
-      averageJobValue,
+      revenue: Number(monthRevenue),
+      invoiced: Number(monthInvoiced),
+      averageJobValue: Number(doneMonth > 0 ? monthRevenue.div(doneMonth) : new Prisma.Decimal(0)),
     },
     mechanics: mechanicStats,
     daily,
