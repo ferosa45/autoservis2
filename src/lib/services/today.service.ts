@@ -1,12 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import type { SessionContext } from '@/lib/session';
+import { endOfPragueDay, startOfPragueDay } from '@/lib/date-time';
 
 function dayRange(date: Date) {
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(date);
-  end.setHours(23, 59, 59, 999);
-  return { start, end };
+  return { start: startOfPragueDay(date), end: endOfPragueDay(date) };
 }
 
 export async function getJobsForDay(context: SessionContext, date: Date) {
