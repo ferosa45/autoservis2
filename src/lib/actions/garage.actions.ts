@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
-import { getSessionContext, assertWriteAccess } from '@/lib/session';
+import { getSessionContext, assertWriteAccess, requireOwner } from '@/lib/session';
 
 export type UpdateGarageSettingsInput = {
   name: string;
@@ -26,6 +26,7 @@ export type UpdateGarageSettingsInput = {
 export async function updateGarageSettings(input: UpdateGarageSettingsInput) {
   const context = await getSessionContext();
   assertWriteAccess(context);
+  requireOwner(context);
 
   if (!input.name.trim()) {
     throw new Error('Název servisu je povinný');
