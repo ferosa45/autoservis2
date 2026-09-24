@@ -29,6 +29,10 @@ export async function getJobsForDay(context: SessionContext, date: Date) {
       items: context.permissions.canViewFinancials
         ? { select: { quantity: true, unitPrice: true } }
         : { select: { quantity: true } },
+      invoices: {
+        where: { status: { in: ['ISSUED', 'PAID'] }, issueDate: { gte: start, lte: end } },
+        select: { total: true },
+      },
     },
     orderBy: { scheduledStart: 'asc' },
   });
@@ -118,9 +122,9 @@ export function calculateTodayStats(jobs: JobForDay[]) {
   const totalToday = jobs.length;
   const waitingForPart = jobs.filter((j) => j.status === 'BLOCKED').length;
   const inProgress = jobs.filter((j) => j.status === 'IN_PROGRESS').length;
-  const revenueToday = jobs.filter((j) => j.status === 'DONE').reduce((sum, job) => {
-    const jobTotal = job.items.reduce((itemSum, item) => itemSum + Number(item.quantity) * Number(item.unitPrice ?? 0), 0);
-    return sum + jobTotal;
-  }, 0);
+  const revenueToday = jobs.reduce(
+    (sum, job) => sum + job.invoices.reduce((invoiceSum, invoice) => invoiceSum + Number(invoice.total), 0),
+    0
+  );
   return { totalToday, waitingForPart, inProgress, revenueToday };
 }
