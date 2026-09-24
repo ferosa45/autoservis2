@@ -1,31 +1,20 @@
 import { prisma } from '@/lib/prisma';
 import type { SessionContext } from '@/lib/session';
-
-function startOfDay(date: Date) {
-  const result = new Date(date);
-  result.setHours(0, 0, 0, 0);
-  return result;
-}
-
-function endOfDay(date: Date) {
-  const result = new Date(date);
-  result.setHours(23, 59, 59, 999);
-  return result;
-}
+import { addPragueDays, endOfPragueDay, endOfPragueMonth, getPragueDateParts, startOfPragueDay, startOfPragueMonth } from '@/lib/date-time';
 
 export async function getDashboardData(context: SessionContext, now = new Date(), monthKey?: string) {
-  const todayStart = startOfDay(now);
-  const todayEnd = endOfDay(now);
+  const todayStart = startOfPragueDay(now);
+  const todayEnd = endOfPragueDay(now);
 
   const parsedMonth = monthKey?.match(/^(\d{4})-(\d{2})$/);
-  const selectedYear = parsedMonth ? Number(parsedMonth[1]) : now.getFullYear();
-  const selectedMonth = parsedMonth ? Number(parsedMonth[2]) - 1 : now.getMonth();
-  const monthStart = new Date(selectedYear, selectedMonth, 1);
-  const monthEnd = endOfDay(new Date(selectedYear, selectedMonth + 1, 0));
-  const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === now.getMonth();
+  const nowParts = getPragueDateParts(now);
+  const selectedYear = parsedMonth ? Number(parsedMonth[1]) : nowParts.year;
+  const selectedMonth = parsedMonth ? Number(parsedMonth[2]) - 1 : nowParts.month;
+  const monthStart = startOfPragueMonth(selectedYear, selectedMonth);
+  const monthEnd = endOfPragueMonth(selectedYear, selectedMonth);
+  const isCurrentMonth = selectedYear === nowParts.year && selectedMonth === nowParts.month;
   const monthDataEnd = isCurrentMonth ? todayEnd : monthEnd;
-  const historyStart = new Date(todayStart);
-  historyStart.setDate(historyStart.getDate() - 29);
+  const historyStart = startOfPragueDay(addPragueDays(now, -29));
 
   const [todayJobs, monthJobs, historyJobs, mechanics, monthWorkSessions, revenueInvoices] = await Promise.all([
     prisma.job.findMany({
@@ -108,13 +97,11 @@ export async function getDashboardData(context: SessionContext, now = new Date()
   });
 
   const daily = Array.from({ length: 30 }, (_, index) => {
-    const date = new Date(historyStart);
-    date.setDate(historyStart.getDate() + index);
-    const next = new Date(date);
-    next.setDate(date.getDate() + 1);
+    const date = addPragueDays(historyStart, index);
+    const next = addPragueDays(date, 1);
     const jobs = historyJobs.filter((job) => job.scheduledStart >= date && job.scheduledStart < next);
     return {
-      date: date.toISOString().slice(0, 10),
+      date: `${getPragueDateParts(date).year}-${String(getPragueDateParts(date).month + 1).padStart(2, '0')}-${String(getPragueDateParts(date).day).padStart(2, '0')}`,
       jobs: jobs.length,
       revenue: jobs
         .filter((job) => job.status === 'DONE')
