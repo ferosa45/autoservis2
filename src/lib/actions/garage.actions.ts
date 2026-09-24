@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { getSessionContext, assertWriteAccess, requireOwner } from '@/lib/session';
+import { z } from 'zod';
 
 export type UpdateGarageSettingsInput = {
   name: string;
@@ -23,16 +24,36 @@ export type UpdateGarageSettingsInput = {
   invoiceDueDays: number;
 };
 
+const updateGarageSettingsSchema = z.object({
+  name: z.string().trim().min(1).max(255),
+  companyName: z.string().max(255),
+  ico: z.string().max(50),
+  dic: z.string().max(50),
+  street: z.string().max(255),
+  city: z.string().max(255),
+  zip: z.string().max(30),
+  country: z.string().max(10),
+  email: z.string().max(255),
+  phone: z.string().max(50),
+  bankAccount: z.string().max(100),
+  iban: z.string().max(100),
+  isVatPayer: z.boolean(),
+  defaultVatRate: z.string().max(20),
+  invoicePrefix: z.string().max(20),
+  invoiceDueDays: z.number().int().min(1).max(365),
+});
+
 export async function updateGarageSettings(input: UpdateGarageSettingsInput) {
+  const validInput = updateGarageSettingsSchema.parse(input);
   const context = await getSessionContext();
   assertWriteAccess(context);
   requireOwner(context);
 
-  if (!input.name.trim()) {
+  if (!validInput.name.trim()) {
     throw new Error('Název servisu je povinný');
   }
 
-  const parsedVatRate = input.defaultVatRate.trim() ? parseFloat(input.defaultVatRate.replace(',', '.')) : null;
+  const parsedVatRate = validInput.defaultVatRate.trim() ? parseFloat(validInput.defaultVatRate.replace(',', '.')) : null;
   if (parsedVatRate !== null && (Number.isNaN(parsedVatRate) || parsedVatRate < 0 || parsedVatRate > 100)) {
     throw new Error('Sazba DPH musí být číslo mezi 0 a 100');
   }
@@ -40,22 +61,22 @@ export async function updateGarageSettings(input: UpdateGarageSettingsInput) {
   await prisma.garage.update({
     where: { id: context.garageId },
     data: {
-      name: input.name.trim(),
-      companyName: input.companyName.trim() || null,
-      ico: input.ico.trim() || null,
-      dic: input.dic.trim() || null,
-      street: input.street.trim() || null,
-      city: input.city.trim() || null,
-      zip: input.zip.trim() || null,
-      country: input.country.trim() || 'CZ',
-      email: input.email.trim() || null,
-      phone: input.phone.trim() || null,
-      bankAccount: input.bankAccount.trim() || null,
-      iban: input.iban.trim() || null,
-      isVatPayer: input.isVatPayer,
+      name: validInput.name.trim(),
+      companyName: validInput.companyName.trim() || null,
+      ico: validInput.ico.trim() || null,
+      dic: validInput.dic.trim() || null,
+      street: validInput.street.trim() || null,
+      city: validInput.city.trim() || null,
+      zip: validInput.zip.trim() || null,
+      country: validInput.country.trim() || 'CZ',
+      email: validInput.email.trim() || null,
+      phone: validInput.phone.trim() || null,
+      bankAccount: validInput.bankAccount.trim() || null,
+      iban: validInput.iban.trim() || null,
+      isVatPayer: validInput.isVatPayer,
       defaultVatRate: parsedVatRate,
-      invoicePrefix: input.invoicePrefix.trim() || null,
-      invoiceDueDays: input.invoiceDueDays > 0 ? input.invoiceDueDays : 14,
+      invoicePrefix: validInput.invoicePrefix.trim() || null,
+      invoiceDueDays: validInput.invoiceDueDays > 0 ? validInput.invoiceDueDays : 14,
     },
   });
 
