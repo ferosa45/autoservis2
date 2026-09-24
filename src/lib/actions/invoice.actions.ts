@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getSessionContext, assertWriteAccess, requirePermission } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { invoiceIdSchema, jobIdSchema, taskIdSchema } from '@/lib/validation/action-schemas';
+import { invoiceIdSchema, jobIdSchema } from '@/lib/validation/action-schemas';
 import { createInvoiceDraftFromJob, computeItemAmounts, computeInvoiceTotals, validateInvoiceItemInput } from '@/lib/services/invoice.service';
 
 export type StartInvoiceDraftResult =
@@ -37,10 +37,11 @@ async function assertDraftOwnership(invoiceId: string, garageId: string) {
 }
 
 async function requireInvoiceEditAccess(invoiceId: string) {
+  const validInvoiceId = invoiceIdSchema.parse(invoiceId);
   const context = await getSessionContext();
   assertWriteAccess(context);
   requirePermission(context, 'canInvoice');
-  await assertDraftOwnership(invoiceId, context.garageId);
+  await assertDraftOwnership(validInvoiceId, context.garageId);
   return context;
 }
 
@@ -103,6 +104,7 @@ export async function updateInvoiceMeta(invoiceId: string, input: { dueDate: str
 }
 
 export async function issueInvoice(invoiceId: string): Promise<{ ok: true; number: string | null } | { ok: false; error: string }> {
+  const validInvoiceId = invoiceIdSchema.parse(invoiceId);
   const context = await getSessionContext(); assertWriteAccess(context); requirePermission(context, 'canInvoice');
 
   class InvoiceIssueValidationError extends Error {}
@@ -110,7 +112,7 @@ export async function issueInvoice(invoiceId: string): Promise<{ ok: true; numbe
   try {
     const issued = await prisma.$transaction(async (tx) => {
     const claimed = await tx.invoice.updateMany({
-      where: { id: invoiceId, garageId: context.garageId, status: 'DRAFT' },
+      where: { id: validInvoiceId, garageId: context.garageId, status: 'DRAFT' },
       data: { status: 'ISSUED' },
     });
     if (claimed.count !== 1) {
@@ -118,7 +120,7 @@ export async function issueInvoice(invoiceId: string): Promise<{ ok: true; numbe
     }
 
     const invoice = await tx.invoice.findFirst({
-      where: { id: invoiceId, garageId: context.garageId },
+      where: { id: validInvoiceId, garageId: context.garageId },
       include: { items: true },
     });
     if (!invoice) throw new InvoiceIssueValidationError('Faktura nenalezena.');
@@ -211,13 +213,15 @@ export async function issueInvoice(invoiceId: string): Promise<{ ok: true; numbe
 }
 
 export async function cancelInvoice(invoiceId: string): Promise<InvoiceActionResult> {
+  const validInvoiceId = invoiceIdSchema.parse(invoiceId);
+  const validInvoiceId = invoiceIdSchema.parse(invoiceId);
   const context = await getSessionContext();
   try {
   assertWriteAccess(context);
   requirePermission(context, 'canInvoice');
 
   const invoice = await prisma.invoice.findFirst({
-    where: { id: invoiceId, garageId: context.garageId },
+    where: { id: validInvoiceId, garageId: context.garageId },
     select: { id: true, jobId: true, status: true },
   });
   if (!invoice) throw new Error('Faktura nenalezena');
@@ -258,7 +262,7 @@ export async function markInvoicePaid(invoiceId: string): Promise<InvoiceActionR
   requirePermission(context, 'canInvoice');
 
   const invoice = await prisma.invoice.findFirst({
-    where: { id: invoiceId, garageId: context.garageId },
+    where: { id: validInvoiceId, garageId: context.garageId },
     select: { id: true, jobId: true, status: true },
   });
   if (!invoice) throw new Error('Faktura nenalezena');
