@@ -194,8 +194,16 @@ export async function createJobFromQuickInput(
       assignedUserId = mechanic.id;
     }
 
-    const jobCount = await tx.job.count({ where: { garageId: context.garageId } });
-    const number = String(jobCount + 1);
+    // Allocate the next job number atomically on the garage row. The
+    // increment is part of the same transaction as the job creation, so
+    // concurrent requests cannot receive the same number and a rollback
+    // also returns the counter to its previous value.
+    const updatedGarage = await tx.garage.update({
+      where: { id: context.garageId },
+      data: { nextJobNumber: { increment: 1 } },
+      select: { nextJobNumber: true },
+    });
+    const number = String(updatedGarage.nextJobNumber - 1);
 
     const job = await tx.job.create({
       data: {
