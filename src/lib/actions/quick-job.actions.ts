@@ -5,6 +5,8 @@ import { getSessionContext, assertWriteAccess } from '@/lib/session';
 import { RuleBasedQuickJobParser } from '@/lib/parser/rule-based-quick-job-parser';
 import { createJobFromQuickInput, type CreateJobFromQuickInput } from '@/lib/services/job.service';
 import type { QuickJobParseResult } from '@/lib/parser/quick-job-parser.interface';
+import { z } from 'zod';
+import { createJobFromQuickInputSchema } from '@/lib/validation/action-schemas';
 
 // POZNÁMKA: parseQuickJobPreview a RuleBasedQuickJobParser už nejsou volané
 // z hlavního Quick Job UI (to bylo nahrazeno strukturovaným formulářem
@@ -23,9 +25,10 @@ const EMPTY_RESULT: QuickJobParseResult = {
 };
 
 export async function parseQuickJobPreview(input: string): Promise<QuickJobParseResult> {
+  const validInput = z.string().trim().max(5000).parse(input);
   const context = await getSessionContext();
 
-  if (!input.trim()) {
+  if (!validInput) {
     return EMPTY_RESULT;
   }
 
@@ -33,9 +36,9 @@ export async function parseQuickJobPreview(input: string): Promise<QuickJobParse
   // vyhodil neočekávanou chybu, raději vrátíme prázdný návrh než spadneme
   // uprostřed psaní uživatele.
   try {
-    return await parser.parse(input, { garageId: context.garageId });
+    return await parser.parse(validInput, { garageId: context.garageId });
   } catch {
-    return { ...EMPTY_RESULT, unrecognizedText: input };
+    return { ...EMPTY_RESULT, unrecognizedText: validInput };
   }
 }
 
@@ -52,7 +55,8 @@ export async function submitQuickJob(input: CreateJobFromQuickInput): Promise<Su
 
   try {
     assertWriteAccess(context);
-    const job = await createJobFromQuickInput(context, input);
+    const validInput = createJobFromQuickInputSchema.parse(input);
+    const job = await createJobFromQuickInput(context, validInput);
 
     revalidatePath('/today');
     revalidatePath('/calendar');
