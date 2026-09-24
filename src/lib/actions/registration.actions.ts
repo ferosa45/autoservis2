@@ -58,9 +58,17 @@ export async function register(
 
     return { error: null, verificationSent: true };
   } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    const userFacingErrors = new Set([
+      'Tento email je vyhrazený pro správu platformy.',
+      'Tento email už je zaregistrovaný. Zkuste se přihlásit.',
+    ]);
+
     return {
       ...initialState,
-      error: error instanceof Error ? error.message : 'Registrace se nezdařila. Zkuste to prosím znovu.',
+      error: userFacingErrors.has(message)
+        ? message
+        : 'Registrace se nezdařila. Zkuste to prosím znovu.',
     };
   }
 }
