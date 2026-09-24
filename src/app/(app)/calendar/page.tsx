@@ -13,12 +13,7 @@ import { MiniMonthCalendar } from '@/components/calendar/mini-month-calendar';
 import { CalendarFilters } from '@/components/calendar/calendar-filters';
 import { CalendarLegend } from '@/components/calendar/calendar-legend';
 import type { JobStatus } from '@prisma/client';
-
-function parseWeekParam(weekParam: string | undefined): Date {
-  if (!weekParam) return new Date();
-  const parsed = new Date(`${weekParam}T00:00:00`);
-  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-}
+import { parsePragueDateParam } from '@/lib/date-time';
 
 const VALID_STATUSES: JobStatus[] = ['WAITING', 'IN_PROGRESS', 'BLOCKED', 'DONE'];
 
