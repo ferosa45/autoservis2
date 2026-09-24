@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSessionContext } from '@/lib/session';
+import { getSessionContext, requirePermission } from '@/lib/session';
 import { getInvoiceDetail } from '@/lib/services/invoice.service';
 import { prisma } from '@/lib/prisma';
 import { buildInvoiceDocument, type InvoicePdfData } from '@/lib/pdf/invoice-document';
@@ -13,6 +13,7 @@ export async function GET(
 ) {
   const { id } = await params;
   const context = await getSessionContext();
+  requirePermission(context, 'canViewInvoices');
 
   const [invoice, garage] = await Promise.all([
     getInvoiceDetail(context, id),
