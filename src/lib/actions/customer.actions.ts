@@ -3,28 +3,34 @@
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { getSessionContext, assertWriteAccess } from '@/lib/session';
+import { z } from 'zod';
+import { customerIdSchema, vehicleIdSchema } from '@/lib/validation/action-schemas';
 
 export type VehicleActionResult = { success: true; error?: never } | { success: false; error: string };
 
 export async function updateCustomer(customerId: string, data: { name: string; phone: string; email?: string; companyName?: string; ico?: string; dic?: string; street?: string; city?: string; zip?: string }) {
+  const validCustomerId = customerIdSchema.parse(customerId);
+  const validData = z.object({ name: z.string().trim().min(1).max(255), phone: z.string().trim().min(1).max(50), email: z.string().trim().max(255).optional(), companyName: z.string().trim().max(255).optional(), ico: z.string().trim().max(50).optional(), dic: z.string().trim().max(50).optional(), street: z.string().trim().max(255).optional(), city: z.string().trim().max(255).optional(), zip: z.string().trim().max(30).optional() }).parse(data);
   const context = await getSessionContext();
   assertWriteAccess(context);
-  const name = data.name.trim();
-  const phone = data.phone.trim();
+  const name = validData.name;
+  const phone = validData.phone;
   if (!name) throw new Error('Jméno zákazníka je povinné');
   if (!phone) throw new Error('Telefon zákazníka je povinný');
-  const result = await prisma.customer.updateMany({ where: { id: customerId, garageId: context.garageId }, data: {
-    name, phone, email: data.email?.trim() || null, companyName: data.companyName?.trim() || null,
-    ico: data.ico?.trim() || null, dic: data.dic?.trim() || null, street: data.street?.trim() || null,
-    city: data.city?.trim() || null, zip: data.zip?.trim() || null,
+  const result = await prisma.customer.updateMany({ where: { id: validCustomerId, garageId: context.garageId }, data: {
+    name, phone, email: validData.email || null, companyName: validData.companyName || null,
+    ico: validData.ico || null, dic: validData.dic || null, street: validData.street || null,
+    city: validData.city || null, zip: validData.zip || null,
   } });
   if (result.count === 0) throw new Error('Zákazník nenalezen');
   revalidatePath('/customers'); revalidatePath(`/customers/${customerId}`);
 }
 
 export async function updateCustomerNote(customerId: string, note: string) {
+  const validCustomerId = customerIdSchema.parse(customerId);
+  const validNote = z.string().max(5000).parse(note);
   const context = await getSessionContext(); assertWriteAccess(context);
-  const result = await prisma.customer.updateMany({ where: { id: customerId, garageId: context.garageId }, data: { note: note.trim() || null } });
+  const result = await prisma.customer.updateMany({ where: { id: validCustomerId, garageId: context.garageId }, data: { note: validNote.trim() || null } });
   if (result.count === 0) throw new Error('Zákazník nenalezen');
   revalidatePath(`/customers/${customerId}`);
 }
