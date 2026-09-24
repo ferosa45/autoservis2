@@ -1,5 +1,37 @@
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
 import type { SessionContext } from '@/lib/session';
+
+const DECIMAL_10_2_MAX = 99999999.99;
+
+export const invoiceItemInputSchema = z.object({
+  title: z.string().trim().min(1).max(255),
+  quantity: z.number().finite().positive().max(DECIMAL_10_2_MAX),
+  unit: z.string().trim().min(1).max(20),
+  unitPrice: z.number().finite().min(0).max(DECIMAL_10_2_MAX),
+  vatRate: z.number().finite().min(0).max(999.99),
+}).superRefine((value, ctx) => {
+  const subtotal = round2(value.quantity * value.unitPrice);
+  const vatAmount = round2(subtotal * (value.vatRate / 100));
+  const total = round2(subtotal + vatAmount);
+  if (!Number.isFinite(subtotal) || subtotal > DECIMAL_10_2_MAX) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['quantity'], message: 'Částka položky je příliš vysoká.' });
+  }
+  if (!Number.isFinite(vatAmount) || vatAmount > DECIMAL_10_2_MAX) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['vatRate'], message: 'DPH u položky je příliš vysoké.' });
+  }
+  if (!Number.isFinite(total) || total > DECIMAL_10_2_MAX) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unitPrice'], message: 'Celková částka položky je příliš vysoká.' });
+  }
+});
+
+export type ValidatedInvoiceItemInput = z.infer<typeof invoiceItemInputSchema>;
+
+export function validateInvoiceItemInput(input: unknown): ValidatedInvoiceItemInput {
+  const result = invoiceItemInputSchema.safeParse(input);
+  if (!result.success) throw new Error(result.error.issues[0]?.message ?? 'Neplatné údaje položky faktury');
+  return result.data;
+}
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -60,16 +92,21 @@ export async function createInvoiceDraftFromJob(context: SessionContext, jobId: 
   dueDate.setDate(dueDate.getDate() + garage.invoiceDueDays);
 
   const itemsData = job.items.map((item) => {
-    const quantity = Number(item.quantity);
-    const unitPrice = Number(item.unitPrice);
-    const amounts = computeItemAmounts(quantity, unitPrice, vatRate);
+    const input = validateInvoiceItemInput({
+      title: item.title,
+      quantity: Number(item.quantity),
+      unit: item.unit,
+      unitPrice: Number(item.unitPrice),
+      vatRate,
+    });
+    const amounts = computeItemAmounts(input.quantity, input.unitPrice, input.vatRate);
     return {
       garageId: context.garageId,
-      title: item.title,
-      quantity: item.quantity,
-      unit: item.unit,
-      unitPrice: item.unitPrice,
-      vatRate,
+      title: input.title,
+      quantity: input.quantity,
+      unit: input.unit,
+      unitPrice: input.unitPrice,
+      vatRate: input.vatRate,
       ...amounts,
     };
   });
