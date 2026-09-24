@@ -17,12 +17,7 @@ import { JobTimeline } from '@/components/today/job-timeline';
 import { JobDetailPanel } from '@/components/today/job-detail-panel';
 import { MechanicAssignment } from '@/components/job-detail/mechanic-assignment';
 import { TasksPanel } from '@/components/today/tasks-panel';
-
-function parseDate(dateParam: string | undefined): Date {
-  if (!dateParam) return new Date();
-  const parsed = new Date(`${dateParam}T00:00:00`);
-  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-}
+import { parsePragueDateParam } from '@/lib/date-time';
 
 export default async function TodayPage({
   searchParams,
