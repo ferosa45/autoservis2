@@ -6,7 +6,7 @@ import { Eye, EyeOff, Loader2, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { register, type RegisterState } from '@/lib/actions/registration.actions';
 
-const initialState: RegisterState = { error: null };
+const initialState: RegisterState = { error: null, verificationSent: false };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -36,7 +36,19 @@ export function SignupForm() {
         </div>
 
         <form action={formAction} className="rounded-xl border border-border bg-surface p-6 shadow-xl shadow-black/10 sm:p-8">
-          <h1 className="font-heading text-xl font-bold text-text-primary">Začněte s Garazio</h1>
+          {state.verificationSent ? (
+            <div>
+              <h1 className="font-heading text-xl font-bold text-text-primary">Registrace dokončena</h1>
+              <p className="mt-3 text-sm leading-6 text-text-secondary">
+                Poslali jsme vám ověřovací odkaz na váš email. Klikněte na něj a potom se budete moci přihlásit.
+              </p>
+              <Link href="/login" className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white hover:bg-primary-hover">
+                Přejít na přihlášení
+              </Link>
+            </div>
+          ) : (
+          <>
+                    <h1 className="font-heading text-xl font-bold text-text-primary">Začněte s Garazio</h1>
           <p className="mt-1.5 text-sm leading-6 text-text-secondary">
             30 dní zdarma. Potom jen 299 Kč měsíčně.
           </p>
@@ -132,6 +144,8 @@ export function SignupForm() {
               Přihlásit se
             </Link>
           </p>
+          </>
+          )}
         </form>
 
         <div className="mt-4 flex items-center justify-center gap-2 text-xs text-text-muted">
