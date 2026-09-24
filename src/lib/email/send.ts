@@ -63,6 +63,12 @@ export function welcomeEmail(input: { name: string; garageName: string }) {
   return layout(`<h1 style="margin:0 0 12px;font-size:26px">Vítejte v Garaziu 👋</h1><p style="margin:0 0 20px;color:#596273;line-height:1.6">Ahoj ${name}, váš účet pro servis <strong>${garageName}</strong> je připravený.</p><p style="margin:0 0 24px;color:#596273;line-height:1.6">Máte <strong>30 dní zdarma</strong>. Můžete rovnou začít přidávat zakázky, zákazníky a vozidla.</p><a href="${appUrl()}/today" style="display:inline-block;background:#5b45d6;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700">Otevřít Garazio</a>`);
 }
 
+export function emailVerificationEmail(input: { name: string; verificationUrl: string }) {
+  const name = escapeHtml(input.name);
+  const verificationUrl = escapeHtml(input.verificationUrl);
+  return layout(`<h1 style="margin:0 0 12px;font-size:26px">Ověřte svůj email</h1><p style="margin:0 0 20px;color:#596273;line-height:1.6">Ahoj ${name}, zbývá už jen ověřit emailovou adresu k vašemu účtu Garazio.</p><p style="margin:0 0 24px;color:#596273;line-height:1.6">Klikněte na tlačítko níže. Odkaz platí 24 hodin a lze použít pouze jednou.</p><a href="${verificationUrl}" style="display:inline-block;background:#5b45d6;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700">Ověřit email</a><p style="margin:24px 0 0;color:#7b8494;font-size:12px;line-height:1.5">Pokud jste si účet nevytvářeli, tento email ignorujte.</p>`);
+}
+
 export function passwordResetEmail(input: { name: string; resetUrl: string }) {
   const name = escapeHtml(input.name);
   const resetUrl = escapeHtml(input.resetUrl);
