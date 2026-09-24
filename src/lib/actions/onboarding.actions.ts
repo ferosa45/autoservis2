@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
-import { assertOwner, assertWriteAccess, getSessionContext } from '@/lib/session';
+import { requireOwner, assertWriteAccess, getSessionContext } from '@/lib/session';
 import { READ_ONLY_ACCESS_MESSAGE } from '@/lib/action-errors';
 
 export async function completeOnboarding() {
@@ -11,7 +11,7 @@ export async function completeOnboarding() {
     return;
   }
   assertWriteAccess(context);
-  assertOwner(context);
+  requireOwner(context);
   await prisma.garage.update({
     where: { id: context.garageId },
     data: { onboardingCompletedAt: new Date() },
@@ -25,7 +25,7 @@ export async function saveOnboardingDetails(formData: FormData) {
     return { error: READ_ONLY_ACCESS_MESSAGE };
   }
   assertWriteAccess(context);
-  assertOwner(context);
+  requireOwner(context);
 
   const name = String(formData.get('name') ?? '').trim();
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
@@ -76,7 +76,7 @@ export async function skipOnboarding() {
     return { error: READ_ONLY_ACCESS_MESSAGE };
   }
   assertWriteAccess(context);
-  assertOwner(context);
+  requireOwner(context);
   await prisma.garage.update({
     where: { id: context.garageId },
     data: { onboardingCompletedAt: new Date() },
