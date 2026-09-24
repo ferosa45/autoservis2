@@ -77,10 +77,14 @@ export function JobDetailPanel({ job, showFinancials, canInvoice, canViewInvoice
           return;
         }
 
-        const { invoiceId } = await startInvoiceDraft(job.id);
-        router.push(`/invoices/${invoiceId}`);
-      } catch (err) {
-        setError(getActionErrorMessage(err, 'Fakturu se nepodařilo otevřít.'));
+        const result = await startInvoiceDraft(job.id);
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+        router.push(`/invoices/${result.invoiceId}`);
+      } catch {
+        setError('Fakturu se nepodařilo otevřít. Zkuste to prosím znovu.');
       }
     });
   };
