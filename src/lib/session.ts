@@ -48,7 +48,11 @@ export async function getSessionContext(): Promise<SessionContext> {
     userId: user.id,
     garageId: garage.id,
     role: user.role,
-    permissions: { canInvoice: user.canInvoice, canViewInvoices: user.canViewInvoices, canViewFinancials: user.canViewFinancials },
+    permissions: {
+      canInvoice: user.role === 'OWNER' || user.canInvoice,
+      canViewInvoices: user.role === 'OWNER' || user.canViewInvoices,
+      canViewFinancials: user.role === 'OWNER' || user.canViewFinancials,
+    },
     subscriptionStatus: garage.subscriptionStatus,
     trialEndsAt: garage.trialEndsAt,
     hasWriteAccess: computeHasWriteAccess(garage.subscriptionStatus, garage.trialEndsAt),
