@@ -33,7 +33,7 @@ export async function startCheckout(): Promise<BillingActionState> {
   requireOwner(context);
   const garage = await prisma.garage.findUnique({ where: { id: context.garageId } });
   if (!garage) return { error: 'Servis nenalezen.' };
-  if (garage.subscriptionStatus === 'ACTIVE' || garage.subscriptionStatus === 'TRIALING' || garage.subscriptionStatus === 'PAST_DUE') {
+  if (garage.stripeSubscriptionId && garage.subscriptionStatus !== 'CANCELED') {
     return { error: 'Servis už má aktivní předplatné. Pro jeho správu otevřete správu předplatného.' };
   }
 
