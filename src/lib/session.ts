@@ -63,7 +63,10 @@ export function requireOwner(context: SessionContext): void {
 }
 
 export function requirePermission(context: SessionContext, permission: keyof UserPermissions): void {
-  if (context.role !== 'OWNER' && !context.permissions[permission]) throw new ForbiddenError();
+  if (context.role === 'OWNER') return;
+  // Creating/issuing an invoice necessarily requires access to the invoice it creates.
+  if (permission === 'canViewInvoices' && context.permissions.canInvoice) return;
+  if (!context.permissions[permission]) throw new ForbiddenError();
 }
 
 // Backwards-compatible aliases while the remaining actions are migrated.
