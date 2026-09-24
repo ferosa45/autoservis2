@@ -168,7 +168,7 @@ export default async function TodayPage({
             <JobDetailPanel
               job={selectedJob}
               showFinancials={context.permissions.canViewFinancials}
-              canInvoice={context.permissions.canInvoice}
+              canInvoice={context.role === 'OWNER' || context.permissions.canInvoice}
               canViewInvoices={context.permissions.canViewInvoices}
             />
           </>
