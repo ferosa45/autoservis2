@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import type { SubscriptionStatus } from '@prisma/client';
 import type { UserPermissions } from '@/lib/permissions';
@@ -13,10 +14,6 @@ export type SessionContext = {
   trialEndsAt: Date;
   hasWriteAccess: boolean;
 };
-
-export class StaleSessionError extends Error {
-  constructor() { super('STALE_SESSION'); this.name = 'StaleSessionError'; }
-}
 
 export class ReadOnlyAccessError extends Error {
   constructor() { super(READ_ONLY_ACCESS_MESSAGE); this.name = 'ReadOnlyAccessError'; }
@@ -42,7 +39,7 @@ export async function getSessionContext(): Promise<SessionContext> {
       select: { id: true, role: true, active: true, canInvoice: true, canViewInvoices: true, canViewFinancials: true },
     }),
   ]);
-  if (!garage || !user || !user.active || garage.suspendedAt) throw new StaleSessionError();
+  if (!garage || !user || !user.active || garage.suspendedAt) redirect('/login');
 
   return {
     userId: user.id,
