@@ -25,6 +25,18 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: 'Garazio - software pro autoservisy',
   description: 'Jednoduchý digitální diář pro malé a střední autoservisy.',
+  openGraph: {
+    type: 'website',
+    locale: 'cs_CZ',
+    title: 'Garazio - software pro autoservisy',
+    description: 'Jednoduchý digitální diář pro malé a střední autoservisy.',
+    siteName: 'Garazio',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Garazio - software pro autoservisy',
+    description: 'Jednoduchý digitální diář pro malé a střední autoservisy.',
+  },
 };
 
 export default function RootLayout({
