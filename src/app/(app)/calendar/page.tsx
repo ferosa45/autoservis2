@@ -23,7 +23,7 @@ export default async function CalendarPage({
   searchParams: Promise<{ week?: string; status?: string; mechanic?: string; fullDay?: string }>;
 }) {
   const { week: weekParam, status: statusParam, mechanic: mechanicParam, fullDay } = await searchParams;
-  const referenceDate = parseWeekParam(weekParam);
+  const referenceDate = parsePragueDateParam(weekParam);
   const context = await getSessionContext();
 
   const weekStart = getWeekStart(referenceDate);
