@@ -119,7 +119,7 @@ export function JobActions({
 
       {status === 'DONE' && (
         <div className="space-y-2">
-          {canInvoice && !latestInvoice && (
+          {canInvoice && canViewInvoices && !latestInvoice && (
             <button
               type="button"
               disabled={isPending}
