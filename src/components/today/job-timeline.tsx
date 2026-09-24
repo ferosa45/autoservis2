@@ -2,7 +2,7 @@ import { JobCard } from './job-card';
 import { FreeSlotCard } from './free-slot-card';
 import type { JobForDay } from '@/lib/services/today.service';
 
-const WORKDAY_START_HOUR = 8;
+const WORKDAY_START_HOUR = 6;
 const WORKDAY_END_HOUR = 18;
 const MIN_FREE_SLOT_MINUTES = 60;
 
