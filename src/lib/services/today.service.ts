@@ -122,9 +122,8 @@ export function calculateTodayStats(jobs: JobForDay[]) {
   const totalToday = jobs.length;
   const waitingForPart = jobs.filter((j) => j.status === 'BLOCKED').length;
   const inProgress = jobs.filter((j) => j.status === 'IN_PROGRESS').length;
-  const revenueToday = jobs.reduce(
-    (sum, job) => sum + job.invoices.reduce((invoiceSum, invoice) => invoiceSum + Number(invoice.total), 0),
-    0
-  );
+  const revenueToday = jobs
+    .filter((job) => job.status === 'DONE')
+    .reduce((sum, job) => sum + job.items.reduce((itemSum, item) => itemSum + Number(item.quantity) * Number(item.unitPrice ?? 0), 0), 0);
   return { totalToday, waitingForPart, inProgress, revenueToday };
 }
