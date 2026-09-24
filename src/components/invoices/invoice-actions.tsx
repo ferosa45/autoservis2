@@ -4,7 +4,6 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileCheck, XCircle, CheckCircle2, Loader2, Download } from 'lucide-react';
 import { issueInvoice, cancelInvoice, markInvoicePaid } from '@/lib/actions/invoice.actions';
-import { getActionErrorMessage } from '@/lib/action-errors';
 import type { InvoiceStatus } from '@prisma/client';
 
 export function InvoiceActions({ invoiceId, status }: { invoiceId: string; status: InvoiceStatus }) {
@@ -22,8 +21,8 @@ export function InvoiceActions({ invoiceId, status }: { invoiceId: string; statu
           return;
         }
         router.refresh();
-      } catch (e) {
-        setError(getActionErrorMessage(e, 'Vystavení se nezdařilo'));
+      } catch {
+        setError('Vystavení se nezdařilo. Zkuste to prosím znovu.');
       }
     });
   }
@@ -33,10 +32,11 @@ export function InvoiceActions({ invoiceId, status }: { invoiceId: string; statu
     setError(null);
     startTransition(async () => {
       try {
-        await cancelInvoice(invoiceId);
+        const result = await cancelInvoice(invoiceId);
+        if (!result.ok) { setError(result.error); return; }
         router.refresh();
-      } catch (e) {
-        setError(getActionErrorMessage(e, 'Zrušení se nezdařilo'));
+      } catch {
+        setError('Zrušení se nezdařilo. Zkuste to prosím znovu.');
       }
     });
   }
@@ -45,10 +45,11 @@ export function InvoiceActions({ invoiceId, status }: { invoiceId: string; statu
     setError(null);
     startTransition(async () => {
       try {
-        await markInvoicePaid(invoiceId);
+        const result = await markInvoicePaid(invoiceId);
+        if (!result.ok) { setError(result.error); return; }
         router.refresh();
-      } catch (e) {
-        setError(getActionErrorMessage(e, 'Označení se nezdařilo'));
+      } catch {
+        setError('Označení se nezdařilo. Zkuste to prosím znovu.');
       }
     });
   }
