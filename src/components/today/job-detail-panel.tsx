@@ -243,7 +243,7 @@ export function JobDetailPanel({ job, showFinancials, canInvoice, canViewInvoice
 
           {localStatus === 'DONE' && (
             <div className="grid grid-cols-2 gap-2">
-              {canViewInvoices && (canInvoice || job.activeInvoice) && (
+              {canInvoice || (canViewInvoices && job.activeInvoice) ? (
                 <button
                   type="button"
                   disabled={isPending}
@@ -253,7 +253,7 @@ export function JobDetailPanel({ job, showFinancials, canInvoice, canViewInvoice
                   <Receipt className="h-4 w-4" />
                   {isPending ? 'Otevírám…' : invoiceButtonLabel}
                 </button>
-              )}
+              ) : null}
               <button
                 type="button"
                 disabled={isPending || smsSent}
