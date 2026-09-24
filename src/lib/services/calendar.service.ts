@@ -33,7 +33,7 @@ export async function getJobsForWeek(
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 7);
 
-  return prisma.job.findMany({
+  const jobs = await prisma.job.findMany({
     where: {
       garageId: context.garageId,
       scheduledStart: { gte: weekStart, lt: weekEnd },
@@ -51,12 +51,20 @@ export async function getJobsForWeek(
         select: { brand: true, model: true, licensePlate: true },
       },
       // Statistiky potřebují pouze cenu a množství, ne celé položky.
-      items: {
-        select: { quantity: true, unitPrice: true },
-      },
+      items: context.permissions.canViewFinancials
+        ? { select: { quantity: true, unitPrice: true } }
+        : { select: { quantity: true } },
     },
     orderBy: { scheduledStart: 'asc' },
   });
+
+  return jobs.map((job) => ({
+    ...job,
+    items: job.items.map((item) => ({
+      ...item,
+      unitPrice: 'unitPrice' in item ? item.unitPrice : null,
+    })),
+  }));
 }
 
 export type WeekJob = Awaited<ReturnType<typeof getJobsForWeek>>[number];
@@ -70,7 +78,7 @@ export function calculateWeekStats(jobs: WeekJob[]) {
     .filter((j) => j.status === 'DONE')
     .reduce((sum, job) => {
       const jobTotal = job.items.reduce(
-        (itemSum, item) => itemSum + Number(item.quantity) * Number(item.unitPrice),
+        (itemSum, item) => itemSum + Number(item.quantity) * Number(item.unitPrice ?? 0),
         0
       );
       return sum + jobTotal;
