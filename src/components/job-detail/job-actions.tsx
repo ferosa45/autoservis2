@@ -119,7 +119,7 @@ export function JobActions({
 
       {status === 'DONE' && (
         <div className="space-y-2">
-          {canInvoice && canViewInvoices && !latestInvoice && (
+          {canInvoice && !latestInvoice && (
             <button
               type="button"
               disabled={isPending}
@@ -131,7 +131,7 @@ export function JobActions({
             </button>
           )}
 
-          {canViewInvoices && latestInvoice?.status === 'DRAFT' && (
+          {(canViewInvoices || canInvoice) && latestInvoice?.status === 'DRAFT' && (
             <Link
               href={`/invoices/${latestInvoice.id}`}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover"
@@ -141,7 +141,7 @@ export function JobActions({
             </Link>
           )}
 
-          {canViewInvoices && (latestInvoice?.status === 'ISSUED' || latestInvoice?.status === 'PAID') && (
+          {(canViewInvoices || canInvoice) && (latestInvoice?.status === 'ISSUED' || latestInvoice?.status === 'PAID') && (
             <div className="rounded-lg border border-border bg-elevated p-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
