@@ -58,9 +58,14 @@ export async function getSessionContext(): Promise<SessionContext> {
 export function assertWriteAccess(context: SessionContext): void {
   if (!context.hasWriteAccess) throw new ReadOnlyAccessError();
 }
-export function assertOwner(context: SessionContext): void {
+export function requireOwner(context: SessionContext): void {
   if (context.role !== 'OWNER') throw new ForbiddenError();
 }
-export function assertPermission(context: SessionContext, permission: keyof UserPermissions): void {
+
+export function requirePermission(context: SessionContext, permission: keyof UserPermissions): void {
   if (context.role !== 'OWNER' && !context.permissions[permission]) throw new ForbiddenError();
 }
+
+// Backwards-compatible aliases while the remaining actions are migrated.
+export const assertOwner = requireOwner;
+export const assertPermission = requirePermission;
