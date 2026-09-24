@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
-import { getSessionContext, assertWriteAccess } from '@/lib/session';
+import { getSessionContext, assertWriteAccess, requirePermission } from '@/lib/session';
 
 async function assertJobOwnership(jobId: string, garageId: string) {
   const job = await prisma.job.findFirst({ where: { id: jobId, garageId } });
@@ -71,7 +71,7 @@ export async function addJobItem(jobId: string, input: AddJobItemInput) {
       title,
       quantity: input.quantity > 0 ? input.quantity : 1,
       unit: input.unit.trim() || 'ks',
-      unitPrice: input.unitPrice >= 0 ? input.unitPrice : 0,
+      unitPrice: context.permissions.canViewFinancials ? (input.unitPrice >= 0 ? input.unitPrice : 0) : 0,
       jobId,
       garageId: context.garageId,
     },
