@@ -1,9 +1,11 @@
+import { toPrague } from '@/lib/date-time';
+
 export function formatTime(date: Date): string {
-  return date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+  return toPrague(date).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
 }
 
 export function formatShortDate(date: Date): string {
-  return date.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' });
+  return toPrague(date).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' });
 }
 
 export function formatDateTime(date: Date): string {
@@ -36,18 +38,19 @@ const MONTHS = [
 ];
 
 export function formatFullDate(date: Date): string {
-  const weekday = WEEKDAYS[date.getDay()];
-  const day = date.getDate();
-  const month = MONTHS[date.getMonth()];
-  const year = date.getFullYear();
+  const local = toPrague(date);
+  const weekday = WEEKDAYS[local.getDay()];
+  const day = local.getDate();
+  const month = MONTHS[local.getMonth()];
+  const year = local.getFullYear();
   return `${weekday} ${day}. ${month} ${year}`;
 }
 
 export function isSameDay(a: Date, b: Date): boolean {
   return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
+    toPrague(a).getFullYear() === toPrague(b).getFullYear() &&
+    toPrague(a).getMonth() === toPrague(b).getMonth() &&
+    toPrague(a).getDate() === toPrague(b).getDate()
   );
 }
 
@@ -73,15 +76,17 @@ export function formatWeekdayShort(date: Date): string {
 }
 
 export function formatWeekRange(weekStart: Date, weekEnd: Date): string {
-  const sameMonth = weekStart.getMonth() === weekEnd.getMonth();
-  const startDay = weekStart.getDate();
-  const endDay = weekEnd.getDate();
-  const month = MONTHS[weekEnd.getMonth()];
-  const year = weekEnd.getFullYear();
+  const start = toPrague(weekStart);
+  const end = toPrague(weekEnd);
+  const sameMonth = start.getMonth() === end.getMonth();
+  const startDay = start.getDate();
+  const endDay = end.getDate();
+  const month = MONTHS[end.getMonth()];
+  const year = end.getFullYear();
 
   if (sameMonth) {
     return `${startDay}. – ${endDay}. ${month} ${year}`;
   }
-  const startMonth = MONTHS[weekStart.getMonth()];
+  const startMonth = MONTHS[start.getMonth()];
   return `${startDay}. ${startMonth} – ${endDay}. ${month} ${year}`;
 }
