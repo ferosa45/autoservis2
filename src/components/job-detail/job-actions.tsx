@@ -23,10 +23,14 @@ export function JobActions({
   jobId,
   status,
   latestInvoice,
+  canInvoice,
+  canViewInvoices,
 }: {
   jobId: string;
   status: JobStatus;
   latestInvoice: LatestInvoice;
+  canInvoice: boolean;
+  canViewInvoices: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -50,6 +54,7 @@ export function JobActions({
   }
 
   function handleStartInvoice() {
+    if (!canInvoice) return;
     setError(null);
     startTransition(async () => {
       try {
@@ -114,7 +119,7 @@ export function JobActions({
 
       {status === 'DONE' && (
         <div className="space-y-2">
-          {!latestInvoice && (
+          {canInvoice && !latestInvoice && (
             <button
               type="button"
               disabled={isPending}
@@ -126,7 +131,7 @@ export function JobActions({
             </button>
           )}
 
-          {latestInvoice?.status === 'DRAFT' && (
+          {canViewInvoices && latestInvoice?.status === 'DRAFT' && (
             <Link
               href={`/invoices/${latestInvoice.id}`}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover"
@@ -136,7 +141,7 @@ export function JobActions({
             </Link>
           )}
 
-          {(latestInvoice?.status === 'ISSUED' || latestInvoice?.status === 'PAID') && (
+          {canViewInvoices && (latestInvoice?.status === 'ISSUED' || latestInvoice?.status === 'PAID') && (
             <div className="rounded-lg border border-border bg-elevated p-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
