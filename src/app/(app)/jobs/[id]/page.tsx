@@ -67,7 +67,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             jobId={job.id}
             status={job.status}
             latestInvoice={activeInvoice}
-            canInvoice={context.permissions.canInvoice}
+            canInvoice={context.role === 'OWNER' || context.permissions.canInvoice}
             canViewInvoices={context.permissions.canViewInvoices}
           />
         </div>
