@@ -68,7 +68,7 @@ export function JobDetailPanel({ job, showFinancials, canInvoice, canViewInvoice
   );
 
   const handleInvoice = () => {
-    if (!canInvoice && !canViewInvoices) return;
+    if (!canViewInvoices) return;
     setError(null);
     startTransition(async () => {
       try {
@@ -243,7 +243,7 @@ export function JobDetailPanel({ job, showFinancials, canInvoice, canViewInvoice
 
           {localStatus === 'DONE' && (
             <div className="grid grid-cols-2 gap-2">
-              {(canInvoice || (canViewInvoices && job.activeInvoice)) && (
+              {canViewInvoices && (canInvoice || job.activeInvoice) && (
                 <button
                   type="button"
                   disabled={isPending}
