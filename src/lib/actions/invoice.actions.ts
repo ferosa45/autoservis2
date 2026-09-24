@@ -5,13 +5,25 @@ import { getSessionContext, assertWriteAccess, requirePermission } from '@/lib/s
 import { prisma } from '@/lib/prisma';
 import { createInvoiceDraftFromJob, computeItemAmounts, computeInvoiceTotals, validateInvoiceItemInput } from '@/lib/services/invoice.service';
 
-export async function startInvoiceDraft(jobId: string): Promise<{ invoiceId: string }> {
+export type StartInvoiceDraftResult =
+  | { ok: true; invoiceId: string }
+  | { ok: false; error: string };
+
+export async function startInvoiceDraft(jobId: string): Promise<StartInvoiceDraftResult> {
   const context = await getSessionContext();
-  assertWriteAccess(context);
-  requirePermission(context, 'canInvoice');
-  const invoice = await createInvoiceDraftFromJob(context, jobId);
-  revalidatePath(`/jobs/${jobId}`);
-  return { invoiceId: invoice.id };
+
+  try {
+    assertWriteAccess(context);
+    requirePermission(context, 'canInvoice');
+    const invoice = await createInvoiceDraftFromJob(context, jobId);
+    revalidatePath(`/jobs/${jobId}`);
+    return { ok: true, invoiceId: invoice.id };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Nepodařilo se založit fakturu.',
+    };
+  }
 }
 
 async function assertDraftOwnership(invoiceId: string, garageId: string) {
