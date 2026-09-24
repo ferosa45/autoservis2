@@ -70,9 +70,11 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     }),
   ]);
 
-  const jobItemsTotal = (items: { quantity: unknown; unitPrice: unknown }[]) =>
+  const jobItemsTotal = (
+    items: { quantity: Prisma.Decimal; unitPrice: Prisma.Decimal }[]
+  ) =>
     items.reduce(
-      (sum, item) => sum.add(new Prisma.Decimal(item.quantity).mul(new Prisma.Decimal(item.unitPrice))),
+      (sum, item) => sum.add(item.quantity.mul(item.unitPrice)),
       new Prisma.Decimal(0)
     );
 
