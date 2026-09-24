@@ -26,7 +26,9 @@ export async function getJobsForDay(context: SessionContext, date: Date) {
       vehicle: { select: { brand: true, model: true, licensePlate: true } },
       assignedUser: { select: { id: true, name: true, active: true } },
       tasks: { select: { id: true, title: true, completed: true }, orderBy: { createdAt: 'asc' } },
-      items: { select: { quantity: true, unitPrice: true } },
+      items: context.permissions.canViewFinancials
+        ? { select: { quantity: true, unitPrice: true } }
+        : { select: { quantity: true } },
     },
     orderBy: { scheduledStart: 'asc' },
   });
@@ -35,7 +37,7 @@ export async function getJobsForDay(context: SessionContext, date: Date) {
 export type JobForDay = Awaited<ReturnType<typeof getJobsForDay>>[number];
 
 export async function getJobDetail(context: SessionContext, jobId: string) {
-  return prisma.job.findFirst({
+  const job = await prisma.job.findFirst({
     where: { id: jobId, garageId: context.garageId },
     select: {
       id: true,
@@ -50,7 +52,9 @@ export async function getJobDetail(context: SessionContext, jobId: string) {
       vehicle: { select: { brand: true, model: true, licensePlate: true, year: true, mileage: true } },
       assignedUser: { select: { id: true, name: true, active: true } },
       tasks: { select: { id: true, title: true, completed: true }, orderBy: { createdAt: 'asc' } },
-      items: { select: { id: true, title: true, quantity: true, unit: true, unitPrice: true }, orderBy: { createdAt: 'asc' } },
+      items: context.permissions.canViewFinancials
+        ? { select: { id: true, title: true, quantity: true, unit: true, unitPrice: true }, orderBy: { createdAt: 'asc' } }
+        : { select: { id: true, title: true, quantity: true, unit: true }, orderBy: { createdAt: 'asc' } },
       invoices: {
         where: { status: { in: ['DRAFT', 'ISSUED', 'PAID'] } },
         select: { id: true, number: true, status: true },
@@ -78,6 +82,16 @@ export async function getJobDetail(context: SessionContext, jobId: string) {
       },
     },
   });
+
+  if (!job) return null;
+
+  return {
+    ...job,
+    items: job.items.map((item) => ({
+      ...item,
+      unitPrice: 'unitPrice' in item ? item.unitPrice : null,
+    })),
+  };
 }
 
 export async function getTasksForDay(context: SessionContext, date: Date) {
