@@ -6,6 +6,7 @@ declare module 'next-auth' {
       id: string;
       garageId: string;
       role: 'OWNER' | 'MECHANIC';
+      passwordChangedAt: string;
     } & DefaultSession['user'];
   }
 }
