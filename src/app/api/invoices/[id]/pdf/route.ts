@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSessionContext, requirePermission } from '@/lib/session';
-import { getInvoiceDetail } from '@/lib/services/invoice.service';
+import { computeVatBreakdown, getInvoiceDetail } from '@/lib/services/invoice.service';
 import { buildInvoiceDocument, type InvoicePdfData } from '@/lib/pdf/invoice-document';
 
 // @react-pdf/renderer potřebuje Node.js APII (fs pro čtení fontů) - ne Edge runtime.
@@ -25,6 +25,7 @@ export async function GET(
     });
   }
 
+  const vatBreakdown = computeVatBreakdown(invoice.items);
   const data: InvoicePdfData = {
     number: invoice.number,
     issueDate: invoice.issueDate,
@@ -57,6 +58,12 @@ export async function GET(
     subtotal: Number(invoice.subtotal),
     vatTotal: Number(invoice.vatTotal),
     total: Number(invoice.total),
+    vatBreakdown: vatBreakdown.map((row) => ({
+      rate: Number(row.rate),
+      base: Number(row.base),
+      vat: Number(row.vat),
+      total: Number(row.total),
+    })),
     note: invoice.note,
   };
 
