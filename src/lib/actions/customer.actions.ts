@@ -6,6 +6,15 @@ import { getSessionContext, assertWriteAccess } from '@/lib/session';
 import { z } from 'zod';
 import { customerIdSchema, vehicleIdSchema } from '@/lib/validation/action-schemas';
 
+const vehicleInputSchema = z.object({
+  brand: z.string().trim().min(1).max(100),
+  model: z.string().trim().min(1).max(100),
+  licensePlate: z.string().trim().max(20).optional(),
+  year: z.number().int().min(1886).max(new Date().getFullYear() + 1).nullable().optional(),
+  mileage: z.number().int().min(0).max(9999999).nullable().optional(),
+  note: z.string().max(5000).optional(),
+});
+
 export type VehicleActionResult = { success: true; error?: never } | { success: false; error: string };
 
 export async function updateCustomer(customerId: string, data: { name: string; phone: string; email?: string; companyName?: string; ico?: string; dic?: string; street?: string; city?: string; zip?: string }) {
@@ -37,18 +46,20 @@ export async function updateCustomerNote(customerId: string, note: string) {
 
 export async function createVehicle(customerId: string, data: { brand: string; model: string; licensePlate?: string; year?: number | null; mileage?: number | null; note?: string }): Promise<VehicleActionResult> {
   try {
+    const validCustomerId = customerIdSchema.parse(customerId);
+    const validData = vehicleInputSchema.parse(data);
     const context = await getSessionContext();
     if (!context.hasWriteAccess) return { success: false, error: 'Účet je pouze pro čtení. Pro pokračování aktivujte předplatné.' };
-    const customer = await prisma.customer.findFirst({ where: { id: customerId, garageId: context.garageId }, select: { id: true } });
+    const customer = await prisma.customer.findFirst({ where: { id: validCustomerId, garageId: context.garageId }, select: { id: true } });
     if (!customer) return { success: false, error: 'Zákazník nenalezen' };
-    const brand = data.brand.trim(); const model = data.model.trim();
+    const brand = validData.brand; const model = validData.model;
     if (!brand) return { success: false, error: 'Značka vozidla je povinná' };
     if (!model) return { success: false, error: 'Model vozidla je povinný' };
     await prisma.vehicle.create({ data: {
-      brand, model, licensePlate: data.licensePlate?.trim() || null,
-      year: data.year && data.year > 0 ? data.year : null,
-      mileage: data.mileage != null && data.mileage >= 0 ? data.mileage : null,
-      note: data.note?.trim() || null, customerId, garageId: context.garageId,
+      brand, model, licensePlate: validData.licensePlate || null,
+      year: validData.year ?? null,
+      mileage: validData.mileage ?? null,
+      note: validData.note?.trim() || null, customerId: validCustomerId, garageId: context.garageId,
     } });
     revalidatePath(`/customers/${customerId}`);
     return { success: true };
@@ -59,19 +70,21 @@ export async function createVehicle(customerId: string, data: { brand: string; m
 
 export async function updateVehicle(vehicleId: string, data: { brand: string; model: string; licensePlate?: string; year?: number | null; mileage?: number | null; note?: string }): Promise<VehicleActionResult> {
   try {
+    const validVehicleId = vehicleIdSchema.parse(vehicleId);
+    const validData = vehicleInputSchema.parse(data);
     const context = await getSessionContext();
     if (!context.hasWriteAccess) return { success: false, error: 'Účet je pouze pro čtení. Pro pokračování aktivujte předplatné.' };
-    const brand = data.brand.trim(); const model = data.model.trim();
+    const brand = validData.brand; const model = validData.model;
     if (!brand) return { success: false, error: 'Značka vozidla je povinná' };
     if (!model) return { success: false, error: 'Model vozidla je povinný' };
-    const result = await prisma.vehicle.updateMany({ where: { id: vehicleId, garageId: context.garageId }, data: {
-      brand, model, licensePlate: data.licensePlate?.trim() || null,
-      year: data.year && data.year > 0 ? data.year : null,
-      mileage: data.mileage != null && data.mileage >= 0 ? data.mileage : null,
-      note: data.note?.trim() || null,
+    const result = await prisma.vehicle.updateMany({ where: { id: validVehicleId, garageId: context.garageId }, data: {
+      brand, model, licensePlate: validData.licensePlate || null,
+      year: validData.year ?? null,
+      mileage: validData.mileage ?? null,
+      note: validData.note?.trim() || null,
     } });
     if (result.count === 0) return { success: false, error: 'Vozidlo nenalezeno' };
-    const vehicle = await prisma.vehicle.findFirst({ where: { id: vehicleId, garageId: context.garageId }, select: { customerId: true } });
+    const vehicle = await prisma.vehicle.findFirst({ where: { id: validVehicleId, garageId: context.garageId }, select: { customerId: true } });
     if (vehicle) revalidatePath(`/customers/${vehicle.customerId}`);
     return { success: true };
   } catch (error) {
