@@ -52,13 +52,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) return null;
 
-        let passwordChangedAt = user.passwordChangedAt;
+        const passwordChangedAt = user.passwordChangedAt;
         if (bcrypt.getRounds(user.password) !== 12) {
           const passwordHash = await bcrypt.hash(password, 12);
-          passwordChangedAt = new Date();
           await prisma.user.update({
             where: { id: user.id },
-            data: { password: passwordHash, passwordChangedAt },
+            data: { password: passwordHash },
           });
         }
 
