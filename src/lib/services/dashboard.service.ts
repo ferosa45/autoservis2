@@ -52,6 +52,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
         scheduledStart: true,
         status: true,
         assignedUser: { select: { id: true, name: true } },
+        items: { select: { quantity: true, unitPrice: true } },
         workSessions: { select: { userId: true, startedAt: true, endedAt: true } },
         invoices: { where: { status: { in: ['ISSUED', 'PAID'] } }, select: { total: true } },
       },
@@ -115,16 +116,19 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     return {
       date: date.toISOString().slice(0, 10),
       jobs: jobs.length,
-      revenue: revenueInvoices
-        .filter((invoice) => invoice.issueDate >= date && invoice.issueDate < next)
-        .reduce((sum, invoice) => sum + Number(invoice.total), 0),
+      revenue: jobs
+        .filter((job) => job.status === 'DONE')
+        .reduce((sum, job) => sum + jobItemsTotal(job.items), 0),
     };
   });
 
-  const monthRevenue = revenueInvoices.reduce((sum, invoice) => sum + Number(invoice.total), 0);
-  const todayRevenue = revenueInvoices
-    .filter((invoice) => invoice.issueDate >= todayStart && invoice.issueDate <= todayEnd)
-    .reduce((sum, invoice) => sum + Number(invoice.total), 0);
+  const todayRevenue = todayJobs
+    .filter((job) => job.status === 'DONE')
+    .reduce((sum, job) => sum + jobItemsTotal(job.items), 0);
+  const monthRevenue = monthJobs
+    .filter((job) => job.status === 'DONE')
+    .reduce((sum, job) => sum + jobItemsTotal(job.items), 0);
+  const monthInvoiced = revenueInvoices.reduce((sum, invoice) => sum + Number(invoice.total), 0);
   const todayMinutes = Math.round(workMinutesForDay(historyJobs.flatMap((job) => job.workSessions)));
   const doneMonth = monthJobs.filter((job) => job.status === 'DONE').length;
   const averageJobValue = doneMonth > 0 ? monthRevenue / doneMonth : 0;
@@ -143,6 +147,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
       jobs: monthJobs.length,
       done: doneMonth,
       revenue: monthRevenue,
+      invoiced: monthInvoiced,
       averageJobValue,
     },
     mechanics: mechanicStats,
