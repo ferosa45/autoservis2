@@ -61,7 +61,7 @@ export default async function WorkshopPage({
         </div>
         <div className="w-[40%]">
           {selectedJob ? (
-            <WorkshopJobDetail job={selectedJob} />
+            <WorkshopJobDetail job={selectedJob} showFinancials={context.permissions.canViewFinancials} />
           ) : (
             <div className="flex h-full items-center justify-center text-center text-text-muted">
               <p className="text-lg">Vyberte zakázku vlevo.</p>
