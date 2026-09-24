@@ -25,7 +25,7 @@ export default async function TodayPage({
   searchParams: Promise<{ date?: string; job?: string }>;
 }) {
   const { date: dateParam, job: jobParam } = await searchParams;
-  const date = parseDate(dateParam);
+  const date = parsePragueDateParam(dateParam);
   const context = await getSessionContext();
 
   // When a job is selected, load its detail in parallel with the day data.
