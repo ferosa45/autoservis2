@@ -1,11 +1,16 @@
 'use server';
 
-import { AuthError } from 'next-auth';
-import { signIn } from '@/lib/auth';
-import { welcomeEmail, sendEmail } from '@/lib/email/send';
+import { headers } from 'next/headers';
+import { emailVerificationEmail, sendEmail } from '@/lib/email/send';
 import { registerGarageWithOwner } from '@/lib/services/registration.service';
+import { consumeRateLimit, getClientIp, normalizeEmail } from '@/lib/auth-rate-limit';
 
-export type RegisterState = { error: string | null };
+export type RegisterState = {
+  error: string | null;
+  verificationSent: boolean;
+};
+
+const initialState = { error: null, verificationSent: false } satisfies RegisterState;
 
 export async function register(
   _prevState: RegisterState,
@@ -13,41 +18,48 @@ export async function register(
 ): Promise<RegisterState> {
   const garageName = String(formData.get('garageName') ?? '').trim();
   const ownerName = String(formData.get('ownerName') ?? '').trim();
-  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const email = normalizeEmail(String(formData.get('email') ?? ''));
   const password = String(formData.get('password') ?? '');
 
   if (!garageName || !ownerName || !email || !password) {
-    return { error: 'Vyplňte prosím všechna pole.' };
+    return { ...initialState, error: 'Vyplňte prosím všechna pole.' };
   }
   if (password.length < 8) {
-    return { error: 'Heslo musí mít alespoň 8 znaků.' };
+    return { ...initialState, error: 'Heslo musí mít alespoň 8 znaků.' };
+  }
+
+  const requestHeaders = await headers();
+  const ip = getClientIp(requestHeaders);
+  const ipAllowed = await consumeRateLimit('register:ip:' + ip, { limit: 5, windowMs: 60 * 60 * 1000 });
+  if (!ipAllowed) {
+    return { ...initialState, error: 'Příliš mnoho pokusů o registraci. Zkuste to prosím později.' };
   }
 
   try {
-    await registerGarageWithOwner({ garageName, ownerName, email, password });
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : 'Registrace se nezdařila. Zkuste to prosím znovu.' };
-  }
+    const { verificationToken } = await registerGarageWithOwner({
+      garageName,
+      ownerName,
+      email,
+      password,
+    });
 
-  const emailSent = await sendEmail({
-    to: email,
-    subject: 'Vítejte v Garaziu 👋',
-    html: welcomeEmail({ name: ownerName, garageName }),
-  });
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://garazio.cz').replace(/\/$/, '');
+    const verificationUrl = appUrl + '/verify-email?token=' + encodeURIComponent(verificationToken);
+    const emailSent = await sendEmail({
+      to: email,
+      subject: 'Ověřte svůj email – Garazio',
+      html: emailVerificationEmail({ name: ownerName, verificationUrl }),
+    });
 
-  if (!emailSent) {
-    console.error(`[registration] Welcome email was not sent to ${email}`);
-  }
-
-  try {
-    await signIn('credentials', { email, password, redirectTo: '/onboarding' });
-    return { error: null };
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return {
-        error: 'Účet byl vytvořen, ale automatické přihlášení se nezdařilo. Zkuste se přihlásit ručně.',
-      };
+    if (!emailSent) {
+      console.error('[registration] Verification email was not sent to ' + email);
     }
-    throw error;
+
+    return { error: null, verificationSent: true };
+  } catch (error) {
+    return {
+      ...initialState,
+      error: error instanceof Error ? error.message : 'Registrace se nezdařila. Zkuste to prosím znovu.',
+    };
   }
 }
