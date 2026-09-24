@@ -54,6 +54,10 @@ export async function getJobsForWeek(
       items: context.permissions.canViewFinancials
         ? { select: { quantity: true, unitPrice: true } }
         : { select: { quantity: true } },
+      invoices: {
+        where: { status: { in: ['ISSUED', 'PAID'] }, issueDate: { gte: weekStart, lt: weekEnd } },
+        select: { total: true },
+      },
     },
     orderBy: { scheduledStart: 'asc' },
   });
