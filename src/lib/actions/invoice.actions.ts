@@ -205,8 +205,9 @@ export async function issueInvoice(invoiceId: string): Promise<{ ok: true; numbe
   }
 }
 
-export async function cancelInvoice(invoiceId: string) {
+export async function cancelInvoice(invoiceId: string): Promise<InvoiceActionResult> {
   const context = await getSessionContext();
+  try {
   assertWriteAccess(context);
   requirePermission(context, 'canInvoice');
 
@@ -239,10 +240,15 @@ export async function cancelInvoice(invoiceId: string) {
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath('/invoices');
   if (invoice.jobId) revalidatePath(`/jobs/${invoice.jobId}`);
+  return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Fakturu se nepodařilo zrušit.' };
+  }
 }
 
-export async function markInvoicePaid(invoiceId: string) {
+export async function markInvoicePaid(invoiceId: string): Promise<InvoiceActionResult> {
   const context = await getSessionContext();
+  try {
   assertWriteAccess(context);
   requirePermission(context, 'canInvoice');
 
@@ -274,4 +280,8 @@ export async function markInvoicePaid(invoiceId: string) {
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath('/invoices');
   if (invoice.jobId) revalidatePath(`/jobs/${invoice.jobId}`);
+  return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Fakturu se nepodařilo označit jako zaplacenou.' };
+  }
 }
