@@ -1,6 +1,7 @@
 import type { JobStatus, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import type { SessionContext } from '@/lib/session';
+import { createJobFromQuickInputSchema } from '@/lib/validation/action-schemas';
 
 type JobListItem = Prisma.JobGetPayload<{
   include: {
@@ -81,8 +82,10 @@ export async function createJobFromQuickInput(
   context: SessionContext,
   input: CreateJobFromQuickInput
 ) {
+  const validatedInput = createJobFromQuickInputSchema.parse(input);
+
   return prisma.$transaction(async (tx) => {
-    let customerId = input.customerId;
+    let customerId = validatedInput.customerId;
 
     if (customerId) {
       const owned = await tx.customer.findFirst({
@@ -90,9 +93,9 @@ export async function createJobFromQuickInput(
       });
       if (!owned) throw new Error('Zákazník nepatří do tohoto servisu');
     } else {
-      const existingByPhone = input.customerPhone
+      const existingByPhone = validatedInput.customerPhone
         ? await tx.customer.findFirst({
-            where: { garageId: context.garageId, phone: input.customerPhone },
+            where: { garageId: context.garageId, phone: validatedInput.customerPhone },
           })
         : null;
 
@@ -101,8 +104,8 @@ export async function createJobFromQuickInput(
       } else {
         const created = await tx.customer.create({
           data: {
-            name: input.customerName.trim() || 'Neznámý zákazník',
-            phone: input.customerPhone.trim() || '—',
+            name: validatedInput.customerName.trim() || 'Neznámý zákazník',
+            phone: validatedInput.customerPhone.trim() || '—',
             garageId: context.garageId,
           },
         });
@@ -114,7 +117,7 @@ export async function createJobFromQuickInput(
       throw new Error('Nepodařilo se určit zákazníka.');
     }
 
-    let vehicleId = input.vehicleId;
+    let vehicleId = validatedInput.vehicleId;
 
     if (vehicleId) {
       const owned = await tx.vehicle.findFirst({
@@ -126,8 +129,8 @@ export async function createJobFromQuickInput(
         where: { garageId: context.garageId, customerId },
       });
 
-      const normalizedPlate = input.vehicleLicensePlate
-        ? input.vehicleLicensePlate.replace(/\s+/g, '').toUpperCase()
+      const normalizedPlate = validatedInput.vehicleLicensePlate
+        ? validatedInput.vehicleLicensePlate.replace(/\s+/g, '').toUpperCase()
         : null;
 
       let existingVehicle = normalizedPlate
@@ -137,8 +140,8 @@ export async function createJobFromQuickInput(
         : undefined;
 
       if (!existingVehicle && !normalizedPlate) {
-        const brand = input.vehicleBrand.trim().toLowerCase();
-        const model = input.vehicleModel.trim().toLowerCase();
+        const brand = validatedInput.vehicleBrand.trim().toLowerCase();
+        const model = validatedInput.vehicleModel.trim().toLowerCase();
         if (brand && model) {
           existingVehicle = customerVehicles.find(
             (v) => v.brand.toLowerCase() === brand && v.model.toLowerCase() === model
@@ -148,12 +151,12 @@ export async function createJobFromQuickInput(
 
       if (existingVehicle) {
         vehicleId = existingVehicle.id;
-      } else if (input.vehicleBrand.trim() && input.vehicleModel.trim()) {
+      } else if (validatedInput.vehicleBrand.trim() && validatedInput.vehicleModel.trim()) {
         const created = await tx.vehicle.create({
           data: {
-            brand: input.vehicleBrand.trim(),
-            model: input.vehicleModel.trim(),
-            licensePlate: input.vehicleLicensePlate?.trim() || null,
+            brand: validatedInput.vehicleBrand.trim(),
+            model: validatedInput.vehicleModel.trim(),
+            licensePlate: validatedInput.vehicleLicensePlate?.trim() || null,
             customerId,
             garageId: context.garageId,
           },
@@ -177,13 +180,13 @@ export async function createJobFromQuickInput(
     }
 
     let assignedUserId: string | null = null;
-    if (input.assignedUserId) {
+    if (validatedInput.assignedUserId) {
       if (context.role !== 'OWNER') {
         throw new Error('Mechanika může přiřadit pouze majitel servisu.');
       }
       const mechanic = await tx.user.findFirst({
         where: {
-          id: input.assignedUserId,
+          id: validatedInput.assignedUserId,
           garageId: context.garageId,
           role: 'MECHANIC',
           active: true,
@@ -210,11 +213,11 @@ export async function createJobFromQuickInput(
         number,
         customerId,
         vehicleId,
-        scheduledStart: new Date(input.scheduledStart),
-        scheduledEnd: input.scheduledEnd ? new Date(input.scheduledEnd) : null,
+        scheduledStart: new Date(validatedInput.scheduledStart),
+        scheduledEnd: validatedInput.scheduledEnd ? new Date(validatedInput.scheduledEnd) : null,
         status: 'WAITING',
         assignedUserId,
-        customerRequest: input.tasks.join(', ') || 'Bez upřesnění',
+        customerRequest: validatedInput.tasks.join(', ') || 'Bez upřesnění',
         garageId: context.garageId,
       },
     });
@@ -229,9 +232,9 @@ export async function createJobFromQuickInput(
       },
     });
 
-    if (input.tasks.length > 0) {
+    if (validatedInput.tasks.length > 0) {
       await tx.jobTask.createMany({
-        data: input.tasks.map((title) => ({
+        data: validatedInput.tasks.map((title) => ({
           title,
           jobId: job.id,
           garageId: context.garageId,
