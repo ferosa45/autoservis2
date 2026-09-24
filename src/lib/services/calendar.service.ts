@@ -1,23 +1,17 @@
 import type { JobStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import type { SessionContext } from '@/lib/session';
+import { addPragueDays, getPragueDateParts, startOfPragueDay } from '@/lib/date-time';
 
 /** Vrátí pondělí týdne, do kterého spadá zadané datum, s časem na půlnoci. */
 export function getWeekStart(date: Date): Date {
-  const result = new Date(date);
-  const day = result.getDay();
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  result.setDate(result.getDate() + diffToMonday);
-  result.setHours(0, 0, 0, 0);
-  return result;
+  const local = getPragueDateParts(date);
+  const diffToMonday = local.dayOfWeek === 0 ? -6 : 1 - local.dayOfWeek;
+  return startOfPragueDay(addPragueDays(date, diffToMonday));
 }
 
 export function getWeekDays(weekStart: Date): Date[] {
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart);
-    d.setDate(d.getDate() + i);
-    return d;
-  });
+  return Array.from({ length: 7 }, (_, i) => addPragueDays(weekStart, i));
 }
 
 export type WeekFilters = {
