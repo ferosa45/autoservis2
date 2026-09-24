@@ -142,6 +142,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
   },
+  vatSummaryBox: {
+    alignSelf: 'flex-end',
+    width: 320,
+    marginTop: 8,
+    marginBottom: 8,
+  },
   noteBox: {
     marginTop: 24,
     padding: 10,
@@ -184,6 +190,7 @@ export type InvoicePdfData = {
   subtotal: number;
   vatTotal: number;
   total: number;
+  vatBreakdown: { rate: number; base: number; vat: number; total: number }[];
   note: string | null;
 };
 
@@ -192,7 +199,7 @@ function formatDateCz(date: Date): string {
 }
 
 function formatMoney(n: number): string {
-  return `${Math.round(n).toLocaleString('cs-CZ')} Kč`;
+  return `${n.toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kč`;
 }
 
 /**
@@ -286,6 +293,28 @@ export function buildInvoiceDocument(data: InvoicePdfData) {
       h(View, { style: styles.totalsRow, key: 'vat' }, h(Text, null, 'DPH'), h(Text, null, formatMoney(data.vatTotal)))
     );
   }
+  const vatSummaryChildren = [];
+  if (data.isVatPayer && data.vatBreakdown.length > 0) {
+    vatSummaryChildren.push(
+      h(View, { style: styles.tableRow, key: 'vat-summary-header' },
+        h(Text, { style: [styles.headerCell, styles.cellSmall] }, 'Sazba'),
+        h(Text, { style: [styles.headerCell, styles.cellPrice] }, 'Základ'),
+        h(Text, { style: [styles.headerCell, styles.cellPrice] }, 'DPH'),
+        h(Text, { style: [styles.headerCell, styles.cellPrice] }, 'Celkem')
+      )
+    );
+    data.vatBreakdown.forEach((row, index) => {
+      vatSummaryChildren.push(
+        h(View, { style: styles.tableRow, key: `vat-summary-${index}` },
+          h(Text, { style: [styles.cell, styles.cellSmall] }, `${row.rate}%`),
+          h(Text, { style: [styles.cell, styles.cellPrice] }, formatMoney(row.base)),
+          h(Text, { style: [styles.cell, styles.cellPrice] }, formatMoney(row.vat)),
+          h(Text, { style: [styles.cell, styles.cellPrice] }, formatMoney(row.total))
+        )
+      );
+    });
+  }
+
   totalsChildren.push(
     h(
       View,
@@ -342,6 +371,9 @@ export function buildInvoiceDocument(data: InvoicePdfData) {
       ...data.items.map((item, index) => buildItemRow(item, data.isVatPayer, index))
     ),
     h(View, { style: styles.totalsBox, key: 'totals' }, ...totalsChildren),
+    data.isVatPayer && data.vatBreakdown.length > 0
+      ? h(View, { style: styles.vatSummaryBox, key: 'vat-summary' }, ...vatSummaryChildren)
+      : null,
   ];
 
   if (data.note) {
