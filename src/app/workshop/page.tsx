@@ -13,7 +13,7 @@ export default async function WorkshopPage({
   searchParams: Promise<{ job?: string; date?: string }>;
 }) {
   const { job: jobParam, date: dateParam } = await searchParams;
-  const date = parseDate(dateParam);
+  const date = parsePragueDateParam(dateParam);
   const context = await getSessionContext();
 
   const [garage, jobs] = await Promise.all([
