@@ -3,7 +3,6 @@
 import { useState, useTransition } from 'react';
 import { ClipboardList, Plus, X } from 'lucide-react';
 import { addInvoiceItem, removeInvoiceItem } from '@/lib/actions/invoice.actions';
-import { getActionErrorMessage } from '@/lib/action-errors';
 import { formatCurrency } from '@/lib/format';
 
 type InvoiceItem = {
@@ -52,18 +51,19 @@ export function InvoiceItemsEditor({
     setError(null);
     startTransition(async () => {
       try {
-        await addInvoiceItem(invoiceId, {
+        const result = await addInvoiceItem(invoiceId, {
           title: trimmedTitle,
           quantity: parseFloat(quantity.replace(',', '.')) || 1,
           unit,
           unitPrice: parseFloat(unitPrice.replace(',', '.')) || 0,
           vatRate: isVatPayer ? parseFloat(vatRate.replace(',', '.')) || 0 : 0,
         });
+        if (!result.ok) { setError(result.error); return; }
         setTitle('');
         setQuantity('1');
         setUnitPrice('');
-      } catch (err) {
-        setError(getActionErrorMessage(err, 'Položku se nepodařilo přidat.'));
+      } catch {
+        setError('Položku se nepodařilo přidat. Zkuste to prosím znovu.');
       }
     });
   }
@@ -72,9 +72,10 @@ export function InvoiceItemsEditor({
     setError(null);
     startTransition(async () => {
       try {
-        await removeInvoiceItem(itemId, invoiceId);
-      } catch (err) {
-        setError(getActionErrorMessage(err, 'Položku se nepodařilo odebrat.'));
+        const result = await removeInvoiceItem(itemId, invoiceId);
+        if (!result.ok) setError(result.error);
+      } catch {
+        setError('Položku se nepodařilo odebrat. Zkuste to prosím znovu.');
       }
     });
   }
