@@ -6,19 +6,10 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
-  // @react-pdf/renderer způsoboval "Minified React error #31" při
-  // generování PDF v API route handleru. Skutečná příčina: Next.js
-  // App Router kompiluje route handlery ve stejné webpack "(rsc)" vrstvě
-  // jako React Server Components, kde se 'react' resolvuje jinak než
-  // v běžném Node.js kontextu. @react-pdf/renderer (a jeho interní
-  // reconciler) pak dostává React elementy vytvořené "jinou" instancí React,
-  // než jakou sám interně používá pro validaci.
   serverExternalPackages: ['@react-pdf/renderer'],
   outputFileTracingIncludes: {
     '/api/invoices/[id]/pdf/route': ['./src/lib/pdf/fonts/**'],
   },
-  // Česká URL aplikace. Staré adresy zůstávají funkční díky rewrite,
-  // takže existující záložky a odkazy se nerozbijí.
   async rewrites() {
     return [
       { source: '/dnes', destination: '/today' },
@@ -31,6 +22,54 @@ const nextConfig = {
       { source: '/prehled', destination: '/dashboard' },
       { source: '/faktury', destination: '/invoices' },
       { source: '/nastaveni', destination: '/settings' },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'self'",
+              "object-src 'none'",
+              "script-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https:",
+              "frame-src 'self'",
+              "worker-src 'self' blob:",
+              "manifest-src 'self'",
+              "upgrade-insecure-requests",
+            ].join('; '),
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+        ],
+      },
     ];
   },
 };
