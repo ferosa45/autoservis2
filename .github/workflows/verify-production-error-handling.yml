@@ -16,4 +16,10 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx next build
-      - run: timeout 10s npx next start -H 127.0.0.1 -p 3000
+      - run: |
+          npx next start -H 127.0.0.1 -p 3000 > /tmp/next-start.log 2>&1 &
+          pid=$!
+          sleep 3
+          kill $pid
+          wait $pid || test $? -eq 143
+          cat /tmp/next-start.log
