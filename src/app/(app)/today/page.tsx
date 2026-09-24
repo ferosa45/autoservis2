@@ -150,7 +150,7 @@ export default async function TodayPage({
           waitingForPart={stats.waitingForPart}
           inProgress={stats.inProgress}
           revenueToday={stats.revenueToday}
-          showRevenue={context.role === 'OWNER'}
+          showRevenue={context.permissions.canViewFinancials}
         />
         <JobTimeline jobs={jobs} date={date} selectedJobId={selectedJobId} />
       </div>
