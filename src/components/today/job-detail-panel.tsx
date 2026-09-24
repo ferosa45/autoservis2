@@ -49,7 +49,7 @@ type Job = {
 const TABS = ['Přehled', 'Práce a díly'] as const;
 type Tab = (typeof TABS)[number];
 
-export function JobDetailPanel({ job, showFinancials }: { job: Job; showFinancials: boolean }) {
+export function JobDetailPanel({ job, showFinancials, canInvoice, canViewInvoices }: { job: Job; showFinancials: boolean; canInvoice: boolean; canViewInvoices: boolean }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('Přehled');
   const [localStatus, setLocalStatus] = useState<JobStatus>(job.status);
@@ -68,6 +68,7 @@ export function JobDetailPanel({ job, showFinancials }: { job: Job; showFinancia
   );
 
   const handleInvoice = () => {
+    if (!canInvoice && !canViewInvoices) return;
     setError(null);
     startTransition(async () => {
       try {
@@ -242,15 +243,17 @@ export function JobDetailPanel({ job, showFinancials }: { job: Job; showFinancia
 
           {localStatus === 'DONE' && (
             <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={handleInvoice}
-                className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
-              >
-                <Receipt className="h-4 w-4" />
-                {isPending ? 'Otevírám…' : invoiceButtonLabel}
-              </button>
+              {(canInvoice || (canViewInvoices && job.activeInvoice)) && (
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={handleInvoice}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+                >
+                  <Receipt className="h-4 w-4" />
+                  {isPending ? 'Otevírám…' : invoiceButtonLabel}
+                </button>
+              )}
               <button
                 type="button"
                 disabled={isPending || smsSent}
