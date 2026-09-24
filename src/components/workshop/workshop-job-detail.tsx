@@ -22,11 +22,11 @@ type WorkshopJob = {
   items: SerializedJobItem[];
 };
 
-export function WorkshopJobDetail({ job }: { job: WorkshopJob }) {
+export function WorkshopJobDetail({ job, showFinancials }: { job: WorkshopJob; showFinancials: boolean }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const total = job.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const total = job.items.reduce((sum, item) => sum + item.quantity * (item.unitPrice ?? 0), 0);
 
   const handleStatusChange = (status: JobStatus) => {
     setError(null);
@@ -135,14 +135,18 @@ export function WorkshopJobDetail({ job }: { job: WorkshopJob }) {
                 <span className="text-text-secondary">
                   {item.title} ({item.quantity} {item.unit})
                 </span>
-                <span className="text-text-primary">{formatCurrency(item.quantity * item.unitPrice)}</span>
+                {showFinancials && item.unitPrice !== null && (
+                  <span className="text-text-primary">{formatCurrency(item.quantity * item.unitPrice)}</span>
+                )}
               </div>
             ))}
           </div>
+          {showFinancials && (
           <div className="mt-2 flex justify-between border-t border-border pt-2 text-base font-bold">
             <span className="text-text-primary">Celkem</span>
             <span className="text-text-primary">{formatCurrency(total)}</span>
           </div>
+        )}
         </div>
       )}
 
