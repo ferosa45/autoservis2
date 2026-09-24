@@ -30,7 +30,7 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
 
   await prisma.$transaction(async (tx) => {
     const activeSession = await tx.workSession.findFirst({
-      where: { jobId, garageId: context.garageId, endedAt: null },
+      where: { jobId: validJobId, garageId: context.garageId, endedAt: null },
       orderBy: { startedAt: 'desc' },
     });
 
@@ -41,17 +41,17 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
       }
       if (!activeSession || activeSession.userId !== context.userId) {
         await tx.workSession.create({
-          data: { jobId, userId: context.userId, garageId: context.garageId, startedAt: now },
+          data: { jobId: validJobId, userId: context.userId, garageId: context.garageId, startedAt: now },
         });
       }
-      await tx.job.update({ where: { id: jobId }, data: { status: validStatus, assignedUserId: context.userId } });
+      await tx.job.update({ where: { id: validJobId }, data: { status: validStatus, assignedUserId: context.userId } });
 
       if (job.status !== 'IN_PROGRESS' || switchingMechanic) {
         await tx.jobEvent.create({
           data: {
             type: job.status === 'BLOCKED' || switchingMechanic ? 'WORK_RESUMED' : 'WORK_STARTED',
             message: switchingMechanic || job.status === 'BLOCKED' ? 'Pokračuje v práci' : 'Zahájena práce',
-            jobId,
+            jobId: validJobId,
             userId: context.userId,
             garageId: context.garageId,
             createdAt: now,
@@ -63,7 +63,7 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<Se
         await tx.workSession.update({ where: { id: activeSession.id }, data: { endedAt: now } });
       }
       await tx.job.update({
-        where: { id: jobId },
+        where: { id: validJobId },
         data: { status: validStatus },
       });
 
@@ -170,11 +170,12 @@ export async function createTask(input: { title: string; dueDate?: string; jobId
 }
 
 export async function sendJobSms(jobId: string) {
+  const validJobId = jobIdSchema.parse(jobId);
   const context = await getSessionContext();
   assertWriteAccess(context);
-  const job = await prisma.job.findFirst({ where: { id: jobId, garageId: context.garageId }, include: { customer: true } });
+  const job = await prisma.job.findFirst({ where: { id: validJobId, garageId: context.garageId }, include: { customer: true } });
   if (!job) throw new Error('Zakázka nenalezena');
   await notificationService.sendJobNotification({ toPhone: job.customer.phone, customerName: job.customer.name, message: `Vaše zakázka č. ${job.number} je připravena.` });
   revalidatePath('/today');
-  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath(`/jobs/${validJobId}`);
 }
