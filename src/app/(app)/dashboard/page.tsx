@@ -53,7 +53,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             { icon: CalendarDays, value: data.today.total, label: 'zakázek dnes' },
             { icon: Wrench, value: data.today.inProgress, label: 'právě se opravuje' },
             { icon: CheckCircle2, value: data.today.done, label: 'hotových' },
-            { icon: Banknote, value: formatCurrency(data.today.revenue), label: 'dnešní obrat' },
+            { icon: Banknote, value: formatCurrency(data.today.revenue), label: 'dnešní obrat bez DPH' },
           ].map((item) => (
             <div key={item.label} className="rounded-lg border border-border bg-surface p-4">
               <item.icon className="h-5 w-5 text-text-secondary" />
@@ -77,9 +77,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           {[
             { icon: CalendarDays, value: data.month.jobs, label: 'zakázek' },
             { icon: CheckCircle2, value: data.month.done, label: 'dokončených' },
-            { icon: TrendingUp, value: formatCurrency(data.month.revenue), label: 'obrat' },
-            { icon: Banknote, value: formatCurrency(data.month.invoiced), label: 'vyfakturováno' },
-            { icon: Wrench, value: formatCurrency(data.month.averageJobValue), label: 'průměrná zakázka' },
+            { icon: TrendingUp, value: formatCurrency(data.month.revenue), label: 'obrat bez DPH' },
+            { icon: Banknote, value: formatCurrency(data.month.invoiced), label: 'vyfakturováno bez DPH' },
+            { icon: Wrench, value: formatCurrency(data.month.averageJobValue), label: 'průměrná zakázka bez DPH' },
           ].map((item) => (
             <div key={item.label} className="rounded-lg border border-border bg-surface p-4">
               <item.icon className="h-5 w-5 text-text-secondary" />
@@ -109,7 +109,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </div>
 
       <section className="rounded-lg border border-border bg-surface p-4 sm:p-5">
-        <div><h2 className="font-heading text-sm font-bold text-text-primary">Posledních 30 dní</h2><p className="mt-1 text-xs text-text-muted">Počet zakázek a vyfakturovaná částka podle dne.</p></div>
+        <div><h2 className="font-heading text-sm font-bold text-text-primary">Posledních 30 dní</h2><p className="mt-1 text-xs text-text-muted">Počet zakázek a hodnota dokončených zakázek bez DPH podle dne.</p></div>
         <div className="mt-5 overflow-x-auto">
           <div className="flex min-w-[620px] items-end gap-1" style={{ height: 190 }}>
             {data.daily.map((day) => (
@@ -120,7 +120,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               </div>
             ))}
           </div>
-          <div className="mt-2 flex items-center justify-end gap-4 text-[11px] text-text-muted"><span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/30" /> zakázky</span><span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary" /> obrat</span></div>
+          <div className="mt-2 flex items-center justify-end gap-4 text-[11px] text-text-muted"><span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/30" /> zakázky</span><span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary" /> hodnota bez DPH</span></div>
         </div>
       </section>
     </div>
