@@ -2,21 +2,15 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { formatWeekRange, isSameDay } from '@/lib/format';
 import { cn } from '@/lib/utils';
-
-function toDateParam(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
+import { addPragueDays, getPragueDateParts, toPragueDateParam } from '@/lib/date-time';
 
 export function CalendarHeader({ weekStart, weekEnd }: { weekStart: Date; weekEnd: Date }) {
-  const prevWeek = new Date(weekStart);
-  prevWeek.setDate(prevWeek.getDate() - 7);
-  const nextWeek = new Date(weekStart);
-  nextWeek.setDate(nextWeek.getDate() + 7);
+  const prevWeek = addPragueDays(weekStart, -7);
+  const nextWeek = addPragueDays(weekStart, 7);
 
   const today = new Date();
-  const currentWeekStart = new Date(today);
-  const day = currentWeekStart.getDay();
-  currentWeekStart.setDate(currentWeekStart.getDate() + (day === 0 ? -6 : 1 - day));
+  const currentParts = getPragueDateParts(today);
+  const currentWeekStart = addPragueDays(today, currentParts.dayOfWeek === 0 ? -6 : 1 - currentParts.dayOfWeek);
   const isCurrentWeek = isSameDay(currentWeekStart, weekStart);
 
   return (
@@ -34,7 +28,7 @@ export function CalendarHeader({ weekStart, weekEnd }: { weekStart: Date; weekEn
       <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
         <div className="flex min-w-0 flex-1 items-center justify-between gap-1 rounded-lg border border-border bg-surface p-1 sm:flex-none">
           <Link
-            href={`/calendar?week=${toDateParam(prevWeek)}`}
+            href={`/calendar?week=${toPragueDateParam(prevWeek)}`}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-text-secondary hover:bg-elevated"
             aria-label="Předchozí týden"
           >
@@ -45,7 +39,7 @@ export function CalendarHeader({ weekStart, weekEnd }: { weekStart: Date; weekEn
             <span className="truncate">{formatWeekRange(weekStart, weekEnd)}</span>
           </span>
           <Link
-            href={`/calendar?week=${toDateParam(nextWeek)}`}
+            href={`/calendar?week=${toPragueDateParam(nextWeek)}`}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-text-secondary hover:bg-elevated"
             aria-label="Následující týden"
           >
