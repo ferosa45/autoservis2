@@ -31,7 +31,8 @@ export async function register(
   const requestHeaders = await headers();
   const ip = getClientIp(requestHeaders);
   const ipAllowed = await consumeRateLimit('register:ip:' + ip, { limit: 5, windowMs: 60 * 60 * 1000 });
-  if (!ipAllowed) {
+  const emailAllowed = await consumeRateLimit('register:email:' + email, { limit: 3, windowMs: 60 * 60 * 1000 });
+  if (!ipAllowed || !emailAllowed) {
     return { ...initialState, error: 'Příliš mnoho pokusů o registraci. Zkuste to prosím později.' };
   }
 
