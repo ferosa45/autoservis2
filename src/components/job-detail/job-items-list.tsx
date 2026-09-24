@@ -11,7 +11,7 @@ type JobItem = SerializedJobItem;
 
 const UNITS = ['ks', 'h', 'l', 'm', 'sada'];
 
-export function JobItemsList({ jobId, items }: { jobId: string; items: JobItem[] }) {
+export function JobItemsList({ jobId, items, showFinancials }: { jobId: string; items: JobItem[]; showFinancials: boolean }) {
   const [title, setTitle] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [unit, setUnit] = useState('ks');
@@ -19,7 +19,7 @@ export function JobItemsList({ jobId, items }: { jobId: string; items: JobItem[]
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const total = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const total = items.reduce((sum, item) => sum + item.quantity * (item.unitPrice ?? 0), 0);
 
   function handleAdd() {
     const trimmedTitle = title.trim();
@@ -67,12 +67,12 @@ export function JobItemsList({ jobId, items }: { jobId: string; items: JobItem[]
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm text-text-primary">{item.title}</p>
               <p className="text-xs text-text-muted">
-                {item.quantity} {item.unit} × {formatCurrency(item.unitPrice)}
+                {item.quantity} {item.unit}{showFinancials && item.unitPrice !== null ? ` × ${formatCurrency(item.unitPrice)}` : ''}
               </p>
             </div>
-            <p className="shrink-0 text-sm font-medium text-text-primary">
-              {formatCurrency(item.quantity * item.unitPrice)}
-            </p>
+            {showFinancials && item.unitPrice !== null && (
+              <p className="shrink-0 text-sm font-medium text-text-primary">{formatCurrency(item.quantity * item.unitPrice)}</p>
+            )}
             <button
               type="button"
               disabled={isPending}
@@ -87,7 +87,7 @@ export function JobItemsList({ jobId, items }: { jobId: string; items: JobItem[]
         {items.length === 0 && <p className="text-sm text-text-muted">Zatím žádné položky.</p>}
       </div>
 
-      {items.length > 0 && (
+      {items.length > 0 && showFinancials && (
         <div className="mt-3 flex justify-between border-t border-border pt-3 text-sm font-semibold">
           <span className="text-text-primary">Celkem</span>
           <span className="text-text-primary">{formatCurrency(total)}</span>
@@ -126,13 +126,15 @@ export function JobItemsList({ jobId, items }: { jobId: string; items: JobItem[]
               </option>
             ))}
           </select>
-          <input
-            value={unitPrice}
-            onChange={(e) => setUnitPrice(e.target.value)}
-            placeholder="Cena/jedn. (Kč)"
-            inputMode="decimal"
-            className="col-span-1 min-w-0 w-full rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none sm:flex-1"
-          />
+          {showFinancials && (
+            <input
+              value={unitPrice}
+              onChange={(e) => setUnitPrice(e.target.value)}
+              placeholder="Cena/jedn. (Kč)"
+              inputMode="decimal"
+              className="col-span-1 min-w-0 w-full rounded-lg border border-border bg-elevated px-2 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none sm:flex-1"
+            />
+          )}
           <button
             type="button"
             onClick={handleAdd}
