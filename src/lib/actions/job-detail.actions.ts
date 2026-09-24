@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
-import { getSessionContext, assertWriteAccess, requirePermission } from '@/lib/session';
+import { getSessionContext, assertWriteAccess } from '@/lib/session';
 
 async function assertJobOwnership(jobId: string, garageId: string) {
   const job = await prisma.job.findFirst({ where: { id: jobId, garageId } });
