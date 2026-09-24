@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import Link from 'next/link';
-import { AlertTriangle, Lock } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 export default function AppError({
   error,
