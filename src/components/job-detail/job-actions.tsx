@@ -64,7 +64,7 @@ export function JobActions({
           return;
         }
         router.push(`/invoices/${result.invoiceId}`);
-      } catch (e) {
+      } catch {
         setError('Nepodařilo se založit fakturu. Zkuste to prosím znovu.');
       }
     });
