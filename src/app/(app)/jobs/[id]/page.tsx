@@ -48,7 +48,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           </div>
 
           <TaskChecklist jobId={job.id} tasks={job.tasks} />
-          <JobItemsList jobId={job.id} items={serializedItems} />
+          <JobItemsList jobId={job.id} items={serializedItems} showFinancials={context.permissions.canViewFinancials} />
           <JobNote jobId={job.id} initialNote={job.note} />
           <JobHistoryTimeline events={job.events} />
         </div>
