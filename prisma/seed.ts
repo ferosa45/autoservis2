@@ -39,13 +39,14 @@ async function main() {
     },
   });
 
-  const passwordHash = await bcrypt.hash('heslo123', 10);
+  const passwordHash = await bcrypt.hash('heslo123', 12);
 
   const owner = await prisma.user.create({
     data: {
       name: 'Jan Novák',
       email: 'jan@autoservisnovak.cz',
       password: passwordHash,
+      emailVerifiedAt: new Date(),
       role: 'OWNER',
       garageId: garage.id,
     },
