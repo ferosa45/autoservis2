@@ -46,33 +46,55 @@ async function recalculateInvoiceTotals(invoiceId: string) {
   await prisma.invoice.update({ where: { id: invoiceId }, data: computeInvoiceTotals(items) });
 }
 
+export type InvoiceActionResult = { ok: true } | { ok: false; error: string };
+
 export type InvoiceItemInput = { title: string; quantity: number; unit: string; unitPrice: number; vatRate: number };
 
-export async function addInvoiceItem(invoiceId: string, input: InvoiceItemInput) {
+export async function addInvoiceItem(invoiceId: string, input: InvoiceItemInput): Promise<InvoiceActionResult> {
+  try {
   const context = await requireInvoiceEditAccess(invoiceId);
   const valid = validateInvoiceItemInput(input);
   const amounts = computeItemAmounts(valid.quantity, valid.unitPrice, valid.vatRate);
   await prisma.invoiceItem.create({ data: { invoiceId, garageId: context.garageId, ...valid, ...amounts } });
   await recalculateInvoiceTotals(invoiceId); revalidatePath(`/invoices/${invoiceId}`);
+  return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Položku se nepodařilo přidat.' };
+  }
 }
 
-export async function updateInvoiceItem(itemId: string, invoiceId: string, input: InvoiceItemInput) {
+export async function updateInvoiceItem(itemId: string, invoiceId: string, input: InvoiceItemInput): Promise<InvoiceActionResult> {
+  try {
   const context = await requireInvoiceEditAccess(invoiceId);
   const valid = validateInvoiceItemInput(input);
   const amounts = computeItemAmounts(valid.quantity, valid.unitPrice, valid.vatRate);
   await prisma.invoiceItem.updateMany({ where: { id: itemId, garageId: context.garageId, invoiceId }, data: { ...valid, ...amounts } });
   await recalculateInvoiceTotals(invoiceId); revalidatePath(`/invoices/${invoiceId}`);
+  return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Položku se nepodařilo upravit.' };
+  }
 }
 
-export async function removeInvoiceItem(itemId: string, invoiceId: string) {
+export async function removeInvoiceItem(itemId: string, invoiceId: string): Promise<InvoiceActionResult> {
+  try {
   const context = await requireInvoiceEditAccess(invoiceId);
   await prisma.invoiceItem.deleteMany({ where: { id: itemId, garageId: context.garageId, invoiceId } });
   await recalculateInvoiceTotals(invoiceId); revalidatePath(`/invoices/${invoiceId}`);
+  return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Položku se nepodařilo odebrat.' };
+  }
 }
 
-export async function updateInvoiceMeta(invoiceId: string, input: { dueDate: string; note: string }) {
+export async function updateInvoiceMeta(invoiceId: string, input: { dueDate: string; note: string }): Promise<InvoiceActionResult> {
+  try {
   await requireInvoiceEditAccess(invoiceId);
   await prisma.invoice.update({ where: { id: invoiceId }, data: { dueDate: new Date(input.dueDate), note: input.note.trim() || null } }); revalidatePath(`/invoices/${invoiceId}`);
+  return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Fakturu se nepodařilo uložit.' };
+  }
 }
 
 export async function issueInvoice(invoiceId: string): Promise<{ ok: true; number: string | null } | { ok: false; error: string }> {
