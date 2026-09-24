@@ -1,14 +1,14 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getSessionContext, assertWriteAccess, assertPermission } from '@/lib/session';
+import { getSessionContext, assertWriteAccess, requirePermission } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { createInvoiceDraftFromJob, computeItemAmounts, computeInvoiceTotals } from '@/lib/services/invoice.service';
 
 export async function startInvoiceDraft(jobId: string): Promise<{ invoiceId: string }> {
   const context = await getSessionContext();
   assertWriteAccess(context);
-  assertPermission(context, 'canInvoice');
+  requirePermission(context, 'canInvoice');
   const invoice = await createInvoiceDraftFromJob(context, jobId);
   revalidatePath(`/jobs/${jobId}`);
   return { invoiceId: invoice.id };
@@ -24,7 +24,7 @@ async function assertDraftOwnership(invoiceId: string, garageId: string) {
 async function requireInvoiceEditAccess(invoiceId: string) {
   const context = await getSessionContext();
   assertWriteAccess(context);
-  assertPermission(context, 'canInvoice');
+  requirePermission(context, 'canInvoice');
   await assertDraftOwnership(invoiceId, context.garageId);
   return context;
 }
@@ -64,7 +64,7 @@ export async function updateInvoiceMeta(invoiceId: string, input: { dueDate: str
 }
 
 export async function issueInvoice(invoiceId: string) {
-  const context = await getSessionContext(); assertWriteAccess(context); assertPermission(context, 'canInvoice');
+  const context = await getSessionContext(); assertWriteAccess(context); requirePermission(context, 'canInvoice');
   const issued = await prisma.$transaction(async (tx) => {
     const invoice = await tx.invoice.findFirst({ where: { id: invoiceId, garageId: context.garageId }, include: { items: true } });
     if (!invoice) throw new Error('Faktura nenalezena');
@@ -96,7 +96,7 @@ export async function issueInvoice(invoiceId: string) {
 export async function cancelInvoice(invoiceId: string) {
   const context = await getSessionContext();
   assertWriteAccess(context);
-  assertPermission(context, 'canInvoice');
+  requirePermission(context, 'canInvoice');
 
   const invoice = await prisma.invoice.findFirst({
     where: { id: invoiceId, garageId: context.garageId },
@@ -132,7 +132,7 @@ export async function cancelInvoice(invoiceId: string) {
 export async function markInvoicePaid(invoiceId: string) {
   const context = await getSessionContext();
   assertWriteAccess(context);
-  assertPermission(context, 'canInvoice');
+  requirePermission(context, 'canInvoice');
 
   const invoice = await prisma.invoice.findFirst({
     where: { id: invoiceId, garageId: context.garageId },
