@@ -38,7 +38,7 @@ export function computeItemAmounts(quantity: number, unitPrice: number, vatRate:
   return { subtotal, vatAmount, total };
 }
 
-export function computeInvoiceTotals(items: { subtotal: unknown; vatAmount: unknown; total: unknown }[]) {
+export function computeInvoiceTotals(items: { subtotal: Prisma.Decimal.Value; vatAmount: Prisma.Decimal.Value; total: Prisma.Decimal.Value }[]) {
   return {
     subtotal: round2Decimal(items.reduce((sum, i) => sum.add(new Prisma.Decimal(i.subtotal)), new Prisma.Decimal(0))),
     vatTotal: round2Decimal(items.reduce((sum, i) => sum.add(new Prisma.Decimal(i.vatAmount)), new Prisma.Decimal(0))),
@@ -48,7 +48,7 @@ export function computeInvoiceTotals(items: { subtotal: unknown; vatAmount: unkn
 
 export type VatBreakdown = { rate: Prisma.Decimal; base: Prisma.Decimal; vat: Prisma.Decimal; total: Prisma.Decimal };
 
-export function computeVatBreakdown(items: { vatRate: unknown; subtotal: unknown; vatAmount: unknown; total: unknown }[]): VatBreakdown[] {
+export function computeVatBreakdown(items: { vatRate: Prisma.Decimal.Value; subtotal: Prisma.Decimal.Value; vatAmount: Prisma.Decimal.Value; total: Prisma.Decimal.Value }[]): VatBreakdown[] {
   const groups = new Map<string, VatBreakdown>();
   for (const item of items) {
     const rate = round2Decimal(new Prisma.Decimal(item.vatRate));
