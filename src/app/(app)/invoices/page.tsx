@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Search, FileText } from 'lucide-react';
-import { getSessionContext, assertPermission } from '@/lib/session';
+import { getSessionContext, requirePermission } from '@/lib/session';
 import { listInvoices } from '@/lib/services/invoice.service';
 import { formatShortDate, formatCurrency } from '@/lib/format';
 import { INVOICE_STATUS_LABEL, INVOICE_STATUS_CLASS } from '@/lib/invoice-status';
@@ -14,7 +14,7 @@ const STATUS_TABS: { value: InvoiceStatus | ''; label: string }[] = [
 export default async function InvoicesPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string }> }) {
   const { q, status } = await searchParams;
   const context = await getSessionContext();
-  assertPermission(context, 'canViewInvoices');
+  requirePermission(context, 'canViewInvoices');
   const validStatus = STATUS_TABS.find((t) => t.value === status)?.value || undefined;
   const invoices = await listInvoices(context, { query: q, status: validStatus || undefined });
   function tabHref(value: string) { const params = new URLSearchParams(); if (q) params.set('q', q); if (value) params.set('status', value); const qs = params.toString(); return qs ? `/invoices?${qs}` : '/invoices'; }
