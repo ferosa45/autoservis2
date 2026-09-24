@@ -165,7 +165,7 @@ export default async function TodayPage({
                 mechanics={mechanics}
               />
             )}
-            <JobDetailPanel job={selectedJob} />
+            <JobDetailPanel job={selectedJob} showFinancials={context.permissions.canViewFinancials} />
           </>
         ) : (
           <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-text-muted">
