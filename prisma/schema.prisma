@@ -62,6 +62,7 @@ model Garage {
   defaultVatRate Decimal? @db.Decimal(5, 2)
   invoicePrefix String?
   nextInvoiceNumber Int @default(1)
+  nextJobNumber Int @default(1)
   invoiceDueDays Int @default(14)
   subscriptionStatus SubscriptionStatus @default(TRIALING)
   trialEndsAt DateTime
