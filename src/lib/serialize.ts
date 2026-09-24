@@ -10,7 +10,7 @@ export type SerializedJobItem = {
   title: string;
   quantity: number;
   unit: string;
-  unitPrice: number;
+  unitPrice: number | null;
 };
 
 export function serializeJobItems<
@@ -21,7 +21,7 @@ export function serializeJobItems<
     title: item.title,
     quantity: Number(item.quantity),
     unit: item.unit,
-    unitPrice: Number(item.unitPrice),
+    unitPrice: item.unitPrice == null ? null : Number(item.unitPrice),
   }));
 }
 
