@@ -23,9 +23,9 @@ export async function addJobTask(jobId: string, title: string) {
   if (!trimmed) return;
 
   await prisma.jobTask.create({
-    data: { title: trimmed, jobId, garageId: context.garageId },
+    data: { title: trimmed, jobId: validJobId, garageId: context.garageId },
   });
-  revalidatePath(`/jobs/${valid.jobId}`);
+  revalidatePath(`/jobs/${validJobId}`);
 }
 
 export async function toggleJobTask(taskId: string, completed: boolean, jobId: string) {
@@ -41,7 +41,7 @@ export async function toggleJobTask(taskId: string, completed: boolean, jobId: s
   });
   if (result.count === 0) throw new Error('Úkon nenalezen');
 
-  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath(`/jobs/${validJobId}`);
   revalidatePath('/workshop');
 }
 
@@ -54,7 +54,7 @@ export async function removeJobTask(taskId: string, jobId: string) {
   await prisma.jobTask.deleteMany({
     where: { id: validTaskId, garageId: context.garageId },
   });
-  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath(`/jobs/${validJobId}`);
 }
 
 // --- Práce a díly (JobItem) ---
@@ -85,7 +85,7 @@ export async function addJobItem(jobId: string, input: AddJobItemInput) {
       garageId: context.garageId,
     },
   });
-  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath(`/jobs/${valid.jobId}`);
 }
 
 export async function removeJobItem(itemId: string, jobId: string) {
@@ -101,12 +101,14 @@ export async function removeJobItem(itemId: string, jobId: string) {
 // --- Poznámka ---
 
 export async function updateJobNote(jobId: string, note: string) {
+  const validJobId = jobIdSchema.parse(jobId);
+  const validNote = z.string().max(5000).parse(note);
   const context = await getSessionContext();
   assertWriteAccess(context);
 
   const result = await prisma.job.updateMany({
-    where: { id: valid.jobId, garageId: context.garageId },
-    data: { note: note.trim() || null },
+    where: { id: validJobId, garageId: context.garageId },
+    data: { note: validNote.trim() || null },
   });
   if (result.count === 0) throw new Error('Zakázka nenalezena');
 
@@ -132,7 +134,7 @@ export async function updateJobTimes(
   }
 
   const result = await prisma.job.updateMany({
-    where: { id: jobId, garageId: context.garageId },
+    where: { id: valid.jobId, garageId: context.garageId },
     data: { scheduledStart: start, scheduledEnd: end },
   });
   if (result.count === 0) throw new Error('Zakázka nenalezena');
