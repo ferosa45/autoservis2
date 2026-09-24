@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSessionContext, requirePermission } from '@/lib/session';
 import { getInvoiceDetail } from '@/lib/services/invoice.service';
-import { prisma } from '@/lib/prisma';
 import { buildInvoiceDocument, type InvoicePdfData } from '@/lib/pdf/invoice-document';
 
 // @react-pdf/renderer potřebuje Node.js APII (fs pro čtení fontů) - ne Edge runtime.
@@ -15,13 +14,7 @@ export async function GET(
   const context = await getSessionContext();
   requirePermission(context, 'canViewInvoices');
 
-  const [invoice, garage] = await Promise.all([
-    getInvoiceDetail(context, id),
-    prisma.garage.findUnique({
-      where: { id: context.garageId },
-      select: { isVatPayer: true, bankAccount: true },
-    }),
-  ]);
+  const invoice = await getInvoiceDetail(context, id);
 
   if (!invoice) {
     return new NextResponse('Faktura nenalezena', { status: 404 });
@@ -42,14 +35,15 @@ export async function GET(
     supplierStreet: invoice.supplierStreet,
     supplierCity: invoice.supplierCity,
     supplierZip: invoice.supplierZip,
-    supplierBankAccount: garage?.bankAccount ?? null,
+    supplierBankAccount: invoice.supplierBankAccount,
+    supplierIban: invoice.supplierIban,
     customerName: invoice.customerName,
     customerIco: invoice.customerIco,
     customerDic: invoice.customerDic,
     customerStreet: invoice.customerStreet,
     customerCity: invoice.customerCity,
     customerZip: invoice.customerZip,
-    isVatPayer: garage?.isVatPayer ?? false,
+    isVatPayer: invoice.supplierIsVatPayer,
     items: invoice.items.map((item) => ({
       title: item.title,
       quantity: Number(item.quantity),
