@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { getSessionContext } from '@/lib/session';
+import { normalizeSearchText, normalizeCompactSearchText } from '@/lib/search-normalize';
 
 export type CustomerSuggestion = {
   id: string;
@@ -23,17 +24,19 @@ export async function searchCustomers(query: string): Promise<CustomerSuggestion
   if (q.length === 0) return [];
 
   const words = q.split(/\s+/).filter(Boolean);
+  const normalizedWords = words.map(normalizeSearchText).filter(Boolean);
+  const compactWords = words.map(normalizeCompactSearchText).filter(Boolean);
 
   return prisma.customer.findMany({
     where: {
       garageId: context.garageId,
-      AND: words.map((word) => ({
+      AND: normalizedWords.map((word, index) => ({
         OR: [
-          { name: { contains: word, mode: 'insensitive' as const } },
-          { phone: { contains: word } },
-          { email: { contains: word, mode: 'insensitive' as const } },
-          { companyName: { contains: word, mode: 'insensitive' as const } },
-          { ico: { contains: word, mode: 'insensitive' as const } },
+          { nameNormalized: { contains: word } },
+          { companyNameNormalized: { contains: word } },
+          { emailNormalized: { contains: word } },
+          { phoneNormalized: { contains: compactWords[index] ?? word } },
+          { icoNormalized: { contains: compactWords[index] ?? word } },
         ],
       })),
     },
@@ -43,49 +46,30 @@ export async function searchCustomers(query: string): Promise<CustomerSuggestion
   });
 }
 
-/**
- * Pokud je zadané customerId, hledá jen mezi vozidly toho zákazníka (a bez
- * dotazu rovnou nabídne všechna jeho vozidla - typicky jedno až dvě).
- * Bez customerId hledá napříč celým servisem podle značky/modelu/SPZ.
- */
 export async function searchVehicles(
   query: string,
   customerId: string | null
 ): Promise<VehicleSuggestion[]> {
   const context = await getSessionContext();
   const q = query.trim();
+  const normalized = normalizeSearchText(q);
+  const compact = normalizeCompactSearchText(q);
 
-  if (customerId) {
-    return prisma.vehicle.findMany({
-      where: {
-        garageId: context.garageId,
-        customerId,
-        ...(q.length > 0
-          ? {
-              OR: [
-                { brand: { contains: q, mode: 'insensitive' } },
-                { model: { contains: q, mode: 'insensitive' } },
-                { licensePlate: { contains: q, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 6,
-      select: { id: true, brand: true, model: true, licensePlate: true, customerId: true },
-    });
-  }
-
-  if (q.length === 0) return [];
+  const searchFilter = q.length > 0
+    ? {
+        OR: [
+          { brandNormalized: { contains: normalized } },
+          { modelNormalized: { contains: normalized } },
+          { licensePlateNormalized: { contains: compact } },
+        ],
+      }
+    : {};
 
   return prisma.vehicle.findMany({
     where: {
       garageId: context.garageId,
-      OR: [
-        { brand: { contains: q, mode: 'insensitive' } },
-        { model: { contains: q, mode: 'insensitive' } },
-        { licensePlate: { contains: q, mode: 'insensitive' } },
-      ],
+      ...(customerId ? { customerId } : {}),
+      ...searchFilter,
     },
     orderBy: { createdAt: 'desc' },
     take: 6,
