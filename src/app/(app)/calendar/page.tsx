@@ -40,7 +40,7 @@ export default async function CalendarPage({
   ]);
 
   const stats = calculateWeekStats(jobs);
-  const startHour = fullDay === '1' ? 0 : 7;
+  const startHour = fullDay === '1' ? 0 : 6;
   const endHour = fullDay === '1' ? 24 : 19;
 
   // CalendarGrid je Client Component a Prisma Decimal (u items) nejde přes
