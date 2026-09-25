@@ -1,5 +1,6 @@
-import { normalizeSearchText, normalizeCompactSearchText } from '@/lib/search-normalize';
 'use server';
+
+import { normalizeSearchText, normalizeCompactSearchText } from '@/lib/search-normalize';
 
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
