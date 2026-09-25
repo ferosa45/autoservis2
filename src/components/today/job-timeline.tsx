@@ -69,7 +69,11 @@ export function JobTimeline({
         entry.type === 'job' ? (
           <JobCard key={entry.job.id} job={entry.job} isSelected={entry.job.id === selectedJobId} />
         ) : (
-          <FreeSlotCard key={`free-${index}`} time={entry.time} endTime={entry.endTime} />
+          <FreeSlotCard
+            key={`free-${index}`}
+            time={new Date(entry.time.getTime())}
+            endTime={new Date(entry.endTime.getTime())}
+          />
         )
       )}
     </div>
