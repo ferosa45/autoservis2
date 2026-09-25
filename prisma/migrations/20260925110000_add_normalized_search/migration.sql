@@ -17,8 +17,7 @@ UPDATE "Customer"
 SET
   "nameNormalized" = lower(unaccent("name")),
   "phoneNormalized" = regexp_replace(lower(unaccent("phone")), '[^a-z0-9]', '', 'g'),
-  "emailNormalized" = CASE WHEN "email" IS NULL THEN NULL ELSE lower(unaccent("email"))) END,
-  "companyNameNormalized" = CASE WHEN "companyName" IS NULL THEN NULL ELSE lower(unaccent("companyName")) END,
+"emailNormalized" = CASE WHEN "email" IS NULL THEN NULL ELSE lower(unaccent("email")) END,  "companyNameNormalized" = CASE WHEN "companyName" IS NULL THEN NULL ELSE lower(unaccent("companyName")) END,
   "icoNormalized" = CASE WHEN "ico" IS NULL THEN NULL ELSE regexp_replace(lower(unaccent("ico")), '[^a-z0-9]', '', 'g') END;
 
 UPDATE "Vehicle"
