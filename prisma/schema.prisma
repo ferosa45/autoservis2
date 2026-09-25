@@ -174,7 +174,9 @@ model Customer {
   emailNormalized String?
   note String?
   companyName String?
+  companyNameNormalized String?
   ico String?
+  icoNormalized String?
   dic String?
   street String?
   city String?
