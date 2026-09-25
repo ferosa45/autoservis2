@@ -2,31 +2,39 @@ import { normalizeSearchText, normalizeCompactSearchText } from '@/lib/search-no
 import { prisma } from '@/lib/prisma';
 import type { SessionContext } from '@/lib/session';
 
-export async function listCustomers(context: SessionContext, query?: string) {
+export const CUSTOMER_PAGE_SIZE = 25;
+
+export async function listCustomers(context: SessionContext, query?: string, page = 1) {
   const q = query?.trim();
+  const safePage = Number.isInteger(page) && page > 0 ? page : 1;
   const normalized = q ? normalizeSearchText(q) : '';
   const compact = q ? normalizeCompactSearchText(q) : '';
 
-  return prisma.customer.findMany({
-    where: {
-      garageId: context.garageId,
-      ...(q
-        ? {
-            OR: [
-              { nameNormalized: { contains: normalized } },
-              { phoneNormalized: { contains: compact } },
-              { vehicles: { some: { licensePlateNormalized: { contains: compact } } } },
-              { vehicles: { some: { brandNormalized: { contains: normalized } } } },
-              { vehicles: { some: { modelNormalized: { contains: normalized } } } },
-            ],
-          }
-        : {}),
-    },
+  const where = {
+    garageId: context.garageId,
+    ...(q ? { OR: [
+      { nameNormalized: { contains: normalized } },
+      { phoneNormalized: { contains: compact } },
+      { vehicles: { some: { licensePlateNormalized: { contains: compact } } } },
+      { vehicles: { some: { brandNormalized: { contains: normalized } } } },
+      { vehicles: { some: { modelNormalized: { contains: normalized } } } },
+    ] } : {}),
+  };
+
+  const [items, total] = await prisma.$transaction([
+    prisma.customer.findMany({
+    where,
+    take: CUSTOMER_PAGE_SIZE,
+    skip: (safePage - 1) * CUSTOMER_PAGE_SIZE,
     include: {
       vehicles: { select: { id: true } },
     },
     orderBy: { name: 'asc' },
-  });
+    }),
+    prisma.customer.count({ where }),
+  ]);
+
+  return { items, total, page: safePage, pageSize: CUSTOMER_PAGE_SIZE, totalPages: Math.max(1, Math.ceil(total / CUSTOMER_PAGE_SIZE)) };
 }
 
 export async function getCustomerDetail(context: SessionContext, customerId: string) {
