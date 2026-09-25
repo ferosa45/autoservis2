@@ -48,12 +48,15 @@ export default async function CalendarPage({
   // nevykresluje, takže je pro klientskou část prostě neposíláme.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const jobsForGrid = jobs.map(({ items, ...job }) => job);
+  // TZDate nelze bezpečně poslat přes Server -> Client hranici v Next.js.
+  // CalendarGrid dostane obyčejné nativní Date instance.
+  const weekDaysForGrid = weekDays.map((day) => new Date(day.getTime()));
 
   return (
     <div className="flex min-w-0 flex-col gap-4 p-3 sm:p-4 md:flex-row md:gap-6 md:p-6">
       <div className="min-w-0 flex-1 space-y-4 md:space-y-6">
         <CalendarHeader weekStart={weekStart} weekEnd={weekEnd} />
-        <CalendarGrid weekDays={weekDays} jobs={jobsForGrid} startHour={startHour} endHour={endHour} />
+        <CalendarGrid weekDays={weekDaysForGrid} jobs={jobsForGrid} startHour={startHour} endHour={endHour} />
       </div>
 
       <div className="w-full shrink-0 space-y-4 md:w-72">
