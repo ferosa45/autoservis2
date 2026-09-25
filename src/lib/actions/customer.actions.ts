@@ -1,3 +1,4 @@
+import { normalizeSearchText, normalizeCompactSearchText } from '@/lib/search-normalize';
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -27,8 +28,11 @@ export async function updateCustomer(customerId: string, data: { name: string; p
   if (!name) throw new Error('Jméno zákazníka je povinné');
   if (!phone) throw new Error('Telefon zákazníka je povinný');
   const result = await prisma.customer.updateMany({ where: { id: validCustomerId, garageId: context.garageId }, data: {
-    name, phone, email: validData.email || null, companyName: validData.companyName || null,
-    ico: validData.ico || null, dic: validData.dic || null, street: validData.street || null,
+    name, nameNormalized: normalizeSearchText(name),
+    phone, phoneNormalized: normalizeCompactSearchText(phone),
+    email: validData.email || null, emailNormalized: validData.email ? normalizeSearchText(validData.email) : null,
+    companyName: validData.companyName || null, companyNameNormalized: validData.companyName ? normalizeSearchText(validData.companyName) : null,
+    ico: validData.ico || null, icoNormalized: validData.ico ? normalizeCompactSearchText(validData.ico) : null, dic: validData.dic || null, street: validData.street || null,
     city: validData.city || null, zip: validData.zip || null,
   } });
   if (result.count === 0) throw new Error('Zákazník nenalezen');
@@ -56,7 +60,10 @@ export async function createVehicle(customerId: string, data: { brand: string; m
     if (!brand) return { success: false, error: 'Značka vozidla je povinná' };
     if (!model) return { success: false, error: 'Model vozidla je povinný' };
     await prisma.vehicle.create({ data: {
-      brand, model, licensePlate: validData.licensePlate || null,
+      brand, brandNormalized: normalizeSearchText(brand),
+      model, modelNormalized: normalizeSearchText(model),
+      licensePlate: validData.licensePlate || null,
+      licensePlateNormalized: validData.licensePlate ? normalizeCompactSearchText(validData.licensePlate) : null,
       year: validData.year ?? null,
       mileage: validData.mileage ?? null,
       note: validData.note?.trim() || null, customerId: validCustomerId, garageId: context.garageId,
@@ -78,7 +85,10 @@ export async function updateVehicle(vehicleId: string, data: { brand: string; mo
     if (!brand) return { success: false, error: 'Značka vozidla je povinná' };
     if (!model) return { success: false, error: 'Model vozidla je povinný' };
     const result = await prisma.vehicle.updateMany({ where: { id: validVehicleId, garageId: context.garageId }, data: {
-      brand, model, licensePlate: validData.licensePlate || null,
+      brand, brandNormalized: normalizeSearchText(brand),
+      model, modelNormalized: normalizeSearchText(model),
+      licensePlate: validData.licensePlate || null,
+      licensePlateNormalized: validData.licensePlate ? normalizeCompactSearchText(validData.licensePlate) : null,
       year: validData.year ?? null,
       mileage: validData.mileage ?? null,
       note: validData.note?.trim() || null,
