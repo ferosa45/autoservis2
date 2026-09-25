@@ -1,8 +1,11 @@
+import { normalizeSearchText, normalizeCompactSearchText } from '@/lib/search-normalize';
 import { prisma } from '@/lib/prisma';
 import type { SessionContext } from '@/lib/session';
 
 export async function listCustomers(context: SessionContext, query?: string) {
   const q = query?.trim();
+  const normalized = q ? normalizeSearchText(q) : '';
+  const compact = q ? normalizeCompactSearchText(q) : '';
 
   return prisma.customer.findMany({
     where: {
@@ -10,11 +13,11 @@ export async function listCustomers(context: SessionContext, query?: string) {
       ...(q
         ? {
             OR: [
-              { name: { contains: q, mode: 'insensitive' } },
-              { phone: { contains: q } },
-              { vehicles: { some: { licensePlate: { contains: q, mode: 'insensitive' } } } },
-              { vehicles: { some: { brand: { contains: q, mode: 'insensitive' } } } },
-              { vehicles: { some: { model: { contains: q, mode: 'insensitive' } } } },
+              { nameNormalized: { contains: normalized } },
+              { phoneNormalized: { contains: compact } },
+              { vehicles: { some: { licensePlateNormalized: { contains: compact } } } },
+              { vehicles: { some: { brandNormalized: { contains: normalized } } } },
+              { vehicles: { some: { modelNormalized: { contains: normalized } } } },
             ],
           }
         : {}),
