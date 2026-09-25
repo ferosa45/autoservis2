@@ -58,7 +58,8 @@ export function JobDetailPanel({ job, showFinancials, canInvoice, canViewInvoice
 
   useEffect(() => {
     setLocalStatus(job.status);
-  }, [job.status]);
+    setPendingStatus(null);
+  }, [job.id, job.status]);
   const [smsSent, setSmsSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,6 +104,7 @@ export function JobDetailPanel({ job, showFinancials, canInvoice, canViewInvoice
           setPendingStatus(null);
           return;
         }
+        setPendingStatus(null);
         router.refresh();
       } catch (err) {
         setPendingStatus(null);
