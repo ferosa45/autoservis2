@@ -24,19 +24,21 @@ export async function searchCustomers(query: string): Promise<CustomerSuggestion
   if (q.length === 0) return [];
 
   const words = q.split(/\s+/).filter(Boolean);
-  const normalizedWords = words.map(normalizeSearchText).filter(Boolean);
-  const compactWords = words.map(normalizeCompactSearchText).filter(Boolean);
+  const normalizedWords = words.map((word) => ({
+    text: normalizeSearchText(word),
+    compact: normalizeCompactSearchText(word),
+  })).filter(({ text }) => Boolean(text));
 
   return prisma.customer.findMany({
     where: {
       garageId: context.garageId,
-      AND: normalizedWords.map((word, index) => ({
+      AND: normalizedWords.map(({ text, compact }) => ({
         OR: [
-          { nameNormalized: { contains: word } },
-          { companyNameNormalized: { contains: word } },
-          { emailNormalized: { contains: word } },
-          { phoneNormalized: { contains: compactWords[index] ?? word } },
-          { icoNormalized: { contains: compactWords[index] ?? word } },
+          { nameNormalized: { contains: text } },
+          { companyNameNormalized: { contains: text } },
+          { emailNormalized: { contains: text } },
+          { phoneNormalized: { contains: compact } },
+          { icoNormalized: { contains: compact } },
         ],
       })),
     },
