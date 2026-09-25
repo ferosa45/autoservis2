@@ -48,7 +48,9 @@ model Garage {
   id String @id @default(cuid())
   name String
   companyName String?
+  companyNameNormalized String?
   ico String?
+  icoNormalized String?
   dic String?
   street String?
   city String?
@@ -165,8 +167,11 @@ model EmailDelivery {
 model Customer {
   id String @id @default(cuid())
   name String
+  nameNormalized String
   phone String
+  phoneNormalized String
   email String?
+  emailNormalized String?
   note String?
   companyName String?
   ico String?
@@ -190,6 +195,9 @@ model Vehicle {
   brand String
   model String
   licensePlate String?
+  licensePlateNormalized String?
+  brandNormalized String
+  modelNormalized String
   year Int?
   mileage Int?
   note String?
