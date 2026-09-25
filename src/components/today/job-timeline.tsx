@@ -22,7 +22,7 @@ function buildTimeline(jobs: JobForDay[], date: Date): TimelineEntry[] {
   );
 
   const entries: TimelineEntry[] = [];
-  let cursor = dayStart;
+  let cursor: Date = dayStart;
 
   for (const job of sorted) {
     const gapMinutes = (job.scheduledStart.getTime() - cursor.getTime()) / 60000;
