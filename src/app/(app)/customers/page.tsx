@@ -6,11 +6,12 @@ import { listCustomers } from '@/lib/services/customer.service';
 export default async function CustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, page: pageParam } = await searchParams;
+  const page = Number.parseInt(pageParam ?? '1', 10) || 1;
   const context = await getSessionContext();
-  const customers = await listCustomers(context, q);
+  const customers = await listCustomers(context, q, page);
 
   return (
     <div className="space-y-6 p-6">
@@ -29,13 +30,13 @@ export default async function CustomersPage({
       </form>
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
-        {customers.length === 0 ? (
+        {customers.items.length === 0 ? (
           <p className="p-6 text-center text-sm text-text-muted">
             {q ? `Nic nenalezeno pro "${q}".` : 'Zatím žádní zákazníci.'}
           </p>
         ) : (
           <ul className="divide-y divide-border">
-            {customers.map((customer) => (
+            {customers.items.map((customer) => (
               <li key={customer.id}>
                 <Link
                   href={`/customers/${customer.id}`}
@@ -60,6 +61,16 @@ export default async function CustomersPage({
           </ul>
         )}
       </div>
+      </div>
+      {customers.totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-text-muted">
+          <span>Stránka {customers.page} z {customers.totalPages} · {customers.total} zákazníků</span>
+          <div className="flex gap-2">
+            {customers.page > 1 && <Link href={`/customers?q=${encodeURIComponent(q ?? '')}&page=${customers.page - 1}`} className="rounded-md border border-border px-3 py-1.5 hover:bg-elevated">Předchozí</Link>}
+            {customers.page < customers.totalPages && <Link href={`/customers?q=${encodeURIComponent(q ?? '')}&page=${customers.page + 1}`} className="rounded-md border border-border px-3 py-1.5 hover:bg-elevated">Další</Link>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
