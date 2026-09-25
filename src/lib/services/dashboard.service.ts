@@ -32,13 +32,16 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     prisma.job.count({
       where: { garageId: context.garageId, scheduledStart: { gte: monthStart, lte: monthDataEnd }, status: 'DONE' },
     }),
-    prisma.jobItem.aggregate({
-      where: {
-        garageId: context.garageId,
-        job: { garageId: context.garageId, scheduledStart: { gte: monthStart, lte: monthDataEnd }, status: 'DONE' },
-      },
-      _sum: { quantity: true, unitPrice: true },
-    }),
+    prisma.$queryRaw<{ total: Prisma.Decimal }[]>\`
+      SELECT COALESCE(SUM(ji."quantity" * ji."unitPrice"), 0) AS total
+      FROM "JobItem" ji
+      INNER JOIN "Job" j ON j."id" = ji."jobId"
+      WHERE ji."garageId" = ${context.garageId}
+        AND j."garageId" = ${context.garageId}
+        AND j."scheduledStart" >= ${monthStart}
+        AND j."scheduledStart" <= ${monthDataEnd}
+        AND j."status" = 'DONE'
+    \`),
     prisma.job.findMany({
       where: { garageId: context.garageId, scheduledStart: { gte: historyStart, lte: todayEnd } },
       select: {
@@ -118,9 +121,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
   const todayRevenue = todayJobs
     .filter((job) => job.status === 'DONE')
     .reduce((sum, job) => sum.add(jobItemsTotal(job.items)), new Prisma.Decimal(0));
-  const monthRevenue = monthJobItems._sum.quantity && monthJobItems._sum.unitPrice
-    ? monthJobItems._sum.quantity.mul(monthJobItems._sum.unitPrice)
-    : new Prisma.Decimal(0);
+  const monthRevenue = monthJobItems[0]?.total ?? new Prisma.Decimal(0);
   const monthInvoiced = revenueInvoices.reduce(
     (sum, invoice) => sum.add(new Prisma.Decimal(invoice.subtotal)),
     new Prisma.Decimal(0)
