@@ -32,7 +32,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     prisma.job.count({
       where: { garageId: context.garageId, scheduledStart: { gte: monthStart, lte: monthDataEnd }, status: 'DONE' },
     }),
-    prisma.$queryRaw<{ total: Prisma.Decimal }[]>\`
+    prisma.$queryRaw<{ total: Prisma.Decimal }[]>`
       SELECT COALESCE(SUM(ji."quantity" * ji."unitPrice"), 0) AS total
       FROM "JobItem" ji
       INNER JOIN "Job" j ON j."id" = ji."jobId"
@@ -41,7 +41,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
         AND j."scheduledStart" >= ${monthStart}
         AND j."scheduledStart" <= ${monthDataEnd}
         AND j."status" = 'DONE'
-    \`),
+    `),
     prisma.job.findMany({
       where: { garageId: context.garageId, scheduledStart: { gte: historyStart, lte: todayEnd } },
       select: {
