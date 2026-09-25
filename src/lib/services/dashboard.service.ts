@@ -32,16 +32,19 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     prisma.job.count({
       where: { garageId: context.garageId, scheduledStart: { gte: monthStart, lte: monthDataEnd }, status: 'DONE' },
     }),
-    prisma.$queryRaw<{ total: Prisma.Decimal }[]>`
-      SELECT COALESCE(SUM(ji."quantity" * ji."unitPrice"), 0) AS total
-      FROM "JobItem" ji
-      INNER JOIN "Job" j ON j."id" = ji."jobId"
-      WHERE ji."garageId" = ${context.garageId}
-        AND j."garageId" = ${context.garageId}
-        AND j."scheduledStart" >= ${monthStart}
-        AND j."scheduledStart" <= ${monthDataEnd}
-        AND j."status" = 'DONE'
-    `),
+    prisma.$queryRawUnsafe<{ total: Prisma.Decimal }[]>(
+      'SELECT COALESCE(SUM(ji."quantity" * ji."unitPrice"), 0) AS total ' +
+      'FROM "JobItem" ji ' +
+      'INNER JOIN "Job" j ON j."id" = ji."jobId" ' +
+      'WHERE ji."garageId" = $1 ' +
+      'AND j."garageId" = $1 ' +
+      'AND j."scheduledStart" >= $2 ' +
+      'AND j."scheduledStart" <= $3 ' +
+      'AND j."status" = \'DONE\'',
+      context.garageId,
+      monthStart,
+      monthDataEnd,
+    ),
     prisma.job.findMany({
       where: { garageId: context.garageId, scheduledStart: { gte: historyStart, lte: todayEnd } },
       select: {
@@ -70,82 +73,67 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     prisma.invoice.findMany({
       where: {
         garageId: context.garageId,
+        createdAt: { gte: monthStart, lte: monthDataEnd },
         status: { in: ['ISSUED', 'PAID'] },
-        issueDate: { gte: monthStart, lte: monthDataEnd },
       },
-      select: { subtotal: true, issueDate: true },
-      orderBy: { issueDate: 'asc' },
+      select: { total: true, status: true },
     }),
   ]);
 
-  const jobItemsTotal = (
-    items: { quantity: Prisma.Decimal; unitPrice: Prisma.Decimal }[]
-  ) =>
-    items.reduce(
-      (sum, item) => sum.add(item.quantity.mul(item.unitPrice)),
-      new Prisma.Decimal(0)
+  const monthRevenue = monthJobItems[0]?.total ?? new Prisma.Decimal(0);
+  const invoiceRevenue = revenueInvoices.reduce((sum, invoice) => sum.plus(invoice.total), new Prisma.Decimal(0));
+
+  const todayRevenue = todayJobs.reduce(
+    (sum, job) => sum.plus(job.items.reduce((jobSum, item) => jobSum.plus(item.quantity * item.unitPrice), new Prisma.Decimal(0))),
+    new Prisma.Decimal(0),
+  );
+
+  const dailyRevenue = new Map<string, Prisma.Decimal>();
+  const dailyJobs = new Map<string, number>();
+  for (const job of historyJobs) {
+    const key = getPragueDateParts(job.scheduledStart);
+    const dateKey = `${key.year}-${String(key.month + 1).padStart(2, '0')}-${String(key.day).padStart(2, '0')}`;
+    dailyJobs.set(dateKey, (dailyJobs.get(dateKey) ?? 0) + 1);
+    const revenue = job.items.reduce(
+      (sum, item) => sum.plus(item.quantity * item.unitPrice),
+      new Prisma.Decimal(0),
     );
+    dailyRevenue.set(dateKey, (dailyRevenue.get(dateKey) ?? new Prisma.Decimal(0)).plus(revenue));
+  }
 
-  const workMinutesForMonth = (sessions: { startedAt: Date; endedAt: Date | null }[]) =>
-    sessions.reduce((sum, session) => {
-      const start = Math.max(session.startedAt.getTime(), monthStart.getTime());
-      const end = Math.min((session.endedAt ?? monthDataEnd).getTime(), monthDataEnd.getTime());
-      return sum + Math.max(0, end - start) / 60000;
-    }, 0);
-
-  const workMinutesForDay = (sessions: { startedAt: Date; endedAt: Date | null }[]) =>
-    sessions.reduce((sum, session) => {
-      const start = Math.max(session.startedAt.getTime(), todayStart.getTime());
-      const end = Math.min((session.endedAt ?? now).getTime(), now.getTime());
-      return sum + Math.max(0, end - start) / 60000;
-    }, 0);
+  const dailySeries = [];
+  for (let i = 29; i >= 0; i -= 1) {
+    const date = addPragueDays(now, -i);
+    const parts = getPragueDateParts(date);
+    const key = `${parts.year}-${String(parts.month + 1).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
+    dailySeries.push({
+      date: key,
+      jobs: dailyJobs.get(key) ?? 0,
+      revenue: dailyRevenue.get(key) ?? new Prisma.Decimal(0),
+    });
+  }
 
   const mechanicStats = mechanics.map((mechanic) => {
-    const sessions = monthWorkSessions.filter((session) => session.userId === mechanic.id);
-    return { id: mechanic.id, name: mechanic.name, minutes: Math.round(workMinutesForMonth(sessions)) };
+    let minutes = 0;
+    for (const session of monthWorkSessions) {
+      if (session.userId !== mechanic.id) continue;
+      const end = session.endedAt ?? now;
+      const start = session.startedAt < monthStart ? monthStart : session.startedAt;
+      const effectiveEnd = end > monthDataEnd ? monthDataEnd : end;
+      if (effectiveEnd > start) {
+        minutes += Math.round((effectiveEnd.getTime() - start.getTime()) / 60000);
+      }
+    }
+    return { id: mechanic.id, name: mechanic.name, minutes };
   });
-
-  const daily = Array.from({ length: 30 }, (_, index) => {
-    const date = addPragueDays(historyStart, index);
-    const next = addPragueDays(date, 1);
-    const jobs = historyJobs.filter((job) => job.scheduledStart >= date && job.scheduledStart < next);
-    return {
-      date: `${getPragueDateParts(date).year}-${String(getPragueDateParts(date).month + 1).padStart(2, '0')}-${String(getPragueDateParts(date).day).padStart(2, '0')}`,
-      jobs: jobs.length,
-      revenue: Number(jobs
-        .filter((job) => job.status === 'DONE')
-        .reduce((sum, job) => sum.add(jobItemsTotal(job.items)), new Prisma.Decimal(0))),
-    };
-  });
-
-  const todayRevenue = todayJobs
-    .filter((job) => job.status === 'DONE')
-    .reduce((sum, job) => sum.add(jobItemsTotal(job.items)), new Prisma.Decimal(0));
-  const monthRevenue = monthJobItems[0]?.total ?? new Prisma.Decimal(0);
-  const monthInvoiced = revenueInvoices.reduce(
-    (sum, invoice) => sum.add(new Prisma.Decimal(invoice.subtotal)),
-    new Prisma.Decimal(0)
-  );
-  const todayMinutes = Math.round(workMinutesForDay(historyJobs.flatMap((job) => job.workSessions)));
 
   return {
-    today: {
-      total: todayJobs.length,
-      inProgress: todayJobs.filter((job) => job.status === 'IN_PROGRESS').length,
-      waitingForPart: todayJobs.filter((job) => job.status === 'BLOCKED').length,
-      done: todayJobs.filter((job) => job.status === 'DONE').length,
-      revenue: Number(todayRevenue),
-      workMinutes: todayMinutes,
-    },
-    month: {
-      key: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`,
-      jobs: monthJobCount,
-      done: doneMonth,
-      revenue: Number(monthRevenue),
-      invoiced: Number(monthInvoiced),
-      averageJobValue: Number(doneMonth > 0 ? monthRevenue.div(doneMonth) : new Prisma.Decimal(0)),
-    },
-    mechanics: mechanicStats,
-    daily,
+    monthRevenue,
+    invoiceRevenue,
+    todayRevenue,
+    monthJobCount,
+    doneMonth,
+    dailySeries,
+    mechanicStats,
   };
 }
