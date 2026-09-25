@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
+import { TZDate } from '@date-fns/tz';
 import { Plus } from 'lucide-react';
 import { formatWeekdayShort, formatTime, isSameDay } from '@/lib/format';
+import { APP_TIME_ZONE, getPragueDateParts } from '@/lib/date-time';
 import { useQuickJob } from '@/components/quick-job/quick-job-provider';
 import { CalendarJobCard } from './calendar-job-card';
 import { CurrentTimeIndicator } from './current-time-indicator';
@@ -128,9 +130,10 @@ function DayColumn({
   const freeSlots = useMemo(() => findFreeSlots(jobs, startHour, endHour), [jobs, startHour, endHour]);
 
   function timeFromMinutes(totalMinutes: number): Date {
-    const d = new Date(day);
-    d.setHours(0, totalMinutes, 0, 0);
-    return d;
+    const { year, month, day: dayOfMonth } = getPragueDateParts(day);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return new TZDate(year, month, dayOfMonth, hours, minutes, 0, 0, APP_TIME_ZONE);
   }
 
   function handleColumnClick(e: React.MouseEvent<HTMLDivElement>) {
