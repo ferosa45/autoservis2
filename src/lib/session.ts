@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
@@ -28,7 +29,7 @@ function computeHasWriteAccess(subscriptionStatus: SubscriptionStatus, trialEnds
   return false;
 }
 
-export async function getSessionContext(): Promise<SessionContext> {
+export const getSessionContext = cache(async (): Promise<SessionContext> => {
   const session = await auth();
   if (!session?.user?.id || !session.user.garageId) throw new Error('UNAUTHENTICATED');
 
@@ -59,7 +60,7 @@ export async function getSessionContext(): Promise<SessionContext> {
     trialEndsAt: garage.trialEndsAt,
     hasWriteAccess: computeHasWriteAccess(garage.subscriptionStatus, garage.trialEndsAt),
   };
-}
+});
 
 export function assertWriteAccess(context: SessionContext): void {
   if (!context.hasWriteAccess) throw new ReadOnlyAccessError();
