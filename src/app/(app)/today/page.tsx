@@ -125,14 +125,20 @@ export default async function TodayPage({
 
               <div className="flex w-full shrink-0 flex-col gap-2 md:w-auto md:min-w-52">
                 <Link
-                  href="/calendar"
+                  href="/settings"
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+                >
+                  <span>⚙</span> Nastavit servis
+                </Link>
+                <Link
+                  href="/calendar"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm text-text-muted hover:bg-elevated hover:text-text-primary"
                 >
                   <Plus className="h-4 w-4" /> Vytvořit první zakázku
                 </Link>
                 <form action={completeOnboarding}>
-                  <button type="submit" className="w-full rounded-xl px-5 py-2.5 text-sm text-text-muted hover:bg-elevated hover:text-text-primary">
-                    Prohlédnout Garazio
+                  <button type="submit" className="w-full rounded-xl px-5 py-2.5 text-xs text-text-muted hover:bg-elevated hover:text-text-primary">
+                    Přeskočit nastavení
                   </button>
                 </form>
               </div>
