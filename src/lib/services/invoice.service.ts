@@ -157,30 +157,39 @@ export async function createInvoiceDraftFromJob(context: SessionContext, jobId: 
 export type InvoiceListFilters = {
   query?: string;
   status?: 'DRAFT' | 'ISSUED' | 'PAID' | 'CANCELLED';
+  page?: number;
 };
+
+export const INVOICE_PAGE_SIZE = 25;
 
 export async function listInvoices(context: SessionContext, filters: InvoiceListFilters = {}) {
   const q = filters.query?.trim();
+  const safePage = Number.isInteger(filters.page) && (filters.page ?? 0) > 0 ? filters.page! : 1;
 
-  return prisma.invoice.findMany({
-    where: {
-      garageId: context.garageId,
-      ...(filters.status ? { status: filters.status } : {}),
-      ...(q
-        ? {
-            OR: [
-              { number: { contains: q, mode: 'insensitive' } },
-              { customerName: { contains: q, mode: 'insensitive' } },
-              { job: { vehicle: { licensePlate: { contains: q, mode: 'insensitive' } } } },
-            ],
-          }
-        : {}),
-    },
+  const where = {
+    garageId: context.garageId,
+    ...(filters.status ? { status: filters.status } : {}),
+    ...(q ? { OR: [
+      { number: { contains: q, mode: 'insensitive' as const } },
+      { customerName: { contains: q, mode: 'insensitive' as const } },
+      { job: { vehicle: { licensePlate: { contains: q, mode: 'insensitive' as const } } } },
+    ] } : {}),
+  };
+
+  const [items, total] = await prisma.$transaction([
+    prisma.invoice.findMany({
+    where,
+    take: INVOICE_PAGE_SIZE,
+    skip: (safePage - 1) * INVOICE_PAGE_SIZE,
     include: {
       job: { include: { vehicle: { select: { licensePlate: true } } } },
     },
     orderBy: { createdAt: 'desc' },
-  });
+    }),
+    prisma.invoice.count({ where }),
+  ]);
+
+  return { items, total, page: safePage, pageSize: INVOICE_PAGE_SIZE, totalPages: Math.max(1, Math.ceil(total / INVOICE_PAGE_SIZE)) };
 }
 
 export async function getInvoiceDetail(context: SessionContext, invoiceId: string) {
