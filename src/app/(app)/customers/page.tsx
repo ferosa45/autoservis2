@@ -61,13 +61,29 @@ export default async function CustomersPage({
           </ul>
         )}
       </div>
-      </div>
+
       {customers.totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-text-muted">
-          <span>Stránka {customers.page} z {customers.totalPages} · {customers.total} zákazníků</span>
+          <span>
+            Stránka {customers.page} z {customers.totalPages} · {customers.total} zákazníků
+          </span>
           <div className="flex gap-2">
-            {customers.page > 1 && <Link href={`/customers?q=${encodeURIComponent(q ?? '')}&page=${customers.page - 1}`} className="rounded-md border border-border px-3 py-1.5 hover:bg-elevated">Předchozí</Link>}
-            {customers.page < customers.totalPages && <Link href={`/customers?q=${encodeURIComponent(q ?? '')}&page=${customers.page + 1}`} className="rounded-md border border-border px-3 py-1.5 hover:bg-elevated">Další</Link>}
+            {customers.page > 1 && (
+              <Link
+                href={`/customers?q=${encodeURIComponent(q ?? '')}&page=${customers.page - 1}`}
+                className="rounded-md border border-border px-3 py-1.5 hover:bg-elevated"
+              >
+                Předchozí
+              </Link>
+            )}
+            {customers.page < customers.totalPages && (
+              <Link
+                href={`/customers?q=${encodeURIComponent(q ?? '')}&page=${customers.page + 1}`}
+                className="rounded-md border border-border px-3 py-1.5 hover:bg-elevated"
+              >
+                Další
+              </Link>
+            )}
           </div>
         </div>
       )}
