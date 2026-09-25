@@ -48,9 +48,7 @@ model Garage {
   id String @id @default(cuid())
   name String
   companyName String?
-  companyNameNormalized String?
   ico String?
-  icoNormalized String?
   dic String?
   street String?
   city String?
