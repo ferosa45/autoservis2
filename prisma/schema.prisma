@@ -202,6 +202,7 @@ model Vehicle {
   jobs Job[]
   @@index([garageId])
   @@index([garageId, licensePlate])
+  @@index([customerId])
 }
 
 model Job {
@@ -231,6 +232,9 @@ model Job {
   @@unique([garageId, number])
   @@index([garageId])
   @@index([garageId, scheduledStart])
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([assignedUserId])
 }
 
 model WorkSession {
@@ -330,6 +334,8 @@ model Invoice {
   @@unique([garageId, number])
   @@index([garageId])
   @@index([jobId])
+  @@index([customerId])
+  @@index([garageId, status])
 }
 
 model InvoiceItem {
@@ -364,4 +370,5 @@ model Task {
   updatedAt DateTime @updatedAt
   @@index([garageId])
   @@index([garageId, dueDate])
+  @@index([jobId])
 }
