@@ -21,6 +21,8 @@ export type JobListFilters = {
 
 export async function listJobs(context: SessionContext, filters: JobListFilters = {}) {
   const q = filters.query?.trim();
+  const normalized = q ? normalizeSearchText(q) : '';
+  const compact = q ? normalizeCompactSearchText(q) : '';
   const pageSize = Math.min(Math.max(filters.pageSize ?? 20, 1), 100);
   const page = Math.max(filters.page ?? 1, 1);
 
@@ -32,10 +34,10 @@ export async function listJobs(context: SessionContext, filters: JobListFilters 
           OR: [
             { number: { contains: q, mode: 'insensitive' } },
             { customerRequest: { contains: q, mode: 'insensitive' } },
-            { customer: { name: { contains: q, mode: 'insensitive' } } },
-            { vehicle: { licensePlate: { contains: q, mode: 'insensitive' } } },
-            { vehicle: { brand: { contains: q, mode: 'insensitive' } } },
-            { vehicle: { model: { contains: q, mode: 'insensitive' } } },
+            { customer: { nameNormalized: { contains: normalized } } },
+            { vehicle: { licensePlateNormalized: { contains: compact } } },
+            { vehicle: { brandNormalized: { contains: normalized } } },
+            { vehicle: { modelNormalized: { contains: normalized } } },
           ],
         }
       : {}),
