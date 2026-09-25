@@ -1,3 +1,4 @@
+import { normalizeSearchText, normalizeCompactSearchText } from '@/lib/search-normalize';
 import type { JobStatus, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import type { SessionContext } from '@/lib/session';
@@ -105,7 +106,9 @@ export async function createJobFromQuickInput(
         const created = await tx.customer.create({
           data: {
             name: validatedInput.customerName.trim() || 'Neznámý zákazník',
+            nameNormalized: normalizeSearchText(validatedInput.customerName.trim() || 'Neznámý zákazník'),
             phone: validatedInput.customerPhone.trim() || '—',
+            phoneNormalized: normalizeCompactSearchText(validatedInput.customerPhone.trim() || '—'),
             garageId: context.garageId,
           },
         });
@@ -155,8 +158,11 @@ export async function createJobFromQuickInput(
         const created = await tx.vehicle.create({
           data: {
             brand: validatedInput.vehicleBrand.trim(),
+            brandNormalized: normalizeSearchText(validatedInput.vehicleBrand.trim()),
             model: validatedInput.vehicleModel.trim(),
+            modelNormalized: normalizeSearchText(validatedInput.vehicleModel.trim()),
             licensePlate: validatedInput.vehicleLicensePlate?.trim() || null,
+            licensePlateNormalized: validatedInput.vehicleLicensePlate ? normalizeCompactSearchText(validatedInput.vehicleLicensePlate) : null,
             customerId,
             garageId: context.garageId,
           },
