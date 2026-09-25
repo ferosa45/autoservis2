@@ -1,3 +1,4 @@
+import { normalizeSearchText, normalizeCompactSearchText } from '../src/lib/search-normalize';
 import { PrismaClient, JobStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
@@ -54,24 +55,28 @@ async function main() {
 
   const [zakaznikNovak, zakaznikMaly, zakaznikDvorak, firmaNovak] = await Promise.all([
     prisma.customer.create({
-      data: { name: 'Jan Novák', phone: '608123456', garageId: garage.id },
+      data: { name: 'Jan Novák', nameNormalized: normalizeSearchText('Jan Novák'), phone: '608123456', phoneNormalized: normalizeCompactSearchText('608123456'), garageId: garage.id },
     }),
     prisma.customer.create({
-      data: { name: 'Petr Malý', phone: '724556677', garageId: garage.id },
+      data: { name: 'Petr Malý', nameNormalized: normalizeSearchText('Petr Malý'), phone: '724556677', phoneNormalized: normalizeCompactSearchText('724556677'), garageId: garage.id },
     }),
     prisma.customer.create({
-      data: { name: 'Lukáš Dvořák', phone: '739112233', garageId: garage.id },
+      data: { name: 'Lukáš Dvořák', nameNormalized: normalizeSearchText('Lukáš Dvořák'), phone: '739112233', phoneNormalized: normalizeCompactSearchText('739112233'), garageId: garage.id },
     }),
     prisma.customer.create({
       data: {
         name: 'Stavební firma Novák',
+        nameNormalized: normalizeSearchText('Stavební firma Novák'),
         companyName: 'Stavební firma Novák s.r.o.',
+        companyNameNormalized: normalizeSearchText('Stavební firma Novák s.r.o.'),
         ico: '87654321',
+        icoNormalized: normalizeCompactSearchText('87654321'),
         dic: 'CZ87654321',
         street: 'Dělnická 22',
         city: 'Brno',
         zip: '61700',
         phone: '605998877',
+        phoneNormalized: normalizeCompactSearchText('605998877'),
         garageId: garage.id,
       },
     }),
@@ -80,9 +85,12 @@ async function main() {
   const [octavia, bmw, passat, transit] = await Promise.all([
     prisma.vehicle.create({
       data: {
+        brandNormalized: normalizeSearchText('Škoda'),
         brand: 'Škoda',
         model: 'Octavia III',
+        modelNormalized: normalizeSearchText('Octavia III'),
         licensePlate: '5T4 8241',
+        licensePlateNormalized: normalizeCompactSearchText('5T4 8241'),
         year: 2016,
         mileage: 142000,
         customerId: zakaznikNovak.id,
@@ -91,9 +99,12 @@ async function main() {
     }),
     prisma.vehicle.create({
       data: {
+        brandNormalized: normalizeSearchText('BMW'),
         brand: 'BMW',
         model: '320D',
+        modelNormalized: normalizeSearchText('320D'),
         licensePlate: '8T2 1934',
+        licensePlateNormalized: normalizeCompactSearchText('8T2 1934'),
         year: 2018,
         mileage: 98000,
         customerId: zakaznikMaly.id,
@@ -102,9 +113,12 @@ async function main() {
     }),
     prisma.vehicle.create({
       data: {
+        brandNormalized: normalizeSearchText('VW'),
         brand: 'VW',
         model: 'Passat B7',
+        modelNormalized: normalizeSearchText('Passat B7'),
         licensePlate: '1TA 7845',
+        licensePlateNormalized: normalizeCompactSearchText('1TA 7845'),
         year: 2014,
         mileage: 187000,
         customerId: zakaznikDvorak.id,
@@ -113,9 +127,12 @@ async function main() {
     }),
     prisma.vehicle.create({
       data: {
+        brandNormalized: normalizeSearchText('Ford'),
         brand: 'Ford',
         model: 'Transit',
+        modelNormalized: normalizeSearchText('Transit'),
         licensePlate: '7T8 1123',
+        licensePlateNormalized: normalizeCompactSearchText('7T8 1123'),
         year: 2019,
         mileage: 76000,
         customerId: firmaNovak.id,
