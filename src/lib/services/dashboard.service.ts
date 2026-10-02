@@ -17,7 +17,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
   const monthDataEnd = isCurrentMonth ? todayEnd : monthEnd;
   const historyStart = startOfPragueDay(addPragueDays(now, -29));
 
-  const [todayJobs, monthJobCount, doneMonth, monthJobItems, historyJobs, mechanics, monthWorkSessions, revenueInvoices] = await Promise.all([
+  const [todayJobs, monthJobCount, doneMonth, monthDoneJobItems, historyJobs, mechanics, monthWorkSessions, revenueInvoices] = await Promise.all([
     prisma.job.findMany({
       where: { garageId: context.garageId, scheduledStart: { gte: todayStart, lte: todayEnd } },
       select: {
@@ -32,12 +32,15 @@ export async function getDashboardData(context: SessionContext, now = new Date()
     prisma.job.count({
       where: { garageId: context.garageId, scheduledStart: { gte: monthStart, lte: monthDataEnd }, status: 'DONE' },
     }),
-    prisma.jobItem.aggregate({
+    // Fetched (not aggregated) so each item's quantity*unitPrice can be summed
+    // individually - SUM(quantity) * SUM(unitPrice) is not the same number
+    // as SUM(quantity * unitPrice) once items have different prices.
+    prisma.jobItem.findMany({
       where: {
         garageId: context.garageId,
         job: { garageId: context.garageId, scheduledStart: { gte: monthStart, lte: monthDataEnd }, status: 'DONE' },
       },
-      _sum: { quantity: true, unitPrice: true },
+      select: { quantity: true, unitPrice: true },
     }),
     prisma.job.findMany({
       where: { garageId: context.garageId, scheduledStart: { gte: historyStart, lte: todayEnd } },
@@ -118,9 +121,7 @@ export async function getDashboardData(context: SessionContext, now = new Date()
   const todayRevenue = todayJobs
     .filter((job) => job.status === 'DONE')
     .reduce((sum, job) => sum.add(jobItemsTotal(job.items)), new Prisma.Decimal(0));
-  const monthRevenue = monthJobItems._sum.quantity && monthJobItems._sum.unitPrice
-    ? monthJobItems._sum.quantity.mul(monthJobItems._sum.unitPrice)
-    : new Prisma.Decimal(0);
+  const monthRevenue = jobItemsTotal(monthDoneJobItems);
   const monthInvoiced = revenueInvoices.reduce(
     (sum, invoice) => sum.add(new Prisma.Decimal(invoice.subtotal)),
     new Prisma.Decimal(0)

@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = ['/', '/login', '/signup', '/forgot-password', '/reset-password'];
+const PUBLIC_PATHS = ['/', '/login', '/signup', '/forgot-password', '/reset-password', '/verify-email'];
 const REDIRECT_LOGGED_IN_PATHS = ['/login', '/signup', '/forgot-password'];
 
 export default auth((req) => {
